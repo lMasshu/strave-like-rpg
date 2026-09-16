@@ -1,0 +1,25 @@
+{
+  "name": "strave-like-rpg",
+  "private": "true",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm --prefix mobile-ionic run dev",
+    "build": "npm --prefix mobile-ionic run build",
+    "test": "npm --prefix mobile-ionic run test.unit -- --run",
+    "lint": "npm --prefix mobile-ionic run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lMasshu/strave-like-rpg.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lMasshu/strave-like-rpg/issues"
+  },
+  "homepage": "https://github.com/lMasshu/strave-like-rpg#readme"
+}

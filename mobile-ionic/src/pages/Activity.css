@@ -1,0 +1,49 @@
+.activity-shell {
+  padding: 20px;
+}
+
+.map-placeholder {
+  display: flex;
+  min-height: 52vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--ion-color-medium-shade);
+  background: linear-gradient(145deg, var(--ion-color-light), var(--ion-color-light-tint));
+  border: 1px dashed var(--ion-color-medium-tint);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.map-placeholder ion-icon {
+  margin-bottom: 8px;
+  color: var(--ion-color-primary);
+  font-size: 3rem;
+}
+
+.map-placeholder span {
+  font-size: 0.85rem;
+}
+
+.activity-intro {
+  display: flex;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.activity-intro > ion-icon {
+  flex: 0 0 auto;
+  font-size: 1.7rem;
+}
+
+.activity-intro h1 {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+}
+
+.activity-intro p {
+  margin: 0;
+  color: var(--ion-color-medium-shade);
+  line-height: 1.45;
+}

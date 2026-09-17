@@ -14,9 +14,9 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
-} from '@ionic/react';
-import { flame, footsteps, play, shield, trophy } from 'ionicons/icons';
-import './Home.css';
+} from "@ionic/react";
+import { flame, footsteps, play, shield, trophy } from "ionicons/icons";
+import "./Home.css";
 
 const Home: React.FC = () => {
   return (
@@ -36,7 +36,10 @@ const Home: React.FC = () => {
           <section className="welcome-block">
             <IonText color="medium">Bonjour, aventurier</IonText>
             <h1>Chaque pas fait avancer la quête.</h1>
-            <p>Pars explorer ton quartier et transforme ton effort en puissance de combat.</p>
+            <p>
+              Pars explorer ton quartier et transforme ton effort en puissance
+              de combat.
+            </p>
           </section>
 
           <IonCard className="raid-card">
@@ -46,11 +49,15 @@ const Home: React.FC = () => {
             </IonCardHeader>
             <IonCardContent>
               <div className="raid-status">
-                <span><IonIcon icon={shield} /> 68% PV restants</span>
+                <span>
+                  <IonIcon icon={shield} /> 68% PV restants
+                </span>
                 <IonBadge color="warning">Niveau 4</IonBadge>
               </div>
               <IonProgressBar value={0.68} color="warning" />
-              <p className="card-hint">Encore 420 points de dégâts pour obtenir le coffre.</p>
+              <p className="card-hint">
+                Encore 420 points de dégâts pour obtenir le coffre.
+              </p>
               <IonButton expand="block" routerLink="/activity">
                 <IonIcon slot="start" icon={play} />
                 Démarrer une activité
@@ -82,7 +89,9 @@ const Home: React.FC = () => {
               <IonText color="primary">Voir tout</IonText>
             </div>
             <div className="activity-row">
-              <div className="activity-icon"><IonIcon icon={footsteps} /></div>
+              <div className="activity-icon">
+                <IonIcon icon={footsteps} />
+              </div>
               <div>
                 <strong>Balade du parc</strong>
                 <IonText color="medium">3,2 km · 34 min</IonText>

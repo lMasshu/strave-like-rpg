@@ -10,7 +10,11 @@
   justify-content: center;
   gap: 8px;
   color: var(--ion-color-medium-shade);
-  background: linear-gradient(145deg, var(--ion-color-light), var(--ion-color-light-tint));
+  background: linear-gradient(
+    145deg,
+    var(--ion-color-light),
+    var(--ion-color-light-tint)
+  );
   border: 1px dashed var(--ion-color-medium-tint);
   border-radius: 16px;
   text-align: center;

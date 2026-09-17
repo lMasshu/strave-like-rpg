@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" vite.config.ts cypress.config.ts"
   },
   "dependencies": {
     "@capacitor/app": "8.1.1",
@@ -42,6 +43,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "jsdom": "^22.1.0",
+    "prettier": "^3.6.2",
     "terser": "^5.16.0",
     "typescript": "~5.9.0",
     "typescript-eslint": "^8.24.0",

@@ -7,9 +7,9 @@ import {
   IonPage,
   IonTitle,
   IonToolbar,
-} from '@ionic/react';
-import { locationOutline, navigate } from 'ionicons/icons';
-import './Activity.css';
+} from "@ionic/react";
+import { locationOutline, navigate } from "ionicons/icons";
+import "./Activity.css";
 
 const Activity: React.FC = () => {
   return (
@@ -24,7 +24,11 @@ const Activity: React.FC = () => {
       </IonHeader>
       <IonContent fullscreen>
         <main className="activity-shell">
-          <div className="map-placeholder" role="img" aria-label="Zone de carte en attente de la position GPS">
+          <div
+            className="map-placeholder"
+            role="img"
+            aria-label="Zone de carte en attente de la position GPS"
+          >
             <IonIcon icon={navigate} />
             <strong>Carte de parcours</strong>
             <span>La position GPS sera affichée ici.</span>
@@ -33,7 +37,10 @@ const Activity: React.FC = () => {
             <IonIcon icon={locationOutline} color="primary" />
             <div>
               <h1>Prêt à explorer ?</h1>
-              <p>Autorise l'accès à ta position pour suivre ton trajet et contribuer au raid.</p>
+              <p>
+                Autorise l'accès à ta position pour suivre ton trajet et
+                contribuer au raid.
+              </p>
             </div>
           </section>
         </main>

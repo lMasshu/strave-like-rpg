@@ -1,131 +1,131 @@
 .home-shell {
-	--page-padding: 20px;
-	padding: 24px var(--page-padding) 40px;
-	max-width: 720px;
-	margin: 0 auto;
+  --page-padding: 20px;
+  padding: 24px var(--page-padding) 40px;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 .welcome-block ion-text {
-	font-size: 0.9rem;
-	font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .welcome-block h1 {
-	margin: 8px 0;
-	color: var(--ion-color-primary-shade);
-	font-size: clamp(2rem, 9vw, 3rem);
-	line-height: 1.05;
+  margin: 8px 0;
+  color: var(--ion-color-primary-shade);
+  font-size: clamp(2rem, 9vw, 3rem);
+  line-height: 1.05;
 }
 
 .welcome-block p {
-	margin: 0 0 24px;
-	color: var(--ion-color-medium-shade);
-	line-height: 1.5;
+  margin: 0 0 24px;
+  color: var(--ion-color-medium-shade);
+  line-height: 1.5;
 }
 
 .raid-card {
-	margin: 0 0 20px;
-	border: 1px solid rgba(var(--ion-color-primary-rgb), 0.15);
-	box-shadow: 0 10px 30px rgba(34, 45, 57, 0.1);
+  margin: 0 0 20px;
+  border: 1px solid rgba(var(--ion-color-primary-rgb), 0.15);
+  box-shadow: 0 10px 30px rgba(34, 45, 57, 0.1);
 }
 
 .raid-card ion-card-title {
-	font-size: 1.45rem;
+  font-size: 1.45rem;
 }
 
 .raid-status {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 10px;
-	color: var(--ion-color-medium-shade);
-	font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: var(--ion-color-medium-shade);
+  font-size: 0.9rem;
 }
 
 .raid-status ion-icon {
-	vertical-align: middle;
-	margin-right: 4px;
+  vertical-align: middle;
+  margin-right: 4px;
 }
 
 .card-hint {
-	margin: 10px 0 18px;
-	color: var(--ion-color-medium-shade);
-	font-size: 0.85rem;
+  margin: 10px 0 18px;
+  color: var(--ion-color-medium-shade);
+  font-size: 0.85rem;
 }
 
 .stats-grid {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 10px;
-	margin-bottom: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
 }
 
 .stat-tile {
-	display: flex;
-	flex-direction: column;
-	gap: 5px;
-	min-width: 0;
-	padding: 14px 10px;
-	background: var(--ion-color-light);
-	border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px 10px;
+  background: var(--ion-color-light);
+  border-radius: 12px;
 }
 
 .stat-tile ion-icon {
-	font-size: 1.3rem;
+  font-size: 1.3rem;
 }
 
 .stat-tile strong {
-	font-size: 0.95rem;
+  font-size: 0.95rem;
 }
 
 .stat-tile ion-text {
-	font-size: 0.72rem;
+  font-size: 0.72rem;
 }
 
 .section-heading {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .section-heading h2 {
-	margin: 0;
-	font-size: 1.2rem;
+  margin: 0;
+  font-size: 1.2rem;
 }
 
 .section-heading ion-text {
-	font-size: 0.85rem;
-	font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .activity-row {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	padding: 14px;
-	border-top: 1px solid var(--ion-color-light-shade);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--ion-color-light-shade);
 }
 
 .activity-icon {
-	display: grid;
-	flex: 0 0 40px;
-	place-items: center;
-	width: 40px;
-	height: 40px;
-	color: var(--ion-color-primary);
-	background: var(--ion-color-primary-tint);
-	border-radius: 50%;
+  display: grid;
+  flex: 0 0 40px;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--ion-color-primary);
+  background: var(--ion-color-primary-tint);
+  border-radius: 50%;
 }
 
 .activity-row > div:nth-child(2) {
-	display: flex;
-	flex: 1;
-	flex-direction: column;
-	gap: 4px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .activity-row ion-text {
-	font-size: 0.8rem;
+  font-size: 0.8rem;
 }

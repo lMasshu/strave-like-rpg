@@ -1,5 +1,5 @@
 .map-page-content {
-  --background: #121826;
+  --background: #0f172a;
 }
 
 .map-shell {
@@ -21,34 +21,239 @@
   height: 100%;
 }
 
+/* Panneau HUD de Quête RPG (Tracé A ➔ B) */
+.rpg-route-hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  max-width: 440px;
+  margin: 0 auto;
+  z-index: 10;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  padding: 12px 14px;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rpg-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rpg-points-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 6px;
+}
+
+.point-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.point-tag.tag-a {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.point-tag.tag-b {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.point-tag:active {
+  transform: scale(0.96);
+}
+
+.swap-btn {
+  --color: #94a3b8;
+  --padding-start: 4px;
+  --padding-end: 4px;
+  margin: 0;
+  height: 32px;
+}
+
+.swap-btn:hover {
+  --color: #38bdf8;
+}
+
+/* Sélecteur de mode */
+.rpg-mode-selector ion-segment {
+  --background: rgba(30, 41, 59, 0.85);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.rpg-mode-selector ion-segment-button {
+  --color: #94a3b8;
+  --color-checked: #ffffff;
+  --indicator-color: #2563eb;
+  font-size: 0.75rem;
+  min-height: 32px;
+}
+
+.rpg-mode-selector ion-segment-button ion-icon {
+  font-size: 1rem;
+  margin-right: 4px;
+}
+
+/* Grille de statistiques */
+.rpg-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rpg-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.rpg-stat-item .stat-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+
+.rpg-stat-item .stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.rpg-stat-item.xp-item .stat-value.xp-value {
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.rpg-hud-footer {
+  text-align: center;
+}
+
+.hud-tip {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.25;
+}
+
+/* Marqueurs Personnalisés A et B */
+.custom-route-marker {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  cursor: grab;
+  transition: transform 0.15s ease;
+  user-select: none;
+}
+
+.custom-route-marker:active {
+  cursor: grabbing;
+  transform: scale(1.15);
+}
+
+.custom-route-marker.marker-a {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+.custom-route-marker.marker-b {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+/* Boutons Flottants */
+.map-floating-actions {
+  position: absolute;
+  bottom: 24px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-fab {
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  width: 48px;
+  height: 48px;
+  margin: 0;
+}
+
+.fit-btn {
+  --background: #2563eb;
+  --color: #ffffff;
+}
+
+.location-btn {
+  --background: #1e293b;
+  --color: #38bdf8;
+  --border-color: rgba(56, 189, 248, 0.3);
+  --border-style: solid;
+  --border-width: 1px;
+}
+
+/* Bannière d'état et erreurs */
 .mapatlas-config-banner {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 60px;
+  bottom: 84px;
+  left: 14px;
+  right: 76px;
   z-index: 10;
   background: rgba(30, 41, 59, 0.92);
   backdrop-filter: blur(8px);
   color: #facc15;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 500;
   padding: 8px 12px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(250, 204, 21, 0.4);
   cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.mapatlas-config-banner:active {
-  transform: scale(0.98);
 }
 
 .mapatlas-error-card {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
+  bottom: 84px;
+  left: 14px;
+  right: 14px;
   z-index: 10;
   background: rgba(220, 38, 38, 0.95);
   color: #ffffff;
@@ -64,49 +269,21 @@
   line-height: 1.35;
 }
 
-.map-floating-actions {
-  position: absolute;
-  bottom: 24px;
-  right: 16px;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.recenter-btn {
-  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --background: #3880ff;
-  --color: #ffffff;
-  width: 50px;
-  height: 50px;
-}
-
 .map-popup-card {
   padding: 4px;
   color: #0f172a;
-  font-family: inherit;
 }
 
 .map-popup-card h3 {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
+  margin: 0 0 2px;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #1e3a8a;
 }
 
 .map-popup-card p {
-  margin: 0 0 6px;
-  font-size: 0.8rem;
+  margin: 0;
+  font-size: 0.75rem;
   color: #475569;
 }
 
-.map-popup-card .badge {
-  display: inline-block;
-  background: #e0f2fe;
-  color: #0369a1;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-}

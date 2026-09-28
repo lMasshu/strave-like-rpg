@@ -1,19 +1,33 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from "@ionic/react";
+import {
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonPage,
+  IonTitle,
+  IonToolbar,
+} from "@ionic/react";
+import { mapOutline } from "ionicons/icons";
 import "./Home.css";
 
 const Home: React.FC = () => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar>
-          <IonTitle>Accueil</IonTitle>
+        <IonToolbar color="primary">
+          <IonTitle>Stride Quest</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen>
         <main className="blank-shell">
-          <div className="blank-canvas">
-            <div className="blank-placeholder" />
+          <div className="home-card">
+            <h2>Prêt pour l'aventure ?</h2>
+            <p>Explorez votre environnement et validez vos quêtes GPS.</p>
+            <IonButton routerLink="/map" expand="block" shape="round" color="primary">
+              <IonIcon slot="start" icon={mapOutline} />
+              Ouvrir la Carte
+            </IonButton>
           </div>
         </main>
       </IonContent>

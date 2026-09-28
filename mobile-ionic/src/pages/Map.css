@@ -1,0 +1,112 @@
+.map-page-content {
+  --background: #121826;
+}
+
+.map-shell {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  min-height: 420px;
+}
+
+.mapatlas-map-container {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  background: #1b263b;
+}
+
+.mapmetricsgl-map {
+  width: 100%;
+  height: 100%;
+}
+
+.mapatlas-config-banner {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 60px;
+  z-index: 10;
+  background: rgba(30, 41, 59, 0.92);
+  backdrop-filter: blur(8px);
+  color: #facc15;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.mapatlas-config-banner:active {
+  transform: scale(0.98);
+}
+
+.mapatlas-error-card {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(220, 38, 38, 0.95);
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.mapatlas-error-card p {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.map-floating-actions {
+  position: absolute;
+  bottom: 24px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recenter-btn {
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --background: #3880ff;
+  --color: #ffffff;
+  width: 50px;
+  height: 50px;
+}
+
+.map-popup-card {
+  padding: 4px;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.map-popup-card h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.map-popup-card p {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.map-popup-card .badge {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}

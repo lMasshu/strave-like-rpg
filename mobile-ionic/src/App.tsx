@@ -2,6 +2,7 @@ import { Route } from "react-router-dom";
 import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import Home from "./pages/Home";
+import MapPage from "./pages/Map";
 
 import "@ionic/react/css/core.css";
 import "@ionic/react/css/normalize.css";
@@ -24,6 +25,8 @@ const App: React.FC = () => (
     <IonReactRouter>
       <IonRouterOutlet>
         <Route path="/" element={<Home />} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/Map" element={<MapPage />} />
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>

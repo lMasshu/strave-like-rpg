@@ -1,5 +1,5 @@
 .map-page-content {
-  --background: #0f172a;
+  --background: #090d16;
 }
 
 .map-shell {
@@ -7,13 +7,14 @@
   height: 100%;
   width: 100%;
   min-height: 420px;
+  overflow: hidden;
 }
 
 .mapatlas-map-container {
   width: 100%;
   height: 100%;
   min-height: 420px;
-  background: #1b263b;
+  background: #111827;
 }
 
 .mapmetricsgl-map {
@@ -21,32 +22,179 @@
   height: 100%;
 }
 
-/* Panneau HUD de Quête RPG (Tracé A ➔ B) */
-.rpg-route-hud {
+/* =======================================================
+   BOUTONS DE CONTRÔLE FLOTTANTS LATÉRAUX (HAUT À DROITE)
+======================================================= */
+.map-side-controls {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 16px;
   right: 14px;
-  max-width: 440px;
-  margin: 0 auto;
   z-index: 10;
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-  padding: 12px 14px;
-  color: #f8fafc;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.rpg-hud-header {
+.action-fab {
+  --box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  width: 46px;
+  height: 46px;
+  margin: 0;
+  transition: transform 0.15s ease;
+}
+
+.action-fab:active {
+  transform: scale(0.92);
+}
+
+.immersion-btn {
+  --background: rgba(15, 23, 42, 0.88);
+  --color: #f1f5f9;
+  --border-color: rgba(255, 255, 255, 0.18);
+  --border-style: solid;
+  --border-width: 1px;
+}
+
+.style-btn {
+  --background: rgba(15, 23, 42, 0.88);
+  --color: #38bdf8;
+  --border-color: rgba(56, 189, 248, 0.3);
+  --border-style: solid;
+  --border-width: 1px;
+}
+
+.fit-btn {
+  --background: #0284c7;
+  --color: #ffffff;
+}
+
+.location-btn {
+  --background: rgba(15, 23, 42, 0.88);
+  --color: #10b981;
+  --border-color: rgba(16, 185, 129, 0.3);
+  --border-style: solid;
+  --border-width: 1px;
+}
+
+/* MENU SÉLECTEUR DE STYLE DE CARTE */
+.map-theme-dropdown {
+  position: absolute;
+  top: 72px;
+  right: 68px;
+  z-index: 20;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 210px;
+}
+
+.theme-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  padding: 4px 8px;
+}
+
+.theme-option {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #e2e8f0;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.theme-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.theme-option.active {
+  background: rgba(2, 132, 199, 0.25);
+  color: #38bdf8;
+  font-weight: 600;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+/* =======================================================
+   PANNEAU BAS ERGONOMIQUE (BOTTOM SHEET FLOTTANT)
+======================================================= */
+.rpg-bottom-hud {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  max-width: 480px;
+  margin: 0 auto;
+  z-index: 10;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.rpg-bottom-hud.collapsed {
+  border-radius: 28px;
+  bottom: 16px;
+}
+
+.hud-drag-handle {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hud-drag-handle ion-icon {
+  font-size: 1.15rem;
+  color: #94a3b8;
+}
+
+.hud-summary-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.02em;
+}
+
+.hud-badge-xp {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.18);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.hud-expanded-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .rpg-points-summary {
@@ -82,8 +230,15 @@
   border: 1px solid rgba(248, 113, 113, 0.4);
 }
 
-.point-tag:active {
-  transform: scale(0.96);
+.point-tag.targeting {
+  animation: pulse-border 1.2s infinite;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+@keyframes pulse-border {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .swap-btn {
@@ -98,7 +253,7 @@
   --color: #38bdf8;
 }
 
-/* Sélecteur de mode */
+/* SÉLECTEUR DE MODE DE TRANSPORT */
 .rpg-mode-selector ion-segment {
   --background: rgba(30, 41, 59, 0.85);
   border-radius: 10px;
@@ -108,8 +263,8 @@
 .rpg-mode-selector ion-segment-button {
   --color: #94a3b8;
   --color-checked: #ffffff;
-  --indicator-color: #2563eb;
-  font-size: 0.75rem;
+  --indicator-color: #0284c7;
+  font-size: 0.74rem;
   min-height: 32px;
 }
 
@@ -118,7 +273,7 @@
   margin-right: 4px;
 }
 
-/* Grille de statistiques */
+/* GRILLE DE STATISTIQUES */
 .rpg-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -155,118 +310,116 @@
   text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
 }
 
-.rpg-hud-footer {
-  text-align: center;
-}
-
 .hud-tip {
   font-size: 0.72rem;
   color: #94a3b8;
+  text-align: center;
   line-height: 1.25;
 }
 
-/* Marqueurs Personnalisés A et B */
-.custom-route-marker {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+/* =======================================================
+   MARQUEURS 3D HAUTE VISIBILITÉ AVEC POINTEUR & PULSE
+======================================================= */
+.pin-marker-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: grab;
+  user-select: none;
+  transform: translate(0, -50%);
+}
+
+.pin-marker-wrapper:active {
+  cursor: grabbing;
+}
+
+.pin-marker-head {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 0.9rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  border: 2px solid #ffffff;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.pin-marker-head:hover {
+  transform: rotate(-45deg) scale(1.1);
+}
+
+.pin-marker-head span {
+  transform: rotate(45deg);
+  font-size: 0.95rem;
+  font-weight: 900;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
-  cursor: grab;
-  transition: transform 0.15s ease;
-  user-select: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-.custom-route-marker:active {
-  cursor: grabbing;
-  transform: scale(1.15);
+.pin-marker-head.marker-a {
+  background: linear-gradient(135deg, #10b981, #047857);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.75);
 }
 
-.custom-route-marker.marker-a {
-  background: linear-gradient(135deg, #10b981, #059669);
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+.pin-marker-head.marker-b {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.75);
 }
 
-.custom-route-marker.marker-b {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
-}
-
-/* Boutons Flottants */
-.map-floating-actions {
+.pin-marker-pulse {
   position: absolute;
-  bottom: 24px;
-  right: 16px;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  bottom: -4px;
+  width: 18px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
 }
 
-.action-fab {
-  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  width: 48px;
-  height: 48px;
-  margin: 0;
-}
-
-.fit-btn {
-  --background: #2563eb;
-  --color: #ffffff;
-}
-
-.location-btn {
-  --background: #1e293b;
-  --color: #38bdf8;
-  --border-color: rgba(56, 189, 248, 0.3);
-  --border-style: solid;
-  --border-width: 1px;
-}
-
-/* Bannière d'état et erreurs */
-.mapatlas-config-banner {
+.pin-marker-pulse::after {
+  content: "";
   position: absolute;
-  bottom: 84px;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.pulse-a::after {
+  border: 2px solid rgba(16, 185, 129, 0.85);
+}
+
+.pulse-b::after {
+  border: 2px solid rgba(239, 68, 68, 0.85);
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* NOTIFICATION D'ERREUR DISCRÈTE */
+.mapatlas-error-pill {
+  position: absolute;
+  top: 14px;
   left: 14px;
-  right: 76px;
+  right: 70px;
   z-index: 10;
-  background: rgba(30, 41, 59, 0.92);
-  backdrop-filter: blur(8px);
-  color: #facc15;
-  font-size: 0.8rem;
-  font-weight: 500;
+  background: rgba(220, 38, 38, 0.92);
+  color: #ffffff;
   padding: 8px 12px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(250, 204, 21, 0.4);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-}
-
-.mapatlas-error-card {
-  position: absolute;
-  bottom: 84px;
-  left: 14px;
-  right: 14px;
-  z-index: 10;
-  background: rgba(220, 38, 38, 0.95);
-  color: #ffffff;
-  padding: 12px 16px;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
-}
-
-.mapatlas-error-card p {
-  margin: 0 0 8px;
-  font-size: 0.85rem;
-  line-height: 1.35;
 }
 
 .map-popup-card {
@@ -286,4 +439,3 @@
   font-size: 0.75rem;
   color: #475569;
 }
-

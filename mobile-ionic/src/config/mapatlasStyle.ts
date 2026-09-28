@@ -29,7 +29,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
         id: "background",
         type: "background",
         paint: {
-          "background-color": "rgba(200, 189, 174, 1)",
+          "background-color": "#E5EBF1",
         },
       },
       {
@@ -40,7 +40,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
         minzoom: 0,
         filter: ["==", "$type", "Polygon"],
         paint: {
-          "fill-color": "#F4F1ED",
+          "fill-color": "#F8FAFC",
         },
       },
       {
@@ -276,7 +276,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
         "source-layer": "water",
         filter: ["==", "$type", "Polygon"],
         paint: {
-          "fill-color": "#98DCFE",
+          "fill-color": "#60A5FA",
         },
       },
       {
@@ -287,8 +287,8 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
         minzoom: 14,
         filter: ["in", "kind", "stream"],
         paint: {
-          "line-color": "#A3D5FF",
-          "line-width": 0.5,
+          "line-color": "#3B82F6",
+          "line-width": 1,
         },
       },
       {
@@ -299,7 +299,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
         minzoom: 9,
         filter: ["in", "kind", "river"],
         paint: {
-          "line-color": "#A3D5FF",
+          "line-color": "#3B82F6",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -626,8 +626,8 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
         source: "protomaps",
         "source-layer": "buildings",
         paint: {
-          "fill-color": "#ECE6DD",
-          "fill-opacity": 0.5,
+          "fill-color": "#CBD5E1",
+          "fill-opacity": 0.75,
         },
       },
       {
@@ -699,7 +699,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["!=", "kind_detail", "service"],
         ],
         paint: {
-          "line-color": "#F8EECD",
+          "line-color": "#CBD5E1",
           "line-gap-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -768,7 +768,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["==", "kind", "major_road"],
         ],
         paint: {
-          "line-color": "#b2bcd7",
+          "line-color": "#94A3B8",
           "line-gap-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -807,7 +807,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["!has", "is_link"],
         ],
         paint: {
-          "line-color": "#D6D6D6",
+          "line-color": "#C2410C",
           "line-gap-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -917,15 +917,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["!=", "kind_detail", "service"],
         ],
         paint: {
-          "line-color": [
-            "interpolate",
-            ["exponential", 1.6],
-            ["zoom"],
-            11,
-            "#F0F0F0",
-            16,
-            "#FFF8E1",
-          ],
+          "line-color": "#FFFFFF",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -954,7 +946,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["==", "kind", "major_road"],
         ],
         paint: {
-          "line-color": "#F8EECD",
+          "line-color": "#94A3B8",
           "line-gap-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -989,7 +981,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["==", "kind", "major_road"],
         ],
         paint: {
-          "line-color": "#BEC5D8",
+          "line-color": "#FEF08A",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1019,7 +1011,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["!has", "is_link"],
         ],
         paint: {
-          "line-color": "#D6D6D6",
+          "line-color": "#C2410C",
           "line-gap-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1055,7 +1047,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["!has", "is_link"],
         ],
         paint: {
-          "line-color": "#FFF8E1",
+          "line-color": "#F97316",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1276,7 +1268,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["==", "kind", "minor_road"],
         ],
         paint: {
-          "line-color": "#FFF8E1",
+          "line-color": "#FFFFFF",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1300,7 +1292,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
         minzoom: 12,
         filter: ["all", ["has", "is_bridge"], ["has", "is_link"]],
         paint: {
-          "line-color": "#FFF8E1",
+          "line-color": "#FEF08A",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1326,7 +1318,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["==", "kind", "major_road"],
         ],
         paint: {
-          "line-color": "#BEC5D8",
+          "line-color": "#FEF08A",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1355,7 +1347,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["!has", "is_link"],
         ],
         paint: {
-          "line-color": "#D6D6D6",
+          "line-color": "#C2410C",
           "line-gap-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1392,7 +1384,7 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           ["!has", "is_link"],
         ],
         paint: {
-          "line-color": "#FFF8E1",
+          "line-color": "#F97316",
           "line-width": [
             "interpolate",
             ["exponential", 1.6],
@@ -1449,9 +1441,9 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           "text-transform": "uppercase",
         },
         paint: {
-          "text-color": "#8f8f8f",
-          "text-halo-color": "#D6D6D6",
-          "text-halo-width": 1,
+          "text-color": "#1E293B",
+          "text-halo-color": "#FFFFFF",
+          "text-halo-width": 2,
           "text-halo-blur": 1,
         },
       },
@@ -1495,9 +1487,9 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           "text-justify": "auto",
         },
         paint: {
-          "text-color": "#5c5c5c",
-          "text-halo-color": "#D6D6D6",
-          "text-halo-width": 1,
+          "text-color": "#0F172A",
+          "text-halo-color": "#FFFFFF",
+          "text-halo-width": 2,
           "text-halo-blur": 1,
         },
       },
@@ -1525,7 +1517,9 @@ export const createMapAtlasStyle = (token: string): StyleSpecification => {
           "text-transform": "uppercase",
         },
         paint: {
-          "text-color": "#a3a3a3",
+          "text-color": "#334155",
+          "text-halo-color": "#FFFFFF",
+          "text-halo-width": 2,
         },
       },
     ],

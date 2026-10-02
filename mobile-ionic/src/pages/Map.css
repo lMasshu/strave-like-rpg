@@ -1,0 +1,1042 @@
+/* =======================================================
+   DESIGN MOBILE-FIRST ÉPURÉ & MODERNE - PAGE CARTE RPG
+   Inspiré des standards iOS / Apple Maps / Strava
+======================================================= */
+
+.map-page-content {
+  --background: #090d16;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.map-shell {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #090d16;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.map-mapbox-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #0f172a;
+}
+
+.mapboxgl-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* =======================================================
+   1. BARRE SUPÉRIEURE FLOTTANTE MOBILE (TOP BAR ÉPURÉE)
+======================================================= */
+.map-mobile-top-bar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  margin-top: env(safe-area-inset-top, 6px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.top-mobile-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.top-mobile-icon-btn ion-icon {
+  font-size: 1.25rem;
+}
+
+.top-mobile-icon-btn:active {
+  transform: scale(0.92);
+  background: rgba(30, 41, 59, 0.95);
+}
+
+.top-mobile-icon-btn.active {
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+}
+
+/* Pilule de recherche */
+.mobile-search-pill {
+  flex: 1;
+  height: 44px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.mobile-search-pill:focus-within {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 6px 24px rgba(56, 189, 248, 0.25);
+  background: rgba(15, 23, 42, 0.96);
+}
+
+.search-pill-icon {
+  font-size: 1.15rem;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.search-pill-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 0;
+}
+
+.search-pill-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.clear-pill-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.15rem;
+}
+
+.clear-pill-btn:active {
+  color: #f8fafc;
+}
+
+/* =======================================================
+   2. RÉSULTATS DE RECHERCHE DÉROULANTS (OVERLAY)
+======================================================= */
+.search-results-dropdown {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 6px) + 52px);
+  left: 12px;
+  right: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+  z-index: 35;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-result-item {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:active,
+.search-result-item:hover {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.result-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.result-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.result-badge {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.result-address {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CARTE D'ACTION DU LIEU CHOISI */
+.poi-action-card {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 6px) + 52px);
+  left: 12px;
+  right: 12px;
+  max-width: 460px;
+  margin: 0 auto;
+  z-index: 35;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.poi-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.poi-card-info h4 {
+  margin: 0 0 3px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.poi-card-info p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.close-card-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.poi-card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.poi-action-btn {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.poi-action-btn:active {
+  transform: scale(0.96);
+}
+
+.btn-set-a {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.5);
+}
+
+.btn-set-b {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+}
+
+/* =======================================================
+   3. MENU STYLE DE CARTE FLOTTANT
+======================================================= */
+.map-theme-dropdown {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 6px) + 52px);
+  right: 12px;
+  z-index: 35;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  padding: 6px 10px 4px;
+}
+
+.theme-option {
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: #e2e8f0;
+  text-align: left;
+  padding: 9px 12px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.theme-option:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.theme-option.active {
+  background: rgba(2, 132, 199, 0.25);
+  color: #38bdf8;
+  font-weight: 600;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+/* =======================================================
+   4. CONTRÔLES FLOTTANTS DISCRETS (BAS À DROITE)
+======================================================= */
+.map-floating-actions {
+  position: absolute;
+  right: 14px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.map-floating-actions.hud-min {
+  bottom: calc(76px + env(safe-area-inset-bottom, 0));
+}
+
+.map-floating-actions.hud-exp {
+  bottom: calc(365px + env(safe-area-inset-bottom, 0));
+}
+
+.map-floating-actions.immersed {
+  bottom: calc(20px + env(safe-area-inset-bottom, 0));
+}
+
+.fab-action-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.fab-action-btn ion-icon {
+  font-size: 1.25rem;
+}
+
+.fab-action-btn:active {
+  transform: scale(0.92);
+  background: rgba(30, 41, 59, 0.95);
+}
+
+.fab-action-btn.location-btn ion-icon {
+  color: #10b981;
+}
+
+.fab-action-btn.fit-btn ion-icon {
+  color: #38bdf8;
+}
+
+.fab-action-btn.immersion-btn ion-icon {
+  color: #cbd5e1;
+}
+
+/* =======================================================
+   5. BOTTOM SHEET HUD MOBILE ÉPURÉ (APPLE MAPS STYLE)
+======================================================= */
+.rpg-bottom-hud {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 4px));
+  max-width: 500px;
+  margin: 0 auto;
+  z-index: 25;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.6);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rpg-bottom-hud.collapsed {
+  border-radius: 28px;
+}
+
+.hud-header-bar {
+  padding: 8px 16px 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hud-drag-pill {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0 auto;
+}
+
+.hud-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hud-chips-route {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.dot-a {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.dot-b {
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.route-arrow {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 0 2px;
+}
+
+.hud-metric-text {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+  flex: 1;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hud-metric-chips {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.metric-dot {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.metric-elev {
+  color: #38bdf8;
+  font-weight: 800;
+}
+
+.hud-badge-xp {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.16);
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  white-space: nowrap;
+}
+
+.hud-toggle-icon {
+  font-size: 1.1rem;
+  color: #94a3b8;
+}
+
+/* Contenu Développé */
+.hud-expanded-body {
+  padding: 0 16px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(80vh - 80px);
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.rpg-points-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.point-tag {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.point-tag.tag-a {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.point-tag.tag-b {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.point-tag.targeting {
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+  border-color: #38bdf8;
+  animation: pulse-border 1.2s infinite;
+}
+
+@keyframes pulse-border {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.swap-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.swap-btn:active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+}
+
+/* Sélecteur de Transport */
+.rpg-mode-selector ion-segment {
+  --background: rgba(30, 41, 59, 0.8);
+  border-radius: 12px;
+  padding: 3px;
+}
+
+.rpg-mode-selector ion-segment-button {
+  --color: #94a3b8;
+  --color-checked: #ffffff;
+  --indicator-color: #0284c7;
+  font-size: 0.75rem;
+  min-height: 34px;
+}
+
+.rpg-mode-selector ion-segment-button ion-icon {
+  font-size: 1.05rem;
+  margin-right: 4px;
+}
+
+/* Grille de stats (Distance, Dénivelé, Durée, XP) */
+.rpg-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.5);
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rpg-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.rpg-stat-item .stat-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.rpg-stat-item .stat-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+}
+
+.rpg-stat-item.elev-stat-item .stat-value.elev-value {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.rpg-stat-item.xp-item .stat-value.xp-value {
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+/* =======================================================
+   5b. CARTE DE PROFIL ALTIMÉTRIQUE (STYLE STRAVA RPG)
+======================================================= */
+.rpg-elevation-profile-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 14px;
+  padding: 10px 12px 8px 12px;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.rpg-elevation-profile-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(56, 189, 248, 0.6),
+    transparent
+  );
+}
+
+.elev-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.elev-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.elev-title-icon {
+  font-size: 0.95rem;
+  color: #38bdf8;
+}
+
+.elev-title-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #cbd5e1;
+}
+
+.elev-badges-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.elev-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.elev-badge.d-plus {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.elev-badge.d-minus {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.elev-svg-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.elev-alt-label.max-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #38bdf8;
+  text-align: right;
+  margin-bottom: -4px;
+}
+
+.elev-svg-chart {
+  width: 100%;
+  height: 52px;
+  overflow: visible;
+  filter: drop-shadow(0 2px 6px rgba(0, 240, 255, 0.25));
+}
+
+.elev-footer-axis {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.62rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.axis-node {
+  font-weight: 600;
+}
+
+.axis-node.node-a {
+  color: #34d399;
+}
+
+.axis-node.node-b {
+  color: #f87171;
+}
+
+.axis-min {
+  color: #64748b;
+  font-size: 0.6rem;
+}
+
+.hud-tip {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* =======================================================
+   6. MARQUEURS A & B HAUTE PRÉCISION VECTORIELS
+======================================================= */
+.pin-marker-wrapper {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 38px;
+  height: 48px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  line-height: 0;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.pin-marker-wrapper.marker-a-wrapper {
+  --pin-color: #34d399;
+  --pin-color-glow: rgba(52, 211, 153, 0.85);
+  --pin-color-shadow: rgba(52, 211, 153, 0.5);
+}
+
+.pin-marker-wrapper.marker-b-wrapper {
+  --pin-color: #f87171;
+  --pin-color-glow: rgba(248, 113, 113, 0.85);
+  --pin-color-shadow: rgba(248, 113, 113, 0.5);
+}
+
+.pin-marker-wrapper:active {
+  cursor: grabbing;
+}
+
+.pin-marker-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 38px;
+  height: 48px;
+  z-index: 2;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+}
+
+.pin-marker-content svg {
+  display: block;
+  width: 38px;
+  height: 48px;
+}
+
+.pin-marker-wrapper:hover .pin-marker-content {
+  transform: scale(1.1);
+  transform-origin: 19px 48px;
+  transition: transform 0.15s ease;
+}
+
+.pin-marker-wrapper:active .pin-marker-content {
+  transform: scale(0.95);
+  transform-origin: 19px 48px;
+  transition: transform 0.15s ease;
+}
+
+.pin-marker-pulse {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 18px;
+  height: 6px;
+  margin-left: -9px;
+  margin-bottom: -3px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pin-marker-pulse::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 2px solid var(--pin-color-glow);
+  box-shadow: 0 0 10px var(--pin-color-shadow);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* =======================================================
+   7. POPUPS & NOTIFICATIONS
+======================================================= */
+.mapbox-error-pill {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 6px) + 54px);
+  left: 14px;
+  right: 14px;
+  z-index: 30;
+  background: rgba(220, 38, 38, 0.92);
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.mapboxgl-popup-content {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  padding: 10px 14px !important;
+}
+
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+  border-bottom-color: rgba(15, 23, 42, 0.95) !important;
+}
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: rgba(15, 23, 42, 0.95) !important;
+}
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: rgba(15, 23, 42, 0.95) !important;
+}
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: #94a3b8 !important;
+  padding: 4px 8px !important;
+  font-size: 1.1rem !important;
+}
+
+.map-popup-card {
+  padding: 2px;
+}
+
+.map-popup-card h3 {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.map-popup-card p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #cbd5e1;
+}

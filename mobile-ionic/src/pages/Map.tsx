@@ -6,6 +6,7 @@ import {
   IonHeader,
   IonIcon,
   IonPage,
+  IonSearchbar,
   IonSegment,
   IonSegmentButton,
   IonLabel,
@@ -16,8 +17,10 @@ import {
 } from "@ionic/react";
 import {
   arrowBackOutline,
+  closeCircleOutline,
   informationCircleOutline,
   locateOutline,
+  searchOutline,
   swapVerticalOutline,
   navigateOutline,
   walkOutline,
@@ -39,6 +42,10 @@ import {
   RouteResult,
   TransportProfile,
 } from "../services/mapboxDirections";
+import {
+  searchPointsOfInterest,
+  PoiResult,
+} from "../services/mapboxGeocoding";
 import "./Map.css";
 
 // Coordonnées par défaut : Paris Centre (Hôtel de Ville -> Musée du Louvre)
@@ -422,12 +429,6 @@ const MapPage: React.FC = () => {
       }
     });
 
-    // Contrôles de navigation discrets en haut à droite
-    map.addControl(
-      new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }),
-      "top-right",
-    );
-
     const resizeObserver = new ResizeObserver(() => {
       map.resize();
     });
@@ -512,134 +513,287 @@ const MapPage: React.FC = () => {
   };
 
 
+  // Gestion de la recherche de points d'intérêt (POI)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<PoiResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedPoi, setSelectedPoi] = useState<PoiResult | null>(null);
+
+  const handleSearchInput = async (query: string) => {
+    setSearchQuery(query);
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const list = await searchPointsOfInterest(
+        query,
+        token,
+        pointARef.current,
+      );
+      setSearchResults(list);
+    } catch (err) {
+      console.warn("Erreur recherche POI :", err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectPoi = (poi: PoiResult) => {
+    setSelectedPoi(poi);
+    setSearchResults([]);
+    setSearchQuery(poi.name);
+    if (mapInstance.current) {
+      mapInstance.current.flyTo({
+        center: poi.coordinates,
+        zoom: 15,
+        duration: 800,
+      });
+    }
+  };
+
+  const handleApplyPoi = (target: "A" | "B") => {
+    if (!selectedPoi) return;
+    const coords = selectedPoi.coordinates;
+    if (target === "A") {
+      pointARef.current = coords;
+      markerARef.current?.setLngLat(coords);
+      setPointA(coords);
+      updateRoute(coords, pointBRef.current, modeRef.current, false);
+    } else {
+      pointBRef.current = coords;
+      markerBRef.current?.setLngLat(coords);
+      setPointB(coords);
+      updateRoute(pointARef.current, coords, modeRef.current, false);
+    }
+    setSelectedPoi(null);
+    setSearchQuery("");
+  };
+
   const xpReward = routeInfo ? Math.round(routeInfo.distanceKm * 100) : 0;
 
   return (
     <IonPage>
-      <IonHeader className={hideUiForImmersion ? "ion-hide" : ""}>
-        <IonToolbar color="primary">
-          <IonButtons slot="start">
-            <IonButton routerLink="/" routerDirection="back">
-              <IonIcon slot="icon-only" icon={arrowBackOutline} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Tracé de Quête Mapbox</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={() => setShowConfigNotice(true)}>
-              <IonIcon slot="icon-only" icon={informationCircleOutline} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent fullscreen className="map-page-content">
         <div className="map-shell">
           {/* Conteneur Plein Écran de la Carte Mapbox */}
           <div ref={mapContainer} className="map-mapbox-container" />
 
-          {/* Boutons d'Action Flottants Latéraux (Visibilité & Contrôle) */}
-          <div className="map-side-controls">
-            <IonButton
-              shape="round"
-              className="action-fab immersion-btn"
-              onClick={() => setHideUiForImmersion(!hideUiForImmersion)}
-              title={
-                hideUiForImmersion
-                  ? "Afficher les menus"
-                  : "Mode plein écran carte"
-              }
-            >
-              <IonIcon
-                slot="icon-only"
-                icon={hideUiForImmersion ? eyeOutline : eyeOffOutline}
-              />
-            </IonButton>
+          {/* Top Bar Mobile Épurée (Navigation & Recherche) */}
+          {!hideUiForImmersion && (
+            <div className="map-mobile-top-bar">
+              <IonButton
+                routerLink="/"
+                routerDirection="back"
+                fill="clear"
+                className="top-mobile-icon-btn back-btn"
+                title="Retour"
+              >
+                <IonIcon slot="icon-only" icon={arrowBackOutline} />
+              </IonButton>
 
-            <IonButton
-              shape="round"
-              className="action-fab style-btn"
-              onClick={() => setShowStyleMenu(!showStyleMenu)}
-              title="Changer le style Mapbox"
-            >
-              <IonIcon slot="icon-only" icon={layersOutline} />
-            </IonButton>
+              <div className="mobile-search-pill">
+                <IonIcon icon={searchOutline} className="search-pill-icon" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchInput(e.target.value)}
+                  placeholder="Rechercher un lieu, monument..."
+                  className="search-pill-input"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    className="clear-pill-btn"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSearchResults([]);
+                      setSelectedPoi(null);
+                    }}
+                  >
+                    <IonIcon icon={closeCircleOutline} />
+                  </button>
+                ) : null}
+              </div>
 
-            <IonButton
-              shape="round"
-              className="action-fab fit-btn"
-              onClick={handleFitRoute}
-              title="Recentrer et zoomer sur tout le tracé"
-            >
-              <IonIcon slot="icon-only" icon={navigateOutline} />
-            </IonButton>
+              <button
+                type="button"
+                className={`top-mobile-icon-btn ${showStyleMenu ? "active" : ""}`}
+                onClick={() => setShowStyleMenu(!showStyleMenu)}
+                title="Style de carte"
+              >
+                <IonIcon icon={layersOutline} />
+              </button>
+            </div>
+          )}
 
-            <IonButton
-              shape="round"
-              className="action-fab location-btn"
-              onClick={handleUseMyLocation}
-              title="Définir départ à ma position GPS"
-            >
-              <IonIcon slot="icon-only" icon={locateOutline} />
-            </IonButton>
-          </div>
+          {/* Menu déroulant de recherche */}
+          {searchResults.length > 0 && !hideUiForImmersion && (
+            <div className="search-results-dropdown">
+              {searchResults.map((poi) => (
+                <div
+                  key={poi.id}
+                  className="search-result-item"
+                  onClick={() => handleSelectPoi(poi)}
+                >
+                  <div className="result-item-header">
+                    <span className="result-title">{poi.name}</span>
+                    {poi.category && (
+                      <span className="result-badge">{poi.category}</span>
+                    )}
+                  </div>
+                  <span className="result-address">{poi.placeName}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Carte d'action après sélection d'un POI */}
+          {selectedPoi && !hideUiForImmersion && (
+            <div className="poi-action-card">
+              <div className="poi-card-header">
+                <div className="poi-card-info">
+                  <h4>{selectedPoi.name}</h4>
+                  <p>{selectedPoi.placeName}</p>
+                </div>
+                <button
+                  type="button"
+                  className="close-card-btn"
+                  onClick={() => setSelectedPoi(null)}
+                >
+                  <IonIcon icon={closeCircleOutline} />
+                </button>
+              </div>
+              <div className="poi-card-actions">
+                <button
+                  type="button"
+                  className="poi-action-btn btn-set-a"
+                  onClick={() => handleApplyPoi("A")}
+                >
+                  🟢 Départ (A)
+                </button>
+                <button
+                  type="button"
+                  className="poi-action-btn btn-set-b"
+                  onClick={() => handleApplyPoi("B")}
+                >
+                  🔴 Objectif (B)
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Sélecteur de Thème de Carte Flottant */}
-          {showStyleMenu && (
+          {showStyleMenu && !hideUiForImmersion && (
             <div className="map-theme-dropdown">
-              <div className="theme-title">Style Mapbox</div>
+              <div className="theme-title">Style de carte</div>
               <button
                 className={`theme-option ${activeTheme === "outdoors" ? "active" : ""}`}
                 onClick={() => handleSelectTheme("outdoors")}
               >
-                🌲 Outdoors (Idéal Sport & Quête)
+                🌲 Outdoors (Sport & Quête)
               </button>
               <button
                 className={`theme-option ${activeTheme === "dark" ? "active" : ""}`}
                 onClick={() => handleSelectTheme("dark")}
               >
-                🌙 Dark Quest (Contraste élevé)
+                🌙 Dark Quest (Sombre)
               </button>
               <button
                 className={`theme-option ${activeTheme === "streets" ? "active" : ""}`}
                 onClick={() => handleSelectTheme("streets")}
               >
-                🗺️ Streets (Navigation Ville)
+                🗺️ Streets (Ville)
               </button>
               <button
                 className={`theme-option ${activeTheme === "satellite" ? "active" : ""}`}
                 onClick={() => handleSelectTheme("satellite")}
               >
-                🛰️ Satellite (Vue Aérienne)
+                🛰️ Satellite (Aérien)
               </button>
             </div>
           )}
 
-          {/* Panneau Bas Ergonomique (Bottom Sheet Rétractable) */}
+          {/* Boutons d'Action Flottants (Disposés au-dessus du HUD) */}
+          <div
+            className={`map-floating-actions ${isHudCollapsed ? "hud-min" : "hud-exp"} ${hideUiForImmersion ? "immersed" : ""}`}
+          >
+            <button
+              type="button"
+              className="fab-action-btn location-btn"
+              onClick={handleUseMyLocation}
+              title="Ma position GPS"
+            >
+              <IonIcon icon={locateOutline} />
+            </button>
+
+            <button
+              type="button"
+              className="fab-action-btn fit-btn"
+              onClick={handleFitRoute}
+              title="Recentrer le tracé"
+            >
+              <IonIcon icon={navigateOutline} />
+            </button>
+
+            <button
+              type="button"
+              className="fab-action-btn immersion-btn"
+              onClick={() => setHideUiForImmersion(!hideUiForImmersion)}
+              title={
+                hideUiForImmersion ? "Afficher les menus" : "Mode plein écran"
+              }
+            >
+              <IonIcon
+                icon={hideUiForImmersion ? eyeOutline : eyeOffOutline}
+              />
+            </button>
+          </div>
+
+          {/* Bottom Sheet HUD Mobile Épuré */}
           {!hideUiForImmersion && (
             <div
-              className={`rpg-bottom-hud ${isHudCollapsed ? "collapsed" : ""}`}
+              className={`rpg-bottom-hud ${isHudCollapsed ? "collapsed" : "expanded"}`}
             >
-              {/* Poignée pour Réduire / Agrandir */}
+              {/* En-tête / Poignée de réduction */}
               <div
-                className="hud-drag-handle"
+                className="hud-header-bar"
                 onClick={() => setIsHudCollapsed(!isHudCollapsed)}
               >
-                <IonIcon
-                  icon={isHudCollapsed ? chevronUpOutline : chevronDownOutline}
-                />
-                <span className="hud-summary-badge">
-                  {routeInfo?.distanceKm
-                    ? `${routeInfo.distanceKm} km • ${routeInfo.durationMinutes} min`
-                    : "Tracé A ➔ B"}
-                </span>
-                <span className="hud-badge-xp">+{xpReward} XP</span>
+                <div className="hud-drag-pill" />
+                <div className="hud-header-content">
+                  <div className="hud-chips-route">
+                    <span className="dot dot-a">A</span>
+                    <span className="route-arrow">➔</span>
+                    <span className="dot dot-b">B</span>
+                  </div>
+
+                  <span className="hud-metric-text">
+                    {loadingRoute ? (
+                      <IonSpinner name="dots" />
+                    ) : routeInfo?.distanceKm ? (
+                      `${routeInfo.distanceKm} km • ${routeInfo.durationMinutes} min`
+                    ) : (
+                      "Tracé A ➔ B"
+                    )}
+                  </span>
+
+                  <span className="hud-badge-xp">+{xpReward} XP</span>
+
+                  <IonIcon
+                    icon={isHudCollapsed ? chevronUpOutline : chevronDownOutline}
+                    className="hud-toggle-icon"
+                  />
+                </div>
               </div>
 
               {/* Contenu Développé */}
               {!isHudCollapsed && (
                 <div className="hud-expanded-body">
                   <div className="rpg-points-summary">
-                    <span
+                    <button
+                      type="button"
                       className={`point-tag tag-a ${selectionTarget === "A" ? "targeting" : ""}`}
                       onClick={() =>
                         setSelectionTarget(selectionTarget === "A" ? null : "A")
@@ -647,19 +801,19 @@ const MapPage: React.FC = () => {
                     >
                       <IonIcon icon={radioOutline} /> Départ (A){" "}
                       {selectionTarget === "A" && "🎯"}
-                    </span>
+                    </button>
 
-                    <IonButton
-                      fill="clear"
-                      size="small"
+                    <button
+                      type="button"
                       className="swap-btn"
                       onClick={handleSwapPoints}
                       title="Inverser départ et arrivée"
                     >
                       <IonIcon icon={swapVerticalOutline} />
-                    </IonButton>
+                    </button>
 
-                    <span
+                    <button
+                      type="button"
                       className={`point-tag tag-b ${selectionTarget === "B" ? "targeting" : ""}`}
                       onClick={() =>
                         setSelectionTarget(selectionTarget === "B" ? null : "B")
@@ -667,7 +821,7 @@ const MapPage: React.FC = () => {
                     >
                       <IonIcon icon={flagOutline} /> Objectif (B){" "}
                       {selectionTarget === "B" && "🎯"}
-                    </span>
+                    </button>
                   </div>
 
                   {/* Mode de Transport */}
@@ -726,7 +880,7 @@ const MapPage: React.FC = () => {
                   <div className="hud-tip">
                     {selectionTarget
                       ? `👉 Touchez la carte pour placer le Point ${selectionTarget}`
-                      : "💡 Glissez les marqueurs A et B ou touchez la carte pour modifier l'itinéraire"}
+                      : "💡 Touchez la carte ou cherchez un lieu pour modifier l'itinéraire"}
                   </div>
                 </div>
               )}
@@ -761,3 +915,4 @@ const MapPage: React.FC = () => {
 };
 
 export default MapPage;
+

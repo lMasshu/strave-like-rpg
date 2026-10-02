@@ -8,6 +8,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react(), legacy()],
   envPrefix: ["VITE_", "MAPBOX_"],
+  server: {
+    host: true,
+    port: 5173,
+  },
   test: {
     globals: true,
     environment: "jsdom",

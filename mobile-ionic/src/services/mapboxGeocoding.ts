@@ -100,7 +100,37 @@ export async function searchPointsOfInterest(
   const cleanQuery = query.trim();
   if (cleanQuery.length < 2) return [];
 
-  // 1. Tenter l'API Mapbox Geocoding officielle
+  // 1. Moteur Open-Meteo Geocoding en priorité (Gratuit, rapide, sans quota Mapbox, altitude incluse)
+  try {
+    const openMeteoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+      cleanQuery,
+    )}&count=6&language=fr&format=json`;
+    const res = await fetch(openMeteoUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        return (data.results as OpenMeteoGeocodingResult[]).map((item) => {
+          const parts = [item.name, item.admin1, item.country].filter(Boolean);
+          const placeName = parts.join(", ");
+          const elevTag =
+            item.elevation !== undefined
+              ? ` • ${Math.round(item.elevation)}m alt.`
+              : "";
+          return {
+            id: `om-${item.id}`,
+            name: item.name,
+            placeName,
+            coordinates: [item.longitude, item.latitude],
+            category: `📍 Ville / Lieu${elevTag}`,
+          };
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("Erreur Open-Meteo Geocoding :", err);
+  }
+
+  // 2. Bascule vers Mapbox Geocoding (adresses précises, POIs spécifiques si un token est fourni)
   if (token) {
     try {
       const proximityParam = proximity
@@ -135,36 +165,6 @@ export async function searchPointsOfInterest(
     } catch (e) {
       console.warn("Erreur requête Mapbox Geocoding :", e);
     }
-  }
-
-  // 2. Moteur Open-Meteo Geocoding (Rapide, sans clé, sans restriction CORS, avec altitude)
-  try {
-    const openMeteoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-      cleanQuery,
-    )}&count=6&language=fr&format=json`;
-    const res = await fetch(openMeteoUrl);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data.results) && data.results.length > 0) {
-        return (data.results as OpenMeteoGeocodingResult[]).map((item) => {
-          const parts = [item.name, item.admin1, item.country].filter(Boolean);
-          const placeName = parts.join(", ");
-          const elevTag =
-            item.elevation !== undefined
-              ? ` • ${Math.round(item.elevation)}m alt.`
-              : "";
-          return {
-            id: `om-${item.id}`,
-            name: item.name,
-            placeName,
-            coordinates: [item.longitude, item.latitude],
-            category: `📍 Ville / Lieu${elevTag}`,
-          };
-        });
-      }
-    }
-  } catch (err) {
-    console.warn("Erreur Open-Meteo Geocoding :", err);
   }
 
   // 3. Fallback Nominatim (OpenStreetMap)

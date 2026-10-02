@@ -68,6 +68,18 @@ interface MapboxFeature {
   };
 }
 
+interface OpenMeteoGeocodingResult {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  elevation?: number;
+  country?: string;
+  admin1?: string;
+  admin2?: string;
+  postcodes?: string[];
+}
+
 interface OsmNominatimItem {
   place_id: number;
   name?: string;
@@ -125,14 +137,42 @@ export async function searchPointsOfInterest(
     }
   }
 
-  // 2. Fallback Nominatim (OpenStreetMap) si hors-ligne ou sans token
+  // 2. Moteur Open-Meteo Geocoding (Rapide, sans clé, sans restriction CORS, avec altitude)
+  try {
+    const openMeteoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+      cleanQuery,
+    )}&count=6&language=fr&format=json`;
+    const res = await fetch(openMeteoUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        return (data.results as OpenMeteoGeocodingResult[]).map((item) => {
+          const parts = [item.name, item.admin1, item.country].filter(Boolean);
+          const placeName = parts.join(", ");
+          const elevTag =
+            item.elevation !== undefined
+              ? ` • ${Math.round(item.elevation)}m alt.`
+              : "";
+          return {
+            id: `om-${item.id}`,
+            name: item.name,
+            placeName,
+            coordinates: [item.longitude, item.latitude],
+            category: `📍 Ville / Lieu${elevTag}`,
+          };
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("Erreur Open-Meteo Geocoding :", err);
+  }
+
+  // 3. Fallback Nominatim (OpenStreetMap)
   try {
     const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
       cleanQuery,
     )}&addressdetails=1&limit=6&accept-language=fr`;
-    const res = await fetch(nominatimUrl, {
-      headers: { "User-Agent": "StravaRpgQuest/1.0" },
-    });
+    const res = await fetch(nominatimUrl);
     if (res.ok) {
       const list = await res.json();
       if (Array.isArray(list) && list.length > 0) {

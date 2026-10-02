@@ -10,6 +10,7 @@
   overflow: hidden;
 }
 
+.map-mapbox-container,
 .mapatlas-map-container {
   width: 100%;
   height: 100%;
@@ -17,6 +18,7 @@
   background: #111827;
 }
 
+.mapboxgl-map,
 .mapmetricsgl-map {
   width: 100%;
   height: 100%;
@@ -236,9 +238,15 @@
 }
 
 @keyframes pulse-border {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .swap-btn {
@@ -318,66 +326,79 @@
 }
 
 /* =======================================================
-   MARQUEURS 3D HAUTE VISIBILITÉ AVEC POINTEUR & PULSE
+   MARQUEURS HAUTE PRÉCISION AVEC POINTEUR EXACT & PULSE
+   Logique CSS 100% unifiée et paramétrée pour Points A et B
 ======================================================= */
 .pin-marker-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 38px;
+  height: 48px;
   cursor: grab;
   user-select: none;
-  transform: translate(0, -50%);
+  touch-action: none;
+  line-height: 0;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.pin-marker-wrapper.marker-a-wrapper {
+  --pin-color: #34d399;
+  --pin-color-glow: rgba(52, 211, 153, 0.85);
+  --pin-color-shadow: rgba(52, 211, 153, 0.5);
+}
+
+.pin-marker-wrapper.marker-b-wrapper {
+  --pin-color: #f87171;
+  --pin-color-glow: rgba(248, 113, 113, 0.85);
+  --pin-color-shadow: rgba(248, 113, 113, 0.5);
 }
 
 .pin-marker-wrapper:active {
   cursor: grabbing;
 }
 
-.pin-marker-head {
-  width: 36px;
-  height: 36px;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-  border: 2px solid #ffffff;
-  position: relative;
+.pin-marker-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 38px;
+  height: 48px;
   z-index: 2;
-  transition: transform 0.2s ease;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+  pointer-events: none;
 }
 
-.pin-marker-head:hover {
-  transform: rotate(-45deg) scale(1.1);
+.pin-marker-content svg {
+  display: block;
+  width: 38px;
+  height: 48px;
 }
 
-.pin-marker-head span {
-  transform: rotate(45deg);
-  font-size: 0.95rem;
-  font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+.pin-marker-wrapper:hover .pin-marker-content {
+  transform: scale(1.12);
+  transform-origin: 19px 48px;
+  transition: transform 0.15s ease;
 }
 
-.pin-marker-head.marker-a {
-  background: linear-gradient(135deg, #10b981, #047857);
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.75);
-}
-
-.pin-marker-head.marker-b {
-  background: linear-gradient(135deg, #ef4444, #b91c1c);
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.75);
+.pin-marker-wrapper:active .pin-marker-content {
+  transform: scale(0.95);
+  transform-origin: 19px 48px;
+  transition: transform 0.15s ease;
 }
 
 .pin-marker-pulse {
   position: absolute;
-  bottom: -4px;
+  left: 50%;
+  bottom: 0;
   width: 18px;
-  height: 8px;
+  height: 6px;
+  margin-left: -9px;
+  margin-bottom: -3px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
   z-index: 1;
 }
 
@@ -389,23 +410,25 @@
   right: -4px;
   bottom: -4px;
   border-radius: 50%;
-  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-.pulse-a::after {
-  border: 2px solid rgba(16, 185, 129, 0.85);
-}
-
-.pulse-b::after {
-  border: 2px solid rgba(239, 68, 68, 0.85);
+  pointer-events: none;
+  border: 2px solid var(--pin-color-glow);
+  box-shadow: 0 0 10px var(--pin-color-shadow);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(0.6); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
 }
 
 /* NOTIFICATION D'ERREUR DISCRÈTE */
+.mapbox-error-pill,
 .mapatlas-error-pill {
   position: absolute;
   top: 14px;
@@ -422,20 +445,49 @@
   backdrop-filter: blur(8px);
 }
 
+/* POPUPS MAPBOX EN HARMONIE AVEC LE THÈME SOMBRE RPG */
+.mapboxgl-popup-content {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  padding: 10px 14px !important;
+}
+
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+  border-bottom-color: rgba(15, 23, 42, 0.95) !important;
+}
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: rgba(15, 23, 42, 0.95) !important;
+}
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: rgba(15, 23, 42, 0.95) !important;
+}
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: #94a3b8 !important;
+  padding: 4px 8px !important;
+  font-size: 1.1rem !important;
+}
+
 .map-popup-card {
-  padding: 4px;
-  color: #0f172a;
+  padding: 2px;
 }
 
 .map-popup-card h3 {
-  margin: 0 0 2px;
-  font-size: 0.9rem;
+  margin: 0 0 4px;
+  font-size: 0.88rem;
   font-weight: 700;
-  color: #1e3a8a;
+  color: #38bdf8;
 }
 
 .map-popup-card p {
   margin: 0;
-  font-size: 0.75rem;
-  color: #475569;
+  font-size: 0.76rem;
+  color: #cbd5e1;
 }

@@ -18,7 +18,8 @@
   min-height: 100vh;
   overflow: hidden;
   background: #090d16;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .map-mapbox-container {
@@ -400,7 +401,7 @@
 }
 
 .map-floating-actions.hud-exp {
-  bottom: calc(290px + env(safe-area-inset-bottom, 0));
+  bottom: calc(365px + env(safe-area-inset-bottom, 0));
 }
 
 .map-floating-actions.immersed {
@@ -423,7 +424,9 @@
   cursor: pointer;
   padding: 0;
   margin: 0;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .fab-action-btn ion-icon {
@@ -534,12 +537,31 @@
 }
 
 .hud-metric-text {
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: #f8fafc;
   letter-spacing: -0.01em;
   flex: 1;
   text-align: center;
+  overflow: hidden;
+}
+
+.hud-metric-chips {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.metric-dot {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.metric-elev {
+  color: #38bdf8;
+  font-weight: 800;
 }
 
 .hud-badge-xp {
@@ -564,6 +586,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: calc(80vh - 80px);
+  overflow-y: auto;
   animation: fadeIn 0.2s ease;
 }
 
@@ -669,13 +693,13 @@
   margin-right: 4px;
 }
 
-/* Grille de stats */
+/* Grille de stats (Distance, Dénivelé, Durée, XP) */
 .rpg-stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
   background: rgba(30, 41, 59, 0.5);
-  padding: 10px;
+  padding: 10px 8px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -685,25 +709,159 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  min-width: 0;
 }
 
 .rpg-stat-item .stat-label {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: #94a3b8;
   margin-bottom: 2px;
+  white-space: nowrap;
 }
 
 .rpg-stat-item .stat-value {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #f1f5f9;
+  white-space: nowrap;
+}
+
+.rpg-stat-item.elev-stat-item .stat-value.elev-value {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
 }
 
 .rpg-stat-item.xp-item .stat-value.xp-value {
   color: #fbbf24;
   text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+/* =======================================================
+   5b. CARTE DE PROFIL ALTIMÉTRIQUE (STYLE STRAVA RPG)
+======================================================= */
+.rpg-elevation-profile-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 14px;
+  padding: 10px 12px 8px 12px;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.rpg-elevation-profile-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+}
+
+.elev-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.elev-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.elev-title-icon {
+  font-size: 0.95rem;
+  color: #38bdf8;
+}
+
+.elev-title-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #cbd5e1;
+}
+
+.elev-badges-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.elev-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.elev-badge.d-plus {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.elev-badge.d-minus {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.elev-svg-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.elev-alt-label.max-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #38bdf8;
+  text-align: right;
+  margin-bottom: -4px;
+}
+
+.elev-svg-chart {
+  width: 100%;
+  height: 52px;
+  overflow: visible;
+  filter: drop-shadow(0 2px 6px rgba(0, 240, 255, 0.25));
+}
+
+.elev-footer-axis {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.62rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.axis-node {
+  font-weight: 600;
+}
+
+.axis-node.node-a {
+  color: #34d399;
+}
+
+.axis-node.node-b {
+  color: #f87171;
+}
+
+.axis-min {
+  color: #64748b;
+  font-size: 0.6rem;
 }
 
 .hud-tip {

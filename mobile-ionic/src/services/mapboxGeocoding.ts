@@ -57,6 +57,26 @@ const POPULAR_PARIS_POIS: PoiResult[] = [
   },
 ];
 
+interface MapboxFeature {
+  id: string;
+  text?: string;
+  place_name: string;
+  center: [number, number];
+  place_type?: string[];
+  properties?: {
+    category?: string;
+  };
+}
+
+interface OsmNominatimItem {
+  place_id: number;
+  name?: string;
+  display_name: string;
+  lon: string;
+  lat: string;
+  type?: string;
+}
+
 /**
  * Recherche des points d'intérêt ou adresses
  */
@@ -84,7 +104,7 @@ export async function searchPointsOfInterest(
       if (response.ok) {
         const data = await response.json();
         if (data.features && data.features.length > 0) {
-          return data.features.map((feat: any) => {
+          return (data.features as MapboxFeature[]).map((feat) => {
             const category =
               feat.properties?.category ||
               (feat.place_type && feat.place_type[0] === "poi"
@@ -94,7 +114,7 @@ export async function searchPointsOfInterest(
               id: feat.id,
               name: feat.text || feat.place_name,
               placeName: feat.place_name,
-              coordinates: feat.center as [number, number],
+              coordinates: feat.center,
               category,
             };
           });
@@ -116,7 +136,7 @@ export async function searchPointsOfInterest(
     if (res.ok) {
       const list = await res.json();
       if (Array.isArray(list) && list.length > 0) {
-        return list.map((item: any) => ({
+        return (list as OsmNominatimItem[]).map((item) => ({
           id: `osm-${item.place_id}`,
           name: item.name || item.display_name.split(",")[0],
           placeName: item.display_name,

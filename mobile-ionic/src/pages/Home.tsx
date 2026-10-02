@@ -24,7 +24,12 @@ const Home: React.FC = () => {
           <div className="home-card">
             <h2>Prêt pour l'aventure ?</h2>
             <p>Explorez votre environnement et validez vos quêtes GPS.</p>
-            <IonButton routerLink="/map" expand="block" shape="round" color="primary">
+            <IonButton
+              routerLink="/map"
+              expand="block"
+              shape="round"
+              color="primary"
+            >
               <IonIcon slot="start" icon={mapOutline} />
               Ouvrir la Carte
             </IonButton>

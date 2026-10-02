@@ -1,24 +1,18 @@
 import {
   IonAlert,
   IonButton,
-  IonButtons,
   IonContent,
-  IonHeader,
   IonIcon,
   IonPage,
-  IonSearchbar,
   IonSegment,
   IonSegmentButton,
   IonLabel,
   IonSpinner,
-  IonTitle,
-  IonToolbar,
   useIonViewDidEnter,
 } from "@ionic/react";
 import {
   arrowBackOutline,
   closeCircleOutline,
-  informationCircleOutline,
   locateOutline,
   searchOutline,
   swapVerticalOutline,
@@ -33,6 +27,7 @@ import {
   layersOutline,
   eyeOutline,
   eyeOffOutline,
+  trendingUpOutline,
 } from "ionicons/icons";
 import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
@@ -42,10 +37,7 @@ import {
   RouteResult,
   TransportProfile,
 } from "../services/mapboxDirections";
-import {
-  searchPointsOfInterest,
-  PoiResult,
-} from "../services/mapboxGeocoding";
+import { searchPointsOfInterest, PoiResult } from "../services/mapboxGeocoding";
 import "./Map.css";
 
 // Coordonnées par défaut : Paris Centre (Hôtel de Ville -> Musée du Louvre)
@@ -60,6 +52,34 @@ const MAP_STYLES: Record<MapTheme, string> = {
   streets: "mapbox://styles/mapbox/streets-v12",
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
 };
+
+function getElevationChartPaths(
+  profile: number[],
+  width = 300,
+  height = 54,
+  padding = 6,
+) {
+  if (!profile || profile.length < 2) return null;
+
+  const min = Math.min(...profile);
+  const max = Math.max(...profile);
+  const range = max - min || 1;
+
+  const points = profile.map((val, idx) => {
+    const x = (idx / (profile.length - 1)) * (width - 2 * padding) + padding;
+    const y =
+      height - padding - ((val - min) / range) * (height - 2 * padding);
+    return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)), val };
+  });
+
+  const linePath = points.reduce(
+    (acc, p, i) => `${acc} ${i === 0 ? "M" : "L"} ${p.x} ${p.y}`,
+    "",
+  );
+  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
+
+  return { linePath, areaPath, points, min, max };
+}
 
 const MapPage: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -512,7 +532,6 @@ const MapPage: React.FC = () => {
     );
   };
 
-
   // Gestion de la recherche de points d'intérêt (POI)
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<PoiResult[]>([]);
@@ -571,7 +590,9 @@ const MapPage: React.FC = () => {
     setSearchQuery("");
   };
 
-  const xpReward = routeInfo ? Math.round(routeInfo.distanceKm * 100) : 0;
+  const xpReward = routeInfo
+    ? Math.round(routeInfo.distanceKm * 100 + (routeInfo.elevationGain || 0) * 2)
+    : 0;
 
   return (
     <IonPage>
@@ -602,7 +623,9 @@ const MapPage: React.FC = () => {
                   placeholder="Rechercher un lieu, monument..."
                   className="search-pill-input"
                 />
-                {searchQuery ? (
+                {isSearching ? (
+                  <IonSpinner name="crescent" style={{ width: 16, height: 16, color: "#38bdf8" }} />
+                ) : searchQuery ? (
                   <button
                     type="button"
                     className="clear-pill-btn"
@@ -745,9 +768,7 @@ const MapPage: React.FC = () => {
                 hideUiForImmersion ? "Afficher les menus" : "Mode plein écran"
               }
             >
-              <IonIcon
-                icon={hideUiForImmersion ? eyeOutline : eyeOffOutline}
-              />
+              <IonIcon icon={hideUiForImmersion ? eyeOutline : eyeOffOutline} />
             </button>
           </div>
 
@@ -773,7 +794,15 @@ const MapPage: React.FC = () => {
                     {loadingRoute ? (
                       <IonSpinner name="dots" />
                     ) : routeInfo?.distanceKm ? (
-                      `${routeInfo.distanceKm} km • ${routeInfo.durationMinutes} min`
+                      <span className="hud-metric-chips">
+                        <span>{routeInfo.distanceKm} km</span>
+                        <span className="metric-dot">•</span>
+                        <span>{routeInfo.durationMinutes} min</span>
+                        <span className="metric-dot">•</span>
+                        <span className="metric-elev" title="Dénivelé positif (D+)">
+                          ↗ {routeInfo.elevationGain ?? 0}m
+                        </span>
+                      </span>
                     ) : (
                       "Tracé A ➔ B"
                     )}
@@ -782,7 +811,9 @@ const MapPage: React.FC = () => {
                   <span className="hud-badge-xp">+{xpReward} XP</span>
 
                   <IonIcon
-                    icon={isHudCollapsed ? chevronUpOutline : chevronDownOutline}
+                    icon={
+                      isHudCollapsed ? chevronUpOutline : chevronDownOutline
+                    }
                     className="hud-toggle-icon"
                   />
                 </div>
@@ -859,6 +890,18 @@ const MapPage: React.FC = () => {
                         )}
                       </span>
                     </div>
+                    <div className="rpg-stat-item elev-stat-item">
+                      <span className="stat-label">Dénivelé</span>
+                      <span className="stat-value elev-value" title="Dénivelé positif (D+)">
+                        {loadingRoute ? (
+                          <IonSpinner name="dots" />
+                        ) : routeInfo ? (
+                          `+${routeInfo.elevationGain ?? 0} m`
+                        ) : (
+                          "-- m"
+                        )}
+                      </span>
+                    </div>
                     <div className="rpg-stat-item">
                       <span className="stat-label">Durée</span>
                       <span className="stat-value">
@@ -876,6 +919,86 @@ const MapPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
+
+                  {/* Profil altimétrique dynamique façon Strava */}
+                  {routeInfo?.elevationProfile && routeInfo.elevationProfile.length > 1 && (
+                    <div className="rpg-elevation-profile-card">
+                      <div className="elev-card-header">
+                        <div className="elev-title-group">
+                          <IonIcon icon={trendingUpOutline} className="elev-title-icon" />
+                          <span className="elev-title-text">Profil de Dénivelé</span>
+                        </div>
+                        <div className="elev-badges-group">
+                          <span className="elev-badge d-plus" title="Dénivelé positif">
+                            D+ +{routeInfo.elevationGain ?? 0}m
+                          </span>
+                          <span className="elev-badge d-minus" title="Dénivelé négatif">
+                            D- -{routeInfo.elevationLoss ?? 0}m
+                          </span>
+                        </div>
+                      </div>
+
+                      {(() => {
+                        const chart = getElevationChartPaths(routeInfo.elevationProfile);
+                        if (!chart) return null;
+                        return (
+                          <div className="elev-svg-wrapper">
+                            <div className="elev-alt-label max-label">
+                              Max: {routeInfo.maxElevation ?? chart.max} m
+                            </div>
+                            <svg
+                              className="elev-svg-chart"
+                              viewBox="0 0 300 54"
+                              preserveAspectRatio="none"
+                            >
+                              <defs>
+                                <linearGradient id="elevAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                  <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.38" />
+                                  <stop offset="100%" stopColor="#00f0ff" stopOpacity="0.01" />
+                                </linearGradient>
+                              </defs>
+                              <path d={chart.areaPath} fill="url(#elevAreaGrad)" />
+                              <path
+                                d={chart.linePath}
+                                fill="none"
+                                stroke="#00f0ff"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <circle
+                                cx={chart.points[0].x}
+                                cy={chart.points[0].y}
+                                r="3.5"
+                                fill="#34d399"
+                                stroke="#0f172a"
+                                strokeWidth="1.5"
+                              />
+                              <circle
+                                cx={chart.points[chart.points.length - 1].x}
+                                cy={chart.points[chart.points.length - 1].y}
+                                r="3.5"
+                                fill="#f87171"
+                                stroke="#0f172a"
+                                strokeWidth="1.5"
+                              />
+                            </svg>
+                            <div className="elev-footer-axis">
+                              <span className="axis-node node-a">
+                                A ({chart.points[0].val}m)
+                              </span>
+                              <span className="axis-min">
+                                Min: {routeInfo.minElevation ?? chart.min} m
+                              </span>
+                              <span className="axis-node node-b">
+                                B ({chart.points[chart.points.length - 1].val}m)
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   <div className="hud-tip">
                     {selectionTarget
@@ -915,4 +1038,3 @@ const MapPage: React.FC = () => {
 };
 
 export default MapPage;
-

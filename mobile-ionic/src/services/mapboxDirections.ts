@@ -9,10 +9,23 @@ export interface RoutePoint {
   label?: string;
 }
 
+export interface ElevationData {
+  elevationGain: number; // D+ (dénivelé positif) en mètres
+  elevationLoss: number; // D- (dénivelé négatif) en mètres
+  minElevation: number; // Altitude minimale en mètres
+  maxElevation: number; // Altitude maximale en mètres
+  profile: number[]; // Altitudes successives échantillonnées
+}
+
 export interface RouteResult {
   coordinates: [number, number][]; // [lng, lat][] compatible GeoJSON
   distanceKm: number;
   durationMinutes: number;
+  elevationGain: number; // D+ en mètres
+  elevationLoss: number; // D- en mètres
+  minElevation?: number;
+  maxElevation?: number;
+  elevationProfile?: number[];
   source: "mapbox" | "osrm-fallback" | "offline-line";
 }
 
@@ -60,7 +73,10 @@ function snapRouteToPoints(
 
   // 2. Point d'arrivée (B)
   const [lastLng, lastLat] = coordinates[coordinates.length - 1];
-  const distDest = Math.hypot(lastLng - destination[0], lastLat - destination[1]);
+  const distDest = Math.hypot(
+    lastLng - destination[0],
+    lastLat - destination[1],
+  );
   if (distDest > 0.0002) {
     coordinates.push(destination);
   } else {
@@ -68,6 +84,87 @@ function snapRouteToPoints(
   }
 
   return coordinates;
+}
+
+/**
+ * Récupère le profil altimétrique et calcule le dénivelé positif (D+) et négatif (D-)
+ * Utilise l'API Open-Meteo Elevation (rapide, sans clé requise, CORS activé) avec échantillonnage optimisé.
+ */
+export async function fetchElevationForCoordinates(
+  coordinates: [number, number][],
+): Promise<ElevationData> {
+  const fallback: ElevationData = {
+    elevationGain: 0,
+    elevationLoss: 0,
+    minElevation: 0,
+    maxElevation: 0,
+    profile: [],
+  };
+
+  if (!coordinates || coordinates.length === 0) {
+    return fallback;
+  }
+
+  try {
+    // Échantillonnage à max 50 points pour garantir une réponse quasi-instantanée (< 250ms)
+    const maxSamples = 50;
+    const step = Math.max(1, Math.floor(coordinates.length / maxSamples));
+    const sampled: [number, number][] = [];
+    for (let i = 0; i < coordinates.length; i += step) {
+      sampled.push(coordinates[i]);
+    }
+    const lastCoord = coordinates[coordinates.length - 1];
+    if (sampled[sampled.length - 1] !== lastCoord) {
+      sampled.push(lastCoord);
+    }
+
+    const lats = sampled.map((c) => c[1].toFixed(5)).join(",");
+    const lngs = sampled.map((c) => c[0].toFixed(5)).join(",");
+
+    const res = await fetch(
+      `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`,
+    );
+    if (!res.ok) {
+      throw new Error(`Open-Meteo status ${res.status}`);
+    }
+
+    const data = await res.json();
+    const rawElevations: number[] = Array.isArray(data.elevation)
+      ? data.elevation
+      : [];
+
+    if (rawElevations.length === 0) {
+      return fallback;
+    }
+
+    // Filtrage du bruit DEM / GPS (seuil hystérésis de 1.5 mètre)
+    let gain = 0;
+    let loss = 0;
+    const threshold = 1.5;
+
+    for (let i = 1; i < rawElevations.length; i++) {
+      const diff = rawElevations[i] - rawElevations[i - 1];
+      if (diff > threshold) {
+        gain += diff;
+      } else if (diff < -threshold) {
+        loss += Math.abs(diff);
+      }
+    }
+
+    const min = Math.min(...rawElevations);
+    const max = Math.max(...rawElevations);
+
+    return {
+      elevationGain: Math.round(gain),
+      elevationLoss: Math.round(loss),
+      minElevation: Math.round(min),
+      maxElevation: Math.round(max),
+      profile: rawElevations.map((e) => Math.round(e)),
+    };
+  } catch (err) {
+    console.warn("Calcul du dénivelé non disponible :", err);
+    return fallback;
+  }
 }
 
 /**
@@ -98,7 +195,10 @@ export async function fetchRoute(
         const data = await response.json();
         if (data.routes && data.routes.length > 0) {
           const mainRoute = data.routes[0];
-          const rawCoords = mainRoute.geometry.coordinates as [number, number][];
+          const rawCoords = mainRoute.geometry.coordinates as [
+            number,
+            number,
+          ][];
           const distanceKm = Number((mainRoute.distance / 1000).toFixed(2));
           const durationMinutes = Math.max(
             1,
@@ -108,10 +208,18 @@ export async function fetchRoute(
           // Raccordement exact : le tracé doit démarrer à la pointe exacte de A et finir à celle de B
           const coordinates = snapRouteToPoints(rawCoords, origin, destination);
 
+          // Calcul d'élévation
+          const elev = await fetchElevationForCoordinates(coordinates);
+
           return {
             coordinates,
             distanceKm,
             durationMinutes,
+            elevationGain: elev.elevationGain,
+            elevationLoss: elev.elevationLoss,
+            minElevation: elev.minElevation,
+            maxElevation: elev.maxElevation,
+            elevationProfile: elev.profile,
             source: "mapbox",
           };
         }
@@ -143,11 +251,17 @@ export async function fetchRoute(
         const durationMinutes = Math.max(1, Math.round(route.duration / 60));
 
         const coordinates = snapRouteToPoints(rawCoords, origin, destination);
+        const elev = await fetchElevationForCoordinates(coordinates);
 
         return {
           coordinates,
           distanceKm,
           durationMinutes,
+          elevationGain: elev.elevationGain,
+          elevationLoss: elev.elevationLoss,
+          minElevation: elev.minElevation,
+          maxElevation: elev.maxElevation,
+          elevationProfile: elev.profile,
           source: "osrm-fallback",
         };
       }
@@ -163,10 +277,17 @@ export async function fetchRoute(
     (destination[0] - origin[0]) * 111 * Math.cos((origin[1] * Math.PI) / 180);
   const approxKm = Number(Math.sqrt(dLat * dLat + dLng * dLng).toFixed(2));
 
+  const elev = await fetchElevationForCoordinates(straightLine);
+
   return {
     coordinates: straightLine,
     distanceKm: approxKm,
     durationMinutes: Math.max(1, Math.round((approxKm / 4.5) * 60)),
+    elevationGain: elev.elevationGain,
+    elevationLoss: elev.elevationLoss,
+    minElevation: elev.minElevation,
+    maxElevation: elev.maxElevation,
+    elevationProfile: elev.profile,
     source: "offline-line",
   };
 }

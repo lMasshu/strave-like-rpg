@@ -1,0 +1,14 @@
+.friends-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-weight: 700;
+}
+
+.friends-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ion-color-medium);
+}

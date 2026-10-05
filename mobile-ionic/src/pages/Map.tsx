@@ -1,6 +1,5 @@
 import {
   IonAlert,
-  IonButton,
   IonContent,
   IonIcon,
   IonPage,
@@ -11,7 +10,6 @@ import {
   useIonViewDidEnter,
 } from "@ionic/react";
 import {
-  arrowBackOutline,
   closeCircleOutline,
   locateOutline,
   searchOutline,
@@ -605,16 +603,6 @@ const MapPage: React.FC = () => {
           {/* Top Bar Mobile Épurée (Navigation & Recherche) */}
           {!hideUiForImmersion && (
             <div className="map-mobile-top-bar">
-              <IonButton
-                routerLink="/"
-                routerDirection="back"
-                fill="clear"
-                className="top-mobile-icon-btn back-btn"
-                title="Retour"
-              >
-                <IonIcon slot="icon-only" icon={arrowBackOutline} />
-              </IonButton>
-
               <div className="mobile-search-pill">
                 <IonIcon icon={searchOutline} className="search-pill-icon" />
                 <input

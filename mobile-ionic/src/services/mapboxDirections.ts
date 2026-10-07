@@ -168,25 +168,30 @@ export async function fetchElevationForCoordinates(
 }
 
 /**
- * Calcule l'itinéraire entre un point A et un point B via l'API Mapbox Directions v5
+ * Calcule l'itinéraire passant par une série ordonnée de points (ex: boucles, étapes, POI)
  */
-export async function fetchRoute(
-  origin: [number, number], // [lng, lat]
-  destination: [number, number], // [lng, lat]
+export async function fetchMultiPointRoute(
+  points: [number, number][], // [[lng, lat], [lng, lat], ...]
   options?: {
     accessToken?: string;
     costing?: TransportProfile;
   },
 ): Promise<RouteResult> {
+  if (!points || points.length < 2) {
+    throw new Error("Au moins deux points sont nécessaires pour calculer un itinéraire.");
+  }
+
+  const origin = points[0];
+  const destination = points[points.length - 1];
   const costing = options?.costing || "pedestrian";
   const accessToken = (options?.accessToken || "").trim();
   const mapboxProfile = getMapboxProfile(costing);
+  const coordsStr = points.map((p) => `${p[0]},${p[1]}`).join(";");
 
   // 1. Tenter l'API Mapbox Directions v5 officielle
   if (accessToken) {
     try {
-      const coords = `${origin[0]},${origin[1]};${destination[0]},${destination[1]}`;
-      const url = `https://api.mapbox.com/directions/v5/mapbox/${mapboxProfile}/${coords}?geometries=geojson&overview=full&steps=true&access_token=${encodeURIComponent(
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${mapboxProfile}/${coordsStr}?geometries=geojson&overview=full&steps=true&access_token=${encodeURIComponent(
         accessToken,
       )}`;
 
@@ -205,7 +210,7 @@ export async function fetchRoute(
             Math.round(mainRoute.duration / 60),
           );
 
-          // Raccordement exact : le tracé doit démarrer à la pointe exacte de A et finir à celle de B
+          // Raccordement exact : le tracé doit démarrer à origin et finir à destination
           const coordinates = snapRouteToPoints(rawCoords, origin, destination);
 
           // Calcul d'élévation
@@ -239,7 +244,7 @@ export async function fetchRoute(
   try {
     const osrmProfile =
       costing === "bicycle" ? "bike" : costing === "auto" ? "car" : "foot";
-    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?overview=full&geometries=geojson`;
+    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordsStr}?overview=full&geometries=geojson`;
 
     const res = await fetch(osrmUrl);
     if (res.ok) {
@@ -270,17 +275,21 @@ export async function fetchRoute(
     console.error("Erreur fallback OSRM :", err);
   }
 
-  // 3. Fallback géométrique direct (Ligne droite) si hors-ligne
-  const straightLine: [number, number][] = [origin, destination];
-  const dLat = (destination[1] - origin[1]) * 111;
-  const dLng =
-    (destination[0] - origin[0]) * 111 * Math.cos((origin[1] * Math.PI) / 180);
-  const approxKm = Number(Math.sqrt(dLat * dLat + dLng * dLng).toFixed(2));
+  // 3. Fallback géométrique direct (Ligne brisée reliant les points) si hors-ligne
+  let totalApproxKm = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const dLat = (p2[1] - p1[1]) * 111;
+    const dLng = (p2[0] - p1[0]) * 111 * Math.cos((p1[1] * Math.PI) / 180);
+    totalApproxKm += Math.sqrt(dLat * dLat + dLng * dLng);
+  }
+  const approxKm = Number(totalApproxKm.toFixed(2));
 
-  const elev = await fetchElevationForCoordinates(straightLine);
+  const elev = await fetchElevationForCoordinates(points);
 
   return {
-    coordinates: straightLine,
+    coordinates: points,
     distanceKm: approxKm,
     durationMinutes: Math.max(1, Math.round((approxKm / 4.5) * 60)),
     elevationGain: elev.elevationGain,
@@ -290,4 +299,18 @@ export async function fetchRoute(
     elevationProfile: elev.profile,
     source: "offline-line",
   };
+}
+
+/**
+ * Calcule l'itinéraire entre un point A et un point B via l'API Mapbox Directions v5
+ */
+export async function fetchRoute(
+  origin: [number, number], // [lng, lat]
+  destination: [number, number], // [lng, lat]
+  options?: {
+    accessToken?: string;
+    costing?: TransportProfile;
+  },
+): Promise<RouteResult> {
+  return fetchMultiPointRoute([origin, destination], options);
 }

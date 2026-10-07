@@ -6,7 +6,7 @@ ion-tab-bar {
 
 ion-tab-button {
   --color: var(--ion-color-step-500, #6b7280);
-  --color-selected: var(--ion-color-primary, #ea580c);
+  --color-selected: var(--ion-color-primary, #16a34a);
   font-weight: 500;
   font-size: 0.75rem;
 }

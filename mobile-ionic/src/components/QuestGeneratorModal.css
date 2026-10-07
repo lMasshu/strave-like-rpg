@@ -162,13 +162,13 @@
 }
 
 .quest-chip.active {
-  background: #1f2839;
-  border-color: #ea580c;
+  background: #14281c;
+  border-color: #16a34a;
   color: #ffffff;
 }
 
 .quest-chip.active ion-icon {
-  color: #f97316;
+  color: #22c55e;
 }
 
 /* Sélecteur de distance */
@@ -209,22 +209,22 @@
 }
 
 .quest-dist-btn.active {
-  background: #1f2839;
-  border-color: #ea580c;
+  background: #14281c;
+  border-color: #16a34a;
 }
 
 .quest-dist-btn.active .dist-val {
-  color: #f97316;
+  color: #22c55e;
 }
 
 .quest-dist-btn.active .dist-desc {
-  color: #fdba74;
+  color: #86efac;
 }
 
 /* Bouton principal de génération */
 .quest-generate-btn {
   width: 100%;
-  background: #ea580c;
+  background: #16a34a;
   color: #ffffff;
   border: none;
   border-radius: 10px;
@@ -243,11 +243,11 @@
 }
 
 .quest-generate-btn:hover:not(:disabled) {
-  background: #c2410c;
+  background: #15803d;
 }
 
 .quest-generate-btn:active:not(:disabled) {
-  background: #9a3412;
+  background: #166534;
 }
 
 .quest-generate-btn:disabled {
@@ -332,7 +332,7 @@
   align-items: center;
   gap: 6px;
   background: #1e2430;
-  border-left: 3px solid #ea580c;
+  border-left: 3px solid #16a34a;
   padding: 7px 10px;
   border-radius: 4px;
   font-size: 0.82rem;

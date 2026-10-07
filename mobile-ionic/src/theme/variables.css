@@ -4,13 +4,13 @@
  */
 
 :root {
-  /* Couleur d'accentuation principale : Orange athlétique sobre */
-  --ion-color-primary: #ea580c;
-  --ion-color-primary-rgb: 234, 88, 12;
+  /* Couleur d'accentuation principale : Vert nature athlétique */
+  --ion-color-primary: #16a34a;
+  --ion-color-primary-rgb: 22, 163, 74;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #c2410c;
-  --ion-color-primary-tint: #f97316;
+  --ion-color-primary-shade: #15803d;
+  --ion-color-primary-tint: #22c55e;
 
   /* Teinte secondaire : Ardoise technique */
   --ion-color-secondary: #334155;

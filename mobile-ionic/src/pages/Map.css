@@ -94,9 +94,9 @@
 }
 
 .top-mobile-icon-btn.active {
-  border-color: #ea580c;
-  color: #f97316;
-  background: #231c17;
+  border-color: #16a34a;
+  color: #22c55e;
+  background: #14281c;
 }
 
 /* Champ de recherche */
@@ -115,7 +115,7 @@
 }
 
 .mobile-search-pill:focus-within {
-  border-color: #ea580c;
+  border-color: #16a34a;
   background: #1b202c;
 }
 
@@ -362,10 +362,10 @@
 }
 
 .theme-option.active {
-  background: #241d18;
-  color: #f97316;
+  background: #14281c;
+  color: #22c55e;
   font-weight: 600;
-  border: 1px solid #ea580c;
+  border: 1px solid #16a34a;
 }
 
 /* =======================================================
@@ -438,7 +438,7 @@
 }
 
 .fab-action-btn.quest-btn ion-icon {
-  color: #f97316;
+  color: #22c55e;
 }
 
 /* Bannière d'itinéraire actif */
@@ -478,9 +478,9 @@
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  color: #f97316;
-  background: #251b14;
-  border: 1px solid #4a2818;
+  color: #22c55e;
+  background: #14281c;
+  border: 1px solid #1e4d2b;
   padding: 1px 6px;
   border-radius: 4px;
 }
@@ -630,9 +630,9 @@
 .hud-badge-xp {
   font-size: 0.76rem;
   font-weight: 600;
-  color: #f97316;
-  background: #251b14;
-  border: 1px solid #4a2818;
+  color: #22c55e;
+  background: #14281c;
+  border: 1px solid #1e4d2b;
   padding: 2px 8px;
   border-radius: 6px;
 }
@@ -677,8 +677,8 @@
 }
 
 .point-tag.targeting {
-  border-color: #ea580c;
-  color: #f97316;
+  border-color: #16a34a;
+  color: #22c55e;
 }
 
 .point-tag ion-icon {
@@ -773,7 +773,7 @@
 }
 
 .rpg-stat-item.xp-item .stat-value.xp-value {
-  color: #f97316;
+  color: #22c55e;
 }
 
 /* Profil altimétrique */

@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ion-color-primary, #ea580c);
+  background: var(--ion-color-primary, #16a34a);
   color: var(--ion-color-primary-contrast, #ffffff);
   font-weight: 600;
   border-radius: 50%;

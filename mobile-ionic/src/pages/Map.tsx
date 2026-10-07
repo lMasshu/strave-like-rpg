@@ -225,7 +225,7 @@ const MapPage: React.FC = () => {
           },
         });
 
-        // 2. Halo lumineux d'énergie RPG (Glow)
+        // 2. Halo de sentier (Glow vert nature)
         map.addLayer({
           id: "route-glow",
           type: "line",
@@ -235,14 +235,14 @@ const MapPage: React.FC = () => {
             "line-cap": "round",
           },
           paint: {
-            "line-color": "#00f0ff",
-            "line-width": 14,
-            "line-opacity": 0.35,
+            "line-color": "#22c55e",
+            "line-width": 12,
+            "line-opacity": 0.3,
             "line-blur": 3,
           },
         });
 
-        // 3. Ligne intérieure vibrante haute visibilité (Cyan électrique)
+        // 3. Ligne de tracé principale (Vert nature dynamique)
         map.addLayer({
           id: "route-line",
           type: "line",
@@ -252,7 +252,7 @@ const MapPage: React.FC = () => {
             "line-cap": "round",
           },
           paint: {
-            "line-color": "#00f0ff",
+            "line-color": "#22c55e",
             "line-width": 5.5,
             "line-opacity": 1,
           },
@@ -1074,12 +1074,12 @@ const MapPage: React.FC = () => {
                                   >
                                     <stop
                                       offset="0%"
-                                      stopColor="#ea580c"
-                                      stopOpacity="0.2"
+                                      stopColor="#16a34a"
+                                      stopOpacity="0.25"
                                     />
                                     <stop
                                       offset="100%"
-                                      stopColor="#ea580c"
+                                      stopColor="#16a34a"
                                       stopOpacity="0.0"
                                     />
                                   </linearGradient>
@@ -1091,7 +1091,7 @@ const MapPage: React.FC = () => {
                                 <path
                                   d={chart.linePath}
                                   fill="none"
-                                  stroke="#f97316"
+                                  stroke="#22c55e"
                                   strokeWidth="2"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"

@@ -2,13 +2,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ion-color-primary);
-  color: var(--ion-color-primary-contrast);
-  font-weight: 700;
+  background: var(--ion-color-primary, #16a34a);
+  color: var(--ion-color-primary-contrast, #ffffff);
+  font-weight: 600;
+  border-radius: 50%;
 }
 
 .friends-empty {
   padding: 48px 24px;
   text-align: center;
-  color: var(--ion-color-medium);
+  color: var(--ion-color-step-500, #6b7280);
+  font-size: 0.9rem;
 }

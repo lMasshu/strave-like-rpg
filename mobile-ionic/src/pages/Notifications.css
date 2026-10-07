@@ -1,16 +1,17 @@
 .notif-unread {
-  --background: rgba(var(--ion-color-primary-rgb), 0.06);
+  --background: rgba(var(--ion-color-primary-rgb, 22, 163, 74), 0.05);
 }
 
 .notif-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--ion-color-primary);
+  background: var(--ion-color-primary, #16a34a);
 }
 
 .notif-empty {
   padding: 48px 24px;
   text-align: center;
-  color: var(--ion-color-medium);
+  color: var(--ion-color-step-500, #6b7280);
+  font-size: 0.9rem;
 }

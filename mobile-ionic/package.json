@@ -10,6 +10,7 @@
     "test.e2e": "cypress run",
     "test.unit": "vitest",
     "lint": "eslint",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" vite.config.ts cypress.config.ts",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" vite.config.ts cypress.config.ts"
   },
   "dependencies": {

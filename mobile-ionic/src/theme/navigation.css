@@ -1,21 +1,22 @@
-/* Barre d'onglets du bas, façon application mobile */
+/* Barre d'onglets du bas - Design épuré */
 ion-tab-bar {
-  --border: 1px solid rgba(128, 128, 128, 0.2);
+  --border: 1px solid var(--ion-color-step-150, #e5e7eb);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 ion-tab-button {
-  --color: var(--ion-color-medium);
-  --color-selected: var(--ion-color-primary);
-  font-weight: 600;
+  --color: var(--ion-color-step-500, #6b7280);
+  --color-selected: var(--ion-color-primary, #ea580c);
+  font-weight: 500;
+  font-size: 0.75rem;
 }
 
-/* Le bouton central "Enregistrer" est mis en avant */
+/* Bouton central d'enregistrement */
 ion-tab-button[tab="enregistrer"] ion-icon {
-  font-size: 32px;
+  font-size: 28px;
 }
 
-/* Masquée sur les pages poussées (notifications, recherche d'amis) */
+/* Masquée sur les pages secondaires */
 ion-tab-bar.tab-bar-hidden {
   display: none;
 }

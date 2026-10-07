@@ -4,29 +4,31 @@
   justify-content: center;
   min-height: 100%;
   padding: 24px;
-  background: #ffffff;
+  background: var(--ion-background-color, #f9fafb);
 }
 
 .home-card {
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
   padding: 32px 24px;
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: var(--ion-card-background, #ffffff);
+  border: 1px solid var(--ion-color-step-150, #e5e7eb);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   text-align: center;
-  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .home-card h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   margin-bottom: 8px;
-  color: #1e293b;
+  color: var(--ion-text-color, #111827);
 }
 
 .home-card p {
-  font-size: 0.95rem;
-  color: #64748b;
+  font-size: 0.92rem;
+  color: var(--ion-color-step-600, #4b5563);
   margin-bottom: 24px;
+  line-height: 1.45;
 }

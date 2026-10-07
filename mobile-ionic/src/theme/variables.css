@@ -1,2 +1,49 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/**
+ * Système de Thème Sobre & Athlétique - Style Pro Outdoor (Strava-like)
+ * Couleurs franches, contrastes nets, zéro dégradé néon
+ */
+
+:root {
+  /* Couleur d'accentuation principale : Orange athlétique sobre */
+  --ion-color-primary: #ea580c;
+  --ion-color-primary-rgb: 234, 88, 12;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #c2410c;
+  --ion-color-primary-tint: #f97316;
+
+  /* Teinte secondaire : Ardoise technique */
+  --ion-color-secondary: #334155;
+  --ion-color-secondary-rgb: 51, 65, 85;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #1e293b;
+  --ion-color-secondary-tint: #475569;
+
+  /* Teinte de succès : Vert émeraude naturel */
+  --ion-color-success: #059669;
+  --ion-color-success-rgb: 5, 150, 105;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #047857;
+  --ion-color-success-tint: #10b981;
+
+  /* Teinte d'avertissement : Ambre mat */
+  --ion-color-warning: #d97706;
+  --ion-color-warning-rgb: 217, 119, 6;
+  --ion-color-warning-contrast: #ffffff;
+  --ion-color-warning-contrast-rgb: 255, 255, 255;
+  --ion-color-warning-shade: #b45309;
+  --ion-color-warning-tint: #f59e0b;
+
+  /* Teinte d'erreur / Danger : Rouge sobre */
+  --ion-color-danger: #dc2626;
+  --ion-color-danger-rgb: 220, 38, 38;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #b91c1c;
+  --ion-color-danger-tint: #ef4444;
+
+  /* Typographie système propre */
+  --ion-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}

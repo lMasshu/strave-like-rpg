@@ -1,0 +1,407 @@
+/* =======================================================
+   MODALE DU GÉNÉRATEUR DE QUÊTE - DESIGN ÉPURÉ & PROFESSIONNEL
+   Structure avec Header fixe et Corps défilable (Scrollable)
+======================================================= */
+
+.quest-generator-modal {
+  --background: rgba(10, 12, 16, 0.7);
+  --height: auto;
+  --max-height: 85vh;
+}
+
+.quest-generator-modal::part(content) {
+  border-radius: 20px 20px 0 0;
+  height: 85vh;
+  max-height: 85vh;
+  margin-top: auto;
+  background: #14171f;
+  border-top: 1px solid #252b38;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (min-width: 600px) {
+  .quest-generator-modal::part(content) {
+    border-radius: 16px;
+    max-width: 480px;
+    height: 80vh;
+    max-height: 80vh;
+    margin: auto;
+    border: 1px solid #252b38;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.quest-modal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: #14171f;
+  color: #f3f4f6;
+  overflow: hidden;
+}
+
+/* En-tête fixe en haut */
+.quest-modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #202634;
+  background: #14171f;
+  z-index: 5;
+}
+
+.quest-modal-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quest-modal-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.quest-modal-subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  line-height: 1.3;
+}
+
+.quest-modal-close-btn {
+  background: #1d222e;
+  border: 1px solid #2a3244;
+  color: #9ca3af;
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.quest-modal-close-btn:hover {
+  background: #252c3c;
+  color: #ffffff;
+}
+
+/* Corps entièrement défilable avec scrollbar visible et fluide */
+.quest-modal-body {
+  flex: 1;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 18px 20px max(32px, env(safe-area-inset-bottom, 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.quest-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quest-section-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+/* Grilles d'options / Chips */
+.quest-chips-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.quest-chip {
+  background: #191e28;
+  border: 1px solid #262c3b;
+  color: #d1d5db;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.quest-chip ion-icon {
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.quest-chip:hover {
+  background: #1f2533;
+  border-color: #374151;
+}
+
+.quest-chip.active {
+  background: #1f2839;
+  border-color: #ea580c;
+  color: #ffffff;
+}
+
+.quest-chip.active ion-icon {
+  color: #f97316;
+}
+
+/* Sélecteur de distance */
+.quest-distance-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.quest-dist-btn {
+  background: #191e28;
+  border: 1px solid #262c3b;
+  border-radius: 10px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.quest-dist-btn .dist-val {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.quest-dist-btn .dist-desc {
+  font-size: 0.68rem;
+  color: #9ca3af;
+}
+
+.quest-dist-btn:hover {
+  background: #1f2533;
+}
+
+.quest-dist-btn.active {
+  background: #1f2839;
+  border-color: #ea580c;
+}
+
+.quest-dist-btn.active .dist-val {
+  color: #f97316;
+}
+
+.quest-dist-btn.active .dist-desc {
+  color: #fdba74;
+}
+
+/* Bouton principal de génération */
+.quest-generate-btn {
+  width: 100%;
+  background: #ea580c;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.quest-generate-btn:hover:not(:disabled) {
+  background: #c2410c;
+}
+
+.quest-generate-btn:active:not(:disabled) {
+  background: #9a3412;
+}
+
+.quest-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.quest-error-banner {
+  background: #2b181a;
+  border: 1px solid #5c2226;
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+/* Fiche récapitulative de la quête générée */
+.generated-quest-card {
+  background: #181d27;
+  border: 1px solid #293040;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quest-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quest-badges-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rpg-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #232938;
+  color: #cbd5e1;
+  border: 1px solid #333c50;
+}
+
+.quest-xp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #241c15;
+  border: 1px solid #5a381e;
+  color: #fb923c;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.quest-card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.quest-card-desc {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.quest-poi-highlight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e2430;
+  border-left: 3px solid #ea580c;
+  padding: 7px 10px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: #d1d5db;
+}
+
+.quest-poi-highlight strong {
+  color: #ffffff;
+}
+
+.quest-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.quest-metric-box {
+  background: #141720;
+  border: 1px solid #232835;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quest-metric-box .m-label {
+  font-size: 0.66rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.quest-metric-box .m-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quest-metric-box .m-value.d-plus {
+  color: #10b981;
+}
+
+.quest-metric-box .mini-icon {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.quest-card-actions {
+  margin-top: 6px;
+}
+
+.quest-accept-btn {
+  width: 100%;
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.15s ease;
+}
+
+.quest-accept-btn:hover {
+  background: #047857;
+}
+
+.quest-accept-btn:active {
+  background: #065f46;
+}

@@ -4,7 +4,7 @@ import {
   RouteResult,
   TransportProfile,
 } from "./mapboxDirections";
-import { searchPointsOfInterest, PoiResult } from "./mapboxGeocoding";
+import { searchPointsOfInterest } from "./mapboxGeocoding";
 
 export type QuestType = "loop" | "poi" | "linear";
 export type QuestDifficulty = "easy" | "medium" | "hard" | "epic";
@@ -245,7 +245,8 @@ export function extractPoisFromMapbox(
       if (f.geometry.type === "Point") {
         coords = f.geometry.coordinates as [number, number];
       } else if (f.geometry.type === "Polygon") {
-        const ring = (f.geometry as any).coordinates?.[0];
+        const polyCoords = f.geometry.coordinates as unknown as number[][][];
+        const ring = polyCoords?.[0];
         if (Array.isArray(ring) && ring.length > 0) {
           let sumLng = 0;
           let sumLat = 0;
@@ -259,7 +260,8 @@ export function extractPoisFromMapbox(
           ];
         }
       } else if (f.geometry.type === "MultiPolygon") {
-        const firstPolygon = (f.geometry as any).coordinates?.[0]?.[0];
+        const multiCoords = f.geometry.coordinates as unknown as number[][][][];
+        const firstPolygon = multiCoords?.[0]?.[0];
         if (Array.isArray(firstPolygon) && firstPolygon.length > 0) {
           let sumLng = 0;
           let sumLat = 0;

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type mapboxgl from "mapbox-gl";
 import {
   generateLoopWaypoints,
   getDifficultyFromDistance,
@@ -110,7 +111,7 @@ describe("questGenerator service", () => {
             layer: { id: "poi-label" },
           },
         ]),
-      } as any;
+      } as unknown as mapboxgl.Map;
 
       const quest = await generateRandomQuest({
         userLocation: PARIS_COORDS,

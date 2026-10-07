@@ -1,10 +1,11 @@
 /* =======================================================
-   DESIGN MOBILE-FIRST ÉPURÉ & MODERNE - PAGE CARTE RPG
-   Inspiré des standards iOS / Apple Maps / Strava
+   CARTE MOBILE - DESIGN ÉPURÉ, MODERNE ET AUTHENTIQUE
+   Inspiré des applications sportives & outdoor (Strava / AllTrails)
+   Contrastes nets, surfaces solides, zéro artifice IA
 ======================================================= */
 
 .map-page-content {
-  --background: #090d16;
+  --background: #11141c;
   --padding-top: 0;
   --padding-bottom: 0;
   --padding-start: 0;
@@ -17,9 +18,8 @@
   width: 100%;
   min-height: 100%;
   overflow: hidden;
-  background: #090d16;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #11141c;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
 .map-mapbox-container {
@@ -30,7 +30,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #0f172a;
+  background: #11141c;
 }
 
 .mapboxgl-map {
@@ -39,7 +39,7 @@
 }
 
 /* =======================================================
-   1. BARRE SUPÉRIEURE FLOTTANTE MOBILE (TOP BAR ÉPURÉE)
+   1. BARRE SUPÉRIEURE FLOTTANTE (TOP BAR)
 ======================================================= */
 .map-mobile-top-bar {
   position: absolute;
@@ -59,20 +59,18 @@
 .top-mobile-icon-btn {
   width: 44px;
   height: 44px;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f1f5f9;
+  border-radius: 12px;
+  background: #181d27;
+  border: 1px solid #283040;
+  color: #d1d5db;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   padding: 0;
   margin: 0;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   --padding-start: 0;
   --padding-end: 0;
 }
@@ -81,43 +79,44 @@
   font-size: 1.25rem;
 }
 
+.top-mobile-icon-btn:hover {
+  background: #202634;
+  border-color: #374151;
+}
+
 .top-mobile-icon-btn:active {
-  transform: scale(0.92);
-  background: rgba(30, 41, 59, 0.95);
+  background: #141720;
 }
 
 .top-mobile-icon-btn.active {
-  border-color: rgba(56, 189, 248, 0.6);
-  color: #38bdf8;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+  border-color: #ea580c;
+  color: #f97316;
+  background: #231c17;
 }
 
-/* Pilule de recherche */
+/* Champ de recherche */
 .mobile-search-pill {
   flex: 1;
   height: 44px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 22px;
+  background: #181d27;
+  border: 1px solid #283040;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   padding: 0 14px;
   gap: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease;
 }
 
 .mobile-search-pill:focus-within {
-  border-color: rgba(56, 189, 248, 0.6);
-  box-shadow: 0 6px 24px rgba(56, 189, 248, 0.25);
-  background: rgba(15, 23, 42, 0.96);
+  border-color: #ea580c;
+  background: #1b202c;
 }
 
 .search-pill-icon {
-  font-size: 1.15rem;
-  color: #38bdf8;
+  font-size: 1.1rem;
+  color: #9ca3af;
   flex-shrink: 0;
 }
 
@@ -126,22 +125,20 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #f8fafc;
+  color: #f3f4f6;
   font-size: 0.88rem;
   font-weight: 500;
-  letter-spacing: -0.01em;
   padding: 0;
 }
 
 .search-pill-input::placeholder {
-  color: #94a3b8;
-  font-weight: 400;
+  color: #6b7280;
 }
 
 .clear-pill-btn {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #9ca3af;
   padding: 0;
   display: flex;
   align-items: center;
@@ -150,12 +147,12 @@
   font-size: 1.15rem;
 }
 
-.clear-pill-btn:active {
-  color: #f8fafc;
+.clear-pill-btn:hover {
+  color: #ffffff;
 }
 
 /* =======================================================
-   2. RÉSULTATS DE RECHERCHE DÉROULANTS (OVERLAY)
+   2. RÉSULTATS DE RECHERCHE DÉROULANTS
 ======================================================= */
 .search-results-dropdown {
   position: absolute;
@@ -165,47 +162,32 @@
   max-width: 520px;
   margin: 0 auto;
   z-index: 35;
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 18px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  background: #181d27;
+  border: 1px solid #283040;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   max-height: 280px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .search-result-item {
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.15s ease;
+  border-bottom: 1px solid #202634;
+  transition: background-color 0.15s ease;
 }
 
 .search-result-item:last-child {
   border-bottom: none;
 }
 
-.search-result-item:active,
 .search-result-item:hover {
-  background: rgba(56, 189, 248, 0.12);
+  background: #202634;
 }
 
 .result-item-header {
@@ -217,29 +199,29 @@
 
 .result-title {
   font-size: 0.88rem;
-  font-weight: 700;
-  color: #f1f5f9;
+  font-weight: 600;
+  color: #f3f4f6;
 }
 
 .result-badge {
-  font-size: 0.68rem;
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: rgba(56, 189, 248, 0.18);
-  color: #38bdf8;
-  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #252c3c;
+  color: #9ca3af;
+  font-weight: 500;
   flex-shrink: 0;
 }
 
 .result-address {
-  font-size: 0.74rem;
-  color: #94a3b8;
+  font-size: 0.75rem;
+  color: #9ca3af;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* CARTE D'ACTION DU LIEU CHOISI */
+/* Carte d'action du lieu choisi */
 .poi-action-card {
   position: absolute;
   top: calc(12px + env(safe-area-inset-top, 6px) + 52px);
@@ -248,143 +230,139 @@
   max-width: 460px;
   margin: 0 auto;
   z-index: 35;
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  border-radius: 18px;
-  padding: 14px 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  background: #181d27;
+  border: 1px solid #283040;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .poi-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 12px;
 }
 
 .poi-card-info h4 {
-  margin: 0 0 3px;
-  font-size: 0.94rem;
-  font-weight: 700;
-  color: #38bdf8;
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .poi-card-info p {
   margin: 0;
-  font-size: 0.76rem;
-  color: #94a3b8;
+  font-size: 0.78rem;
+  color: #9ca3af;
   line-height: 1.3;
 }
 
 .close-card-btn {
   background: none;
   border: none;
-  color: #94a3b8;
-  font-size: 1.3rem;
-  cursor: pointer;
+  color: #9ca3af;
+  font-size: 1.25rem;
   padding: 0;
-  display: flex;
-  align-items: center;
+  cursor: pointer;
+}
+
+.close-card-btn:hover {
+  color: #ffffff;
 }
 
 .poi-card-actions {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .poi-action-btn {
-  flex: 1;
-  font-size: 0.8rem;
-  font-weight: 700;
-  border-radius: 12px;
   border: none;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-}
-
-.poi-action-btn:active {
-  transform: scale(0.96);
+  transition: opacity 0.15s ease;
 }
 
 .btn-set-a {
-  background: rgba(16, 185, 129, 0.25);
-  color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.5);
+  background: #059669;
+  color: #ffffff;
 }
 
 .btn-set-b {
-  background: rgba(239, 68, 68, 0.25);
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.5);
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.poi-action-btn:hover {
+  opacity: 0.9;
 }
 
 /* =======================================================
-   3. MENU STYLE DE CARTE FLOTTANT
+   3. SÉLECTEUR DE STYLE DE CARTE
 ======================================================= */
 .map-theme-dropdown {
   position: absolute;
   top: calc(12px + env(safe-area-inset-top, 6px) + 52px);
   right: 12px;
   z-index: 35;
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  padding: 8px;
+  background: #181d27;
+  border: 1px solid #283040;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 220px;
-  animation: fadeInDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 2px;
+  min-width: 190px;
 }
 
 .theme-title {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #94a3b8;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
   padding: 6px 10px 4px;
 }
 
 .theme-option {
   background: transparent;
   border: none;
-  border-radius: 10px;
-  color: #e2e8f0;
+  border-radius: 8px;
+  color: #d1d5db;
   text-align: left;
-  padding: 9px 12px;
-  font-size: 0.84rem;
+  padding: 8px 10px;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.theme-option:active {
-  background: rgba(255, 255, 255, 0.08);
+.theme-option:hover {
+  background: #202634;
+  color: #ffffff;
 }
 
 .theme-option.active {
-  background: rgba(2, 132, 199, 0.25);
-  color: #38bdf8;
+  background: #241d18;
+  color: #f97316;
   font-weight: 600;
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  border: 1px solid #ea580c;
 }
 
 /* =======================================================
-   4. CONTRÔLES FLOTTANTS DISCRETS (BAS À DROITE)
+   4. CONTRÔLES FLOTTANTS DISCRETS
 ======================================================= */
 .map-floating-actions {
   position: absolute;
@@ -411,31 +389,31 @@
 .fab-action-btn {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #f1f5f9;
+  border-radius: 12px;
+  background: #181d27;
+  border: 1px solid #283040;
+  color: #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   padding: 0;
   margin: 0;
-  transition:
-    transform 0.15s ease,
-    background 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .fab-action-btn ion-icon {
   font-size: 1.25rem;
 }
 
+.fab-action-btn:hover {
+  background: #202634;
+  border-color: #374151;
+}
+
 .fab-action-btn:active {
-  transform: scale(0.92);
-  background: rgba(30, 41, 59, 0.95);
+  background: #141720;
 }
 
 .fab-action-btn.location-btn ion-icon {
@@ -443,43 +421,120 @@
 }
 
 .fab-action-btn.fit-btn ion-icon {
-  color: #38bdf8;
+  color: #60a5fa;
 }
 
 .fab-action-btn.immersion-btn ion-icon {
-  color: #cbd5e1;
+  color: #9ca3af;
+}
+
+.fab-action-btn.quest-btn ion-icon {
+  color: #f97316;
+}
+
+/* Bannière d'itinéraire actif */
+.active-quest-banner {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 6px) + 54px);
+  left: 14px;
+  right: 14px;
+  max-width: 520px;
+  margin: 0 auto;
+  z-index: 25;
+  background: #161922;
+  border: 1px solid #262c3a;
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.active-quest-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.active-quest-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.active-quest-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #f97316;
+  background: #251b14;
+  border: 1px solid #4a2818;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.active-quest-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-quest-sub {
+  font-size: 0.74rem;
+  color: #9ca3af;
+}
+
+.active-quest-close {
+  background: #1f2430;
+  border: 1px solid #2a3244;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.active-quest-close:hover {
+  background: #283040;
+  color: #ffffff;
 }
 
 /* =======================================================
-   5. BOTTOM SHEET HUD MOBILE ÉPURÉ (APPLE MAPS STYLE)
+   5. BOTTOM SHEET HUD MOBILE
 ======================================================= */
 .rpg-bottom-hud {
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 4px));
-  max-width: 500px;
-  margin: 0 auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 25;
-  background: rgba(15, 23, 42, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 24px;
-  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.6);
-  color: #f8fafc;
+  background: #141720;
+  border-top: 1px solid #252b38;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+  color: #f3f4f6;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-bottom: env(safe-area-inset-bottom, 8px);
 }
 
 .rpg-bottom-hud.collapsed {
-  border-radius: 28px;
+  border-radius: 16px 16px 0 0;
 }
 
 .hud-header-bar {
-  padding: 8px 16px 12px 16px;
+  padding: 10px 16px 12px 16px;
   cursor: pointer;
   user-select: none;
   display: flex;
@@ -491,7 +546,7 @@
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.25);
+  background: #374151;
   margin: 0 auto;
 }
 
@@ -516,31 +571,28 @@
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
-  font-weight: 900;
+  font-weight: 700;
   color: #ffffff;
 }
 
 .dot-a {
-  background: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  background: #059669;
 }
 
 .dot-b {
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+  background: #dc2626;
 }
 
 .route-arrow {
   font-size: 0.72rem;
-  color: #64748b;
+  color: #6b7280;
   margin: 0 2px;
 }
 
 .hud-metric-text {
   font-size: 0.86rem;
-  font-weight: 700;
-  color: #f8fafc;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  color: #f3f4f6;
   flex: 1;
   text-align: center;
   overflow: hidden;
@@ -550,158 +602,138 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .metric-dot {
-  color: #64748b;
+  color: #4b5563;
   font-size: 0.72rem;
 }
 
 .metric-elev {
-  color: #38bdf8;
-  font-weight: 800;
+  color: #10b981;
+  font-weight: 600;
 }
 
 .hud-badge-xp {
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.16);
-  padding: 3px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  white-space: nowrap;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #f97316;
+  background: #251b14;
+  border: 1px solid #4a2818;
+  padding: 2px 8px;
+  border-radius: 6px;
 }
 
 .hud-toggle-icon {
   font-size: 1.1rem;
-  color: #94a3b8;
+  color: #9ca3af;
 }
 
-/* Contenu Développé */
+/* Corps développé */
 .hud-expanded-body {
-  padding: 0 16px 14px 16px;
+  padding: 0 16px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: calc(80vh - 80px);
-  overflow-y: auto;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  gap: 12px;
 }
 
 .rpg-points-summary {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
   gap: 8px;
 }
 
 .point-tag {
   flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  background: #181d27;
+  border: 1px solid #283040;
+  border-radius: 8px;
+  color: #d1d5db;
   padding: 8px 10px;
-  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 
-.point-tag.tag-a {
-  background: rgba(16, 185, 129, 0.18);
-  color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.4);
-}
-
-.point-tag.tag-b {
-  background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.4);
+.point-tag:hover {
+  border-color: #374151;
 }
 
 .point-tag.targeting {
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
-  border-color: #38bdf8;
-  animation: pulse-border 1.2s infinite;
+  border-color: #ea580c;
+  color: #f97316;
 }
 
-@keyframes pulse-border {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.03);
-  }
-  100% {
-    transform: scale(1);
-  }
+.point-tag ion-icon {
+  font-size: 1rem;
+}
+
+.tag-a ion-icon {
+  color: #10b981;
+}
+
+.tag-b ion-icon {
+  color: #ef4444;
 }
 
 .swap-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #94a3b8;
+  background: #181d27;
+  border: 1px solid #283040;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  color: #9ca3af;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.1rem;
   cursor: pointer;
   flex-shrink: 0;
-  padding: 0;
+  transition: background-color 0.15s ease;
 }
 
-.swap-btn:active {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.15);
+.swap-btn:hover {
+  background: #202634;
+  color: #ffffff;
 }
 
-/* Sélecteur de Transport */
+/* Mode de Transport */
 .rpg-mode-selector ion-segment {
-  --background: rgba(30, 41, 59, 0.8);
-  border-radius: 12px;
+  --background: #181d27;
+  border-radius: 8px;
   padding: 3px;
+  border: 1px solid #283040;
 }
 
 .rpg-mode-selector ion-segment-button {
-  --color: #94a3b8;
+  --color: #9ca3af;
   --color-checked: #ffffff;
-  --indicator-color: #0284c7;
-  font-size: 0.75rem;
-  min-height: 34px;
+  --indicator-color: #252d3d;
+  font-size: 0.78rem;
+  font-weight: 500;
+  min-height: 32px;
 }
 
 .rpg-mode-selector ion-segment-button ion-icon {
-  font-size: 1.05rem;
+  font-size: 1rem;
   margin-right: 4px;
 }
 
-/* Grille de stats (Distance, Dénivelé, Durée, XP) */
+/* Grille de statistiques */
 .rpg-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
-  background: rgba(30, 41, 59, 0.5);
+  background: #181d27;
   padding: 10px 8px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  border: 1px solid #242a38;
 }
 
 .rpg-stat-item {
@@ -709,71 +741,45 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  min-width: 0;
 }
 
 .rpg-stat-item .stat-label {
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: #9ca3af;
   margin-bottom: 2px;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
 .rpg-stat-item .stat-value {
   font-size: 0.92rem;
-  font-weight: 700;
-  color: #f1f5f9;
-  white-space: nowrap;
+  font-weight: 600;
+  color: #f3f4f6;
 }
 
 .rpg-stat-item.elev-stat-item .stat-value.elev-value {
-  color: #38bdf8;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  color: #10b981;
 }
 
 .rpg-stat-item.xp-item .stat-value.xp-value {
-  color: #fbbf24;
-  text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+  color: #f97316;
 }
 
-/* =======================================================
-   5b. CARTE DE PROFIL ALTIMÉTRIQUE (STYLE STRAVA RPG)
-======================================================= */
+/* Profil altimétrique */
 .rpg-elevation-profile-card {
   display: flex;
   flex-direction: column;
-  background: rgba(15, 23, 42, 0.65);
-  border: 1px solid rgba(56, 189, 248, 0.22);
-  border-radius: 14px;
-  padding: 10px 12px 8px 12px;
+  background: #181d27;
+  border: 1px solid #262c3a;
+  border-radius: 8px;
+  padding: 10px 12px;
   gap: 6px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.rpg-elevation-profile-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(56, 189, 248, 0.6),
-    transparent
-  );
 }
 
 .elev-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
 }
 
 .elev-title-group {
@@ -784,15 +790,15 @@
 
 .elev-title-icon {
   font-size: 0.95rem;
-  color: #38bdf8;
+  color: #9ca3af;
 }
 
 .elev-title-text {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.74rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #cbd5e1;
+  letter-spacing: 0.04em;
+  color: #d1d5db;
 }
 
 .elev-badges-group {
@@ -802,23 +808,22 @@
 }
 
 .elev-badge {
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 6px;
-  line-height: 1.2;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .elev-badge.d-plus {
-  background: rgba(16, 185, 129, 0.16);
+  background: #13241b;
   color: #34d399;
-  border: 1px solid rgba(52, 211, 153, 0.35);
+  border: 1px solid #1e3a2c;
 }
 
 .elev-badge.d-minus {
-  background: rgba(239, 68, 68, 0.14);
+  background: #2a1617;
   color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.35);
+  border: 1px solid #452123;
 }
 
 .elev-svg-wrapper {
@@ -829,31 +834,30 @@
 }
 
 .elev-alt-label.max-label {
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: #38bdf8;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #9ca3af;
   text-align: right;
-  margin-bottom: -4px;
+  margin-bottom: -2px;
 }
 
 .elev-svg-chart {
   width: 100%;
-  height: 52px;
+  height: 48px;
   overflow: visible;
-  filter: drop-shadow(0 2px 6px rgba(0, 240, 255, 0.25));
 }
 
 .elev-footer-axis {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.62rem;
-  color: #94a3b8;
+  font-size: 0.65rem;
+  color: #9ca3af;
   margin-top: 2px;
 }
 
 .axis-node {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .axis-node.node-a {
@@ -865,120 +869,61 @@
 }
 
 .axis-min {
-  color: #64748b;
-  font-size: 0.6rem;
+  color: #6b7280;
 }
 
 .hud-tip {
-  font-size: 0.72rem;
-  color: #94a3b8;
+  font-size: 0.74rem;
+  color: #9ca3af;
   text-align: center;
-  line-height: 1.25;
 }
 
 /* =======================================================
-   6. MARQUEURS A & B HAUTE PRÉCISION VECTORIELS
+   6. MARQUEURS SUR CARTE (CLEAN FLAT)
 ======================================================= */
 .pin-marker-wrapper {
   position: absolute !important;
   top: 0;
   left: 0;
-  width: 38px;
-  height: 48px;
+  width: 32px;
+  height: 42px;
   cursor: grab;
   user-select: none;
   touch-action: none;
   line-height: 0;
   pointer-events: auto;
-  will-change: transform;
 }
 
 .pin-marker-wrapper.marker-a-wrapper {
-  --pin-color: #34d399;
-  --pin-color-glow: rgba(52, 211, 153, 0.85);
-  --pin-color-shadow: rgba(52, 211, 153, 0.5);
+  --pin-color: #10b981;
 }
 
 .pin-marker-wrapper.marker-b-wrapper {
-  --pin-color: #f87171;
-  --pin-color-glow: rgba(248, 113, 113, 0.85);
-  --pin-color-shadow: rgba(248, 113, 113, 0.5);
-}
-
-.pin-marker-wrapper:active {
-  cursor: grabbing;
+  --pin-color: #ef4444;
 }
 
 .pin-marker-content {
   position: absolute;
   top: 0;
   left: 0;
-  width: 38px;
-  height: 48px;
+  width: 32px;
+  height: 42px;
   z-index: 2;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
   pointer-events: none;
 }
 
 .pin-marker-content svg {
   display: block;
-  width: 38px;
-  height: 48px;
-}
-
-.pin-marker-wrapper:hover .pin-marker-content {
-  transform: scale(1.1);
-  transform-origin: 19px 48px;
-  transition: transform 0.15s ease;
-}
-
-.pin-marker-wrapper:active .pin-marker-content {
-  transform: scale(0.95);
-  transform-origin: 19px 48px;
-  transition: transform 0.15s ease;
+  width: 32px;
+  height: 42px;
 }
 
 .pin-marker-pulse {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 18px;
-  height: 6px;
-  margin-left: -9px;
-  margin-bottom: -3px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.pin-marker-pulse::after {
-  content: "";
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  border-radius: 50%;
-  pointer-events: none;
-  border: 2px solid var(--pin-color-glow);
-  box-shadow: 0 0 10px var(--pin-color-shadow);
-  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.6);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2.4);
-    opacity: 0;
-  }
+  display: none;
 }
 
 /* =======================================================
-   7. POPUPS & NOTIFICATIONS
+   7. POPUPS & ERREURS
 ======================================================= */
 .mapbox-error-pill {
   position: absolute;
@@ -986,57 +931,50 @@
   left: 14px;
   right: 14px;
   z-index: 30;
-  background: rgba(220, 38, 38, 0.92);
-  color: #ffffff;
+  background: #2b181a;
+  border: 1px solid #5c2226;
+  color: #fca5a5;
   padding: 8px 12px;
-  border-radius: 12px;
-  font-size: 0.78rem;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  font-size: 0.8rem;
 }
 
 .mapboxgl-popup-content {
-  background: rgba(15, 23, 42, 0.95) !important;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-radius: 14px !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  background: #181d27 !important;
+  border-radius: 10px !important;
+  border: 1px solid #283040 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
   padding: 10px 14px !important;
 }
 
 .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
-  border-bottom-color: rgba(15, 23, 42, 0.95) !important;
+  border-bottom-color: #181d27 !important;
 }
 .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-  border-top-color: rgba(15, 23, 42, 0.95) !important;
+  border-top-color: #181d27 !important;
 }
 .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-  border-right-color: rgba(15, 23, 42, 0.95) !important;
+  border-right-color: #181d27 !important;
 }
 .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-  border-left-color: rgba(15, 23, 42, 0.95) !important;
+  border-left-color: #181d27 !important;
 }
 
 .mapboxgl-popup-close-button {
-  color: #94a3b8 !important;
+  color: #9ca3af !important;
   padding: 4px 8px !important;
-  font-size: 1.1rem !important;
-}
-
-.map-popup-card {
-  padding: 2px;
+  font-size: 1rem !important;
 }
 
 .map-popup-card h3 {
   margin: 0 0 4px;
   font-size: 0.88rem;
-  font-weight: 700;
-  color: #38bdf8;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .map-popup-card p {
   margin: 0;
   font-size: 0.76rem;
-  color: #cbd5e1;
+  color: #9ca3af;
 }

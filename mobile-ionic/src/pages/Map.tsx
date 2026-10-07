@@ -26,6 +26,7 @@ import {
   eyeOutline,
   eyeOffOutline,
   trendingUpOutline,
+  diceOutline,
 } from "ionicons/icons";
 import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
@@ -36,6 +37,8 @@ import {
   TransportProfile,
 } from "../services/mapboxDirections";
 import { searchPointsOfInterest, PoiResult } from "../services/mapboxGeocoding";
+import QuestGeneratorModal from "../components/QuestGeneratorModal";
+import { GeneratedQuest } from "../services/questGenerator";
 import "./Map.css";
 
 // Coordonnées par défaut : Paris Centre (Hôtel de Ville -> Musée du Louvre)
@@ -100,6 +103,10 @@ const MapPage: React.FC = () => {
     null,
   );
   const selectionTargetRef = useRef<"A" | "B" | null>(null);
+
+  // Gestion des quêtes aléatoires et procédurales
+  const [showQuestModal, setShowQuestModal] = useState(false);
+  const [activeQuest, setActiveQuest] = useState<GeneratedQuest | null>(null);
 
   useEffect(() => {
     pointARef.current = pointA;
@@ -587,11 +594,65 @@ const MapPage: React.FC = () => {
     setSearchQuery("");
   };
 
-  const xpReward = routeInfo
-    ? Math.round(
-        routeInfo.distanceKm * 100 + (routeInfo.elevationGain || 0) * 2,
-      )
-    : 0;
+  // Gestion de l'acceptation d'une quête générée procéduralement
+  const handleAcceptQuest = (quest: GeneratedQuest) => {
+    setActiveQuest(quest);
+    setPointA(quest.origin);
+    setPointB(quest.destination);
+    pointARef.current = quest.origin;
+    pointBRef.current = quest.destination;
+
+    if (markerARef.current) markerARef.current.setLngLat(quest.origin);
+    if (markerBRef.current) markerBRef.current.setLngLat(quest.destination);
+
+    setRouteInfo(quest.route);
+    currentCoordsRef.current = quest.route.coordinates;
+
+    if (mapInstance.current) {
+      const map = mapInstance.current;
+      const source = map.getSource("route-source") as
+        | mapboxgl.GeoJSONSource
+        | undefined;
+      if (source) {
+        source.setData({
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "LineString",
+            coordinates: quest.route.coordinates,
+          },
+        });
+      }
+
+      if (quest.route.coordinates.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds(
+          quest.route.coordinates[0],
+          quest.route.coordinates[0],
+        );
+        for (const coord of quest.route.coordinates) {
+          bounds.extend(coord);
+        }
+        map.fitBounds(bounds, {
+          padding: {
+            top: 120,
+            bottom: isHudCollapsed ? 90 : 380,
+            left: 50,
+            right: 50,
+          },
+          maxZoom: 16,
+          duration: 1200,
+        });
+      }
+    }
+  };
+
+  const xpReward = activeQuest
+    ? activeQuest.xpReward
+    : routeInfo
+      ? Math.round(
+          routeInfo.distanceKm * 100 + (routeInfo.elevationGain || 0) * 2,
+        )
+      : 0;
 
   return (
     <IonPage>
@@ -639,6 +700,35 @@ const MapPage: React.FC = () => {
                 title="Style de carte"
               >
                 <IonIcon icon={layersOutline} />
+              </button>
+            </div>
+          )}
+
+          {/* Bannière de Quête Active */}
+          {activeQuest && !hideUiForImmersion && (
+            <div className="active-quest-banner">
+              <div className="active-quest-content">
+                <div className="active-quest-title-row">
+                  <span className="active-quest-tag">
+                    {activeQuest.type === "loop"
+                      ? "🔄 Boucle"
+                      : activeQuest.type === "poi"
+                        ? "🎯 POI"
+                        : "📍 Trajet"}
+                  </span>
+                  <span className="active-quest-title">{activeQuest.title}</span>
+                </div>
+                <span className="active-quest-sub">
+                  +{activeQuest.xpReward} XP • {activeQuest.route.distanceKm} km • {activeQuest.route.durationMinutes} min
+                </span>
+              </div>
+              <button
+                type="button"
+                className="active-quest-close"
+                onClick={() => setActiveQuest(null)}
+                title="Quitter la quête"
+              >
+                <IonIcon icon={closeCircleOutline} />
               </button>
             </div>
           )}
@@ -734,6 +824,15 @@ const MapPage: React.FC = () => {
           <div
             className={`map-floating-actions ${isHudCollapsed ? "hud-min" : "hud-exp"} ${hideUiForImmersion ? "immersed" : ""}`}
           >
+            <button
+              type="button"
+              className="fab-action-btn quest-btn"
+              onClick={() => setShowQuestModal(true)}
+              title="Générateur de quête aléatoire"
+            >
+              <IonIcon icon={diceOutline} />
+            </button>
+
             <button
               type="button"
               className="fab-action-btn location-btn"
@@ -973,13 +1072,13 @@ const MapPage: React.FC = () => {
                                   >
                                     <stop
                                       offset="0%"
-                                      stopColor="#00f0ff"
-                                      stopOpacity="0.38"
+                                      stopColor="#ea580c"
+                                      stopOpacity="0.2"
                                     />
                                     <stop
                                       offset="100%"
-                                      stopColor="#00f0ff"
-                                      stopOpacity="0.01"
+                                      stopColor="#ea580c"
+                                      stopOpacity="0.0"
                                     />
                                   </linearGradient>
                                 </defs>
@@ -990,25 +1089,25 @@ const MapPage: React.FC = () => {
                                 <path
                                   d={chart.linePath}
                                   fill="none"
-                                  stroke="#00f0ff"
-                                  strokeWidth="2.2"
+                                  stroke="#f97316"
+                                  strokeWidth="2"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                 />
                                 <circle
                                   cx={chart.points[0].x}
                                   cy={chart.points[0].y}
-                                  r="3.5"
-                                  fill="#34d399"
-                                  stroke="#0f172a"
+                                  r="3"
+                                  fill="#10b981"
+                                  stroke="#11141c"
                                   strokeWidth="1.5"
                                 />
                                 <circle
                                   cx={chart.points[chart.points.length - 1].x}
                                   cy={chart.points[chart.points.length - 1].y}
-                                  r="3.5"
-                                  fill="#f87171"
-                                  stroke="#0f172a"
+                                  r="3"
+                                  fill="#ef4444"
+                                  stroke="#11141c"
                                   strokeWidth="1.5"
                                 />
                               </svg>
@@ -1061,6 +1160,16 @@ const MapPage: React.FC = () => {
               : "Aucun jeton Mapbox n'est défini dans le fichier .env (VITE_MAPBOX_TOKEN). Ajoutez votre clé pour débloquer les styles Mapbox complets."
           }
           buttons={["OK"]}
+        />
+
+        {/* Modal Générateur de Quête Aléatoire */}
+        <QuestGeneratorModal
+          isOpen={showQuestModal}
+          onDismiss={() => setShowQuestModal(false)}
+          userLocation={pointA}
+          currentMode={mode}
+          mapboxToken={token}
+          onAcceptQuest={handleAcceptQuest}
         />
       </IonContent>
     </IonPage>

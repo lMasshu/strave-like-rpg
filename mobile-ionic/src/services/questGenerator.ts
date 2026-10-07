@@ -154,38 +154,104 @@ function projectPoint(
 }
 
 /**
- * Génère des étapes pour une boucle fermée (départ = arrivée)
+ * Calcule l'angle (bearing) initial entre deux points en degrés [0, 360[
+ */
+export function calculateBearing(
+  from: [number, number],
+  to: [number, number],
+): number {
+  const [lng1, lat1] = from;
+  const [lng2, lat2] = to;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const lat1Rad = (lat1 * Math.PI) / 180;
+  const lat2Rad = (lat2 * Math.PI) / 180;
+
+  const y = Math.sin(dLng) * Math.cos(lat2Rad);
+  const x =
+    Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+    Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+
+  const brng = (Math.atan2(y, x) * 180) / Math.PI;
+  return (brng + 360) % 360;
+}
+
+/**
+ * Génère des étapes pour une boucle fermée asymétrique garantissant l'absence d'aller-retour (Clean Loop).
+ * Séparation stricte de la branche aller et retour avec écartement angulaire minimal pour éviter les demi-tours.
  */
 export function generateLoopWaypoints(
   center: [number, number],
   targetDistanceKm = 3,
+  scaleFactor = 1.0,
 ): [number, number][] {
-  // Ajustement : la circonférence d'un cercle est 2*PI*R.
-  // En ville avec le quadrillage des rues, le tracé réel fait ~1.3 à 1.4 fois le périmètre vol d'oiseau.
-  const approximatedRadius = targetDistanceKm / (2 * Math.PI * 1.35);
+  const effectiveDistance = targetDistanceKm * scaleFactor;
+  // L'apex (point le plus éloigné) est situé à environ 38% de la distance cible
+  const apexDistance = Math.max(0.35, effectiveDistance * 0.38);
+  // Les points d'ailes latérales (aller et retour) sont situés à environ 22% de la distance
+  const wingDistance = Math.max(0.22, effectiveDistance * 0.22);
 
-  // Choisir un nombre d'étapes (3 ou 4 waypoints intermédiaires)
-  const numWaypoints = targetDistanceKm > 4 ? 4 : 3;
-  const initialAngle = Math.random() * 360;
-  const clockwise = Math.random() > 0.5 ? 1 : -1;
-  const angleStep = 360 / (numWaypoints + 1);
+  // Direction principale de la boucle (axe d'exploration)
+  const mainAxis = Math.random() * 360;
+  // Sens de rotation (horaire ou anti-horaire)
+  const isClockwise = Math.random() > 0.5;
+  const sign = isClockwise ? 1 : -1;
+
+  // Écartement angulaire pour l'aller et le retour (entre 55° et 75° par rapport à l'axe)
+  const wingAngle1 = (mainAxis - sign * (55 + Math.random() * 20) + 360) % 360;
+  const wingAngle2 = (mainAxis + sign * (55 + Math.random() * 20) + 360) % 360;
 
   const waypoints: [number, number][] = [center];
 
-  for (let i = 1; i <= numWaypoints; i++) {
-    // Ajout d'une variation aléatoire sur l'angle et le rayon pour un tracé naturel
-    const angleNoise = (Math.random() - 0.5) * (angleStep * 0.4);
-    const bearing =
-      (initialAngle + clockwise * (i * angleStep) + angleNoise + 360) % 360;
-
-    const radiusVariation = approximatedRadius * (0.8 + Math.random() * 0.4);
-    const point = projectPoint(center, radiusVariation, bearing);
-    waypoints.push(point);
+  // Si distance > 4.5 km, affiner avec un point intermédiaire supplémentaire pour courber la trajectoire
+  if (targetDistanceKm >= 4.5) {
+    const quarterDist = wingDistance * 0.7;
+    const preWingAngle =
+      (mainAxis - sign * (80 + Math.random() * 15) + 360) % 360;
+    waypoints.push(projectPoint(center, quarterDist, preWingAngle));
   }
 
-  // Fermeture de la boucle sur le point de départ
+  // Jalon 1 : Branche Aller (décalée latéralement)
+  waypoints.push(projectPoint(center, wingDistance, wingAngle1));
+
+  // Jalon 2 : Apex (point le plus éloigné dans l'axe)
+  const apexNoiseAngle = (mainAxis + (Math.random() - 0.5) * 20 + 360) % 360;
+  waypoints.push(projectPoint(center, apexDistance, apexNoiseAngle));
+
+  // Jalon 3 : Branche Retour (décalée sur le flanc opposé)
+  waypoints.push(projectPoint(center, wingDistance, wingAngle2));
+
+  // Fermeture stricte sur le point de départ
   waypoints.push(center);
   return waypoints;
+}
+
+/**
+ * Génère une boucle "Découverte" intégrant un POI réel en étape intermédiaire sans aller-retour direct.
+ */
+export function generatePoiLoopWaypoints(
+  center: [number, number],
+  poiCoords: [number, number],
+  targetDistanceKm = 3,
+): [number, number][] {
+  // Calcul du cap et de la distance vers le POI
+  const bearingToPoi = calculateBearing(center, poiCoords);
+  const dLat = (poiCoords[1] - center[1]) * 111.32;
+  const dLng =
+    (poiCoords[0] - center[0]) * 111.32 * Math.cos((center[1] * Math.PI) / 180);
+  const distToPoi = Math.sqrt(dLat * dLat + dLng * dLng);
+
+  // Déterminer le sens de retour (latéral à ~75° de l'axe vers le POI)
+  const sideSign = Math.random() > 0.5 ? 1 : -1;
+  const returnAngle = (bearingToPoi + sideSign * 75 + 360) % 360;
+  const returnDist = Math.max(
+    0.3,
+    Math.min(distToPoi * 0.8, targetDistanceKm * 0.25),
+  );
+
+  const returnWaypoint = projectPoint(center, returnDist, returnAngle);
+
+  // Séquence : Centre -> POI -> Flanc de retour alternatif -> Centre
+  return [center, poiCoords, returnWaypoint, center];
 }
 
 // Typologies riches de points d'intérêt : forêts, puits, sources, panoramas, patrimoine rural...
@@ -679,10 +745,9 @@ function createQuestLore(
     title = `Cap sur : ${poiName}`;
   } else if (type === "loop" && poiName) {
     const prefixes = [
+      "Circuit Découverte du",
       "Boucle du",
-      "Circuit du",
       "La Ronde du",
-      "Passage par le",
       "Sentier du",
     ];
     title = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${poiName.replace(/^(le|la|les|l'|du|de la|des)\s+/i, "")}`;
@@ -727,10 +792,10 @@ export async function generateRandomQuest(
   let targetPoiName: string | undefined;
   let poiCategory: string | undefined;
   let customPoiAction: string | undefined;
+  let isPoiLoop = false;
 
   switch (questType) {
     case "loop": {
-      waypoints = generateLoopWaypoints(userLocation, targetDistanceKm);
       destination = userLocation;
       if (mapInstance) {
         const localPois = extractPoisFromMapbox(
@@ -738,13 +803,29 @@ export async function generateRandomQuest(
           userLocation,
           targetDistanceKm,
         );
-        if (localPois.length > 0) {
+        // Si des POIs sont à proximité, 50% de chance d'intégrer le POI comme jalon de la boucle
+        if (localPois.length > 0 && Math.random() > 0.4) {
+          const picked =
+            localPois[Math.floor(Math.random() * localPois.length)];
+          targetPoiName = picked.name;
+          poiCategory = picked.category;
+          customPoiAction = `Gagnez ${picked.name} puis complétez la boucle par les sentiers alternatifs sans faire demi-tour.`;
+          waypoints = generatePoiLoopWaypoints(
+            userLocation,
+            picked.coordinates,
+            targetDistanceKm,
+          );
+          isPoiLoop = true;
+          break;
+        } else if (localPois.length > 0) {
           const picked =
             localPois[Math.floor(Math.random() * localPois.length)];
           targetPoiName = picked.name;
           poiCategory = picked.category;
         }
       }
+
+      waypoints = generateLoopWaypoints(userLocation, targetDistanceKm);
       break;
     }
 
@@ -775,10 +856,51 @@ export async function generateRandomQuest(
   }
 
   // Calcul du tracé réel via Mapbox Directions / OSRM
-  const route = await fetchMultiPointRoute(waypoints, {
+  let route = await fetchMultiPointRoute(waypoints, {
     accessToken: mapboxToken,
     costing: profile,
   });
+
+  // Phase 3 : Calibration dynamique pour les boucles géométriques si l'écart dépasse 22%
+  if (
+    questType === "loop" &&
+    !isPoiLoop &&
+    targetDistanceKm >= 1.0 &&
+    route.distanceKm > 0.3
+  ) {
+    const errorRatio =
+      Math.abs(route.distanceKm - targetDistanceKm) / targetDistanceKm;
+    if (errorRatio > 0.22) {
+      const correction = targetDistanceKm / route.distanceKm;
+      const clampedScale = Math.max(0.55, Math.min(1.85, correction));
+      const calibratedWaypoints = generateLoopWaypoints(
+        userLocation,
+        targetDistanceKm,
+        clampedScale,
+      );
+
+      try {
+        const calibratedRoute = await fetchMultiPointRoute(
+          calibratedWaypoints,
+          {
+            accessToken: mapboxToken,
+            costing: profile,
+          },
+        );
+
+        // Garder la nouvelle route si elle est plus proche de la distance demandée
+        if (
+          Math.abs(calibratedRoute.distanceKm - targetDistanceKm) <
+          Math.abs(route.distanceKm - targetDistanceKm)
+        ) {
+          route = calibratedRoute;
+          waypoints = calibratedWaypoints;
+        }
+      } catch (err) {
+        console.warn("Recalibration de distance ignorée :", err);
+      }
+    }
+  }
 
   const difficulty = getDifficultyFromDistance(route.distanceKm);
   const xpReward = computeQuestXp(

@@ -5,6 +5,8 @@ import {
   getDifficultyFromDistance,
   computeQuestXp,
   generateRandomQuest,
+  calculateBearing,
+  generatePoiLoopWaypoints,
 } from "./questGenerator";
 
 describe("questGenerator service", () => {
@@ -131,6 +133,57 @@ describe("questGenerator service", () => {
       expect(quest.title).toMatch(
         /Cap sur : (Bois du Quesnoy|Mairie de Cuignières|Église Saint-Martin)/,
       );
+    });
+
+    it("should generate a discovery POI loop quest when map contains local landmarks", async () => {
+      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Offline"));
+
+      const mockMap = {
+        queryRenderedFeatures: vi.fn().mockReturnValue([
+          {
+            properties: { name: "Bois de Serperon", class: "wood" },
+            geometry: { type: "Point", coordinates: [2.365, 48.865] },
+            layer: { id: "natural-point-label" },
+          },
+        ]),
+      } as unknown as mapboxgl.Map;
+
+      const quest = await generateRandomQuest({
+        userLocation: PARIS_COORDS,
+        preferredType: "loop",
+        targetDistanceKm: 3,
+        mapInstance: mockMap,
+      });
+
+      expect(quest.type).toBe("loop");
+      expect(quest.origin).toEqual(PARIS_COORDS);
+      expect(quest.destination).toEqual(PARIS_COORDS);
+      expect(quest.waypoints.length).toBeGreaterThanOrEqual(4);
+      expect(quest.waypoints[0]).toEqual(PARIS_COORDS);
+      expect(quest.waypoints[quest.waypoints.length - 1]).toEqual(PARIS_COORDS);
+    });
+  });
+
+  describe("calculateBearing and generatePoiLoopWaypoints", () => {
+    it("should calculate bearings accurately", () => {
+      const north = calculateBearing([2.0, 48.0], [2.0, 49.0]);
+      expect(north).toBeCloseTo(0, 0);
+
+      const east = calculateBearing([2.0, 48.0], [3.0, 48.0]);
+      expect(east).toBeCloseTo(90, 0);
+    });
+
+    it("should generate a POI discovery loop with non-overlapping return waypoint", () => {
+      const poiCoords: [number, number] = [2.36, 48.86];
+      const waypoints = generatePoiLoopWaypoints(PARIS_COORDS, poiCoords, 3);
+
+      expect(waypoints.length).toBe(4);
+      expect(waypoints[0]).toEqual(PARIS_COORDS);
+      expect(waypoints[1]).toEqual(poiCoords);
+      expect(waypoints[3]).toEqual(PARIS_COORDS);
+      // Le waypoint de retour (index 2) ne doit être ni le centre ni le POI
+      expect(waypoints[2]).not.toEqual(PARIS_COORDS);
+      expect(waypoints[2]).not.toEqual(poiCoords);
     });
   });
 });

@@ -611,8 +611,7 @@ const MapPage: React.FC = () => {
     if (mapInstance.current) {
       const map = mapInstance.current;
       const source = map.getSource("route-source") as
-        | mapboxgl.GeoJSONSource
-        | undefined;
+        mapboxgl.GeoJSONSource | undefined;
       if (source) {
         source.setData({
           type: "Feature",
@@ -716,10 +715,13 @@ const MapPage: React.FC = () => {
                         ? "🎯 POI"
                         : "📍 Trajet"}
                   </span>
-                  <span className="active-quest-title">{activeQuest.title}</span>
+                  <span className="active-quest-title">
+                    {activeQuest.title}
+                  </span>
                 </div>
                 <span className="active-quest-sub">
-                  +{activeQuest.xpReward} XP • {activeQuest.route.distanceKm} km • {activeQuest.route.durationMinutes} min
+                  +{activeQuest.xpReward} XP • {activeQuest.route.distanceKm} km
+                  • {activeQuest.route.durationMinutes} min
                 </span>
               </div>
               <button

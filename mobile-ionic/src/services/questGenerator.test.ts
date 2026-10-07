@@ -122,12 +122,15 @@ describe("questGenerator service", () => {
 
       expect(quest.type).toBe("poi");
       expect(
-        ["Bois du Quesnoy", "Mairie de Cuignières", "Église Saint-Martin"].includes(
-          quest.targetPoiName || "",
-        ),
+        [
+          "Bois du Quesnoy",
+          "Mairie de Cuignières",
+          "Église Saint-Martin",
+        ].includes(quest.targetPoiName || ""),
       ).toBe(true);
-      expect(quest.title).toMatch(/Cap sur : (Bois du Quesnoy|Mairie de Cuignières|Église Saint-Martin)/);
+      expect(quest.title).toMatch(
+        /Cap sur : (Bois du Quesnoy|Mairie de Cuignières|Église Saint-Martin)/,
+      );
     });
   });
 });
-

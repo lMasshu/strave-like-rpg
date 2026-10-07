@@ -68,7 +68,9 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
       setGeneratedQuest(quest);
     } catch (err) {
       console.error("Erreur lors de la génération de la quête :", err);
-      setErrorMsg("Impossible de générer le tracé. Veuillez vérifier votre connexion.");
+      setErrorMsg(
+        "Impossible de générer le tracé. Veuillez vérifier votre connexion.",
+      );
     } finally {
       setLoading(false);
     }
@@ -222,11 +224,18 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
             disabled={loading}
           >
             {loading ? (
-              <IonSpinner name="crescent" style={{ width: 18, height: 18, color: "#fff" }} />
+              <IonSpinner
+                name="crescent"
+                style={{ width: 18, height: 18, color: "#fff" }}
+              />
             ) : (
               <>
                 <IonIcon icon={diceOutline} />
-                <span>{generatedQuest ? "Générer un autre tracé" : "Calculer le tracé"}</span>
+                <span>
+                  {generatedQuest
+                    ? "Générer un autre tracé"
+                    : "Calculer le tracé"}
+                </span>
               </>
             )}
           </button>
@@ -237,8 +246,12 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
             <article className="generated-quest-card">
               <div className="quest-card-top">
                 <div className="quest-badges-group">
-                  <span className="rpg-badge">{getTypeLabel(generatedQuest.type)}</span>
-                  <span className="rpg-badge">{getDifficultyLabel(generatedQuest.difficulty)}</span>
+                  <span className="rpg-badge">
+                    {getTypeLabel(generatedQuest.type)}
+                  </span>
+                  <span className="rpg-badge">
+                    {getDifficultyLabel(generatedQuest.difficulty)}
+                  </span>
                 </div>
                 <div className="quest-xp-badge">
                   <IonIcon icon={flameOutline} />
@@ -252,14 +265,19 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
               {generatedQuest.targetPoiName && (
                 <div className="quest-poi-highlight">
                   <IonIcon icon={locationOutline} />
-                  <span>Destination : <strong>{generatedQuest.targetPoiName}</strong></span>
+                  <span>
+                    Destination :{" "}
+                    <strong>{generatedQuest.targetPoiName}</strong>
+                  </span>
                 </div>
               )}
 
               <div className="quest-metrics-row">
                 <div className="quest-metric-box">
                   <span className="m-label">Distance</span>
-                  <span className="m-value">{generatedQuest.route.distanceKm} km</span>
+                  <span className="m-value">
+                    {generatedQuest.route.distanceKm} km
+                  </span>
                 </div>
                 <div className="quest-metric-box">
                   <span className="m-label">Durée est.</span>
@@ -271,8 +289,8 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 <div className="quest-metric-box">
                   <span className="m-label">Dénivelé</span>
                   <span className="m-value d-plus">
-                    <IonIcon icon={trendingUpOutline} className="mini-icon" />
-                    +{generatedQuest.route.elevationGain ?? 0}m
+                    <IonIcon icon={trendingUpOutline} className="mini-icon" />+
+                    {generatedQuest.route.elevationGain ?? 0}m
                   </span>
                 </div>
               </div>

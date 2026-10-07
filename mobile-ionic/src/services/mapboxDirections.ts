@@ -178,7 +178,9 @@ export async function fetchMultiPointRoute(
   },
 ): Promise<RouteResult> {
   if (!points || points.length < 2) {
-    throw new Error("Au moins deux points sont nécessaires pour calculer un itinéraire.");
+    throw new Error(
+      "Au moins deux points sont nécessaires pour calculer un itinéraire.",
+    );
   }
 
   const origin = points[0];

@@ -14,6 +14,7 @@ import {
   trendingUpOutline,
   timeOutline,
 } from "ionicons/icons";
+import type mapboxgl from "mapbox-gl";
 import {
   generateRandomQuest,
   GeneratedQuest,
@@ -28,6 +29,7 @@ interface QuestGeneratorModalProps {
   userLocation: [number, number];
   currentMode: TransportProfile;
   mapboxToken?: string;
+  mapInstance?: mapboxgl.Map | null;
   onAcceptQuest: (quest: GeneratedQuest) => void;
 }
 
@@ -37,6 +39,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
   userLocation,
   currentMode,
   mapboxToken,
+  mapInstance,
   onAcceptQuest,
 }) => {
   const [selectedType, setSelectedType] = useState<QuestType | "any">("any");
@@ -60,6 +63,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
         targetDistanceKm: targetDistance,
         profile: selectedProfile,
         mapboxToken,
+        mapInstance,
       });
       setGeneratedQuest(quest);
     } catch (err) {

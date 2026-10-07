@@ -73,5 +73,60 @@ describe("questGenerator service", () => {
       expect(quest.route).toBeDefined();
       expect(quest.xpReward).toBeGreaterThan(50);
     });
+
+    it("should generate a POI quest with diverse natural or rural features", async () => {
+      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Offline"));
+
+      const quest = await generateRandomQuest({
+        userLocation: PARIS_COORDS,
+        preferredType: "poi",
+        targetDistanceKm: 2,
+      });
+
+      expect(quest.type).toBe("poi");
+      expect(quest.targetPoiName).toBeDefined();
+      expect(quest.title).toContain("Cap sur :");
+      expect(quest.description).toBeTruthy();
+    });
+
+    it("should extract rural POIs (bois, mairie, église) directly from mapbox features", async () => {
+      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Offline"));
+
+      const mockMap = {
+        queryRenderedFeatures: vi.fn().mockReturnValue([
+          {
+            properties: { name: "Bois du Quesnoy", class: "wood" },
+            geometry: { type: "Point", coordinates: [2.36, 48.86] },
+            layer: { id: "natural-point-label" },
+          },
+          {
+            properties: { name: "Mairie de Cuignières" },
+            geometry: { type: "Point", coordinates: [2.355, 48.858] },
+            layer: { id: "poi-label" },
+          },
+          {
+            properties: { name: "Église Saint-Martin" },
+            geometry: { type: "Point", coordinates: [2.358, 48.857] },
+            layer: { id: "poi-label" },
+          },
+        ]),
+      } as any;
+
+      const quest = await generateRandomQuest({
+        userLocation: PARIS_COORDS,
+        preferredType: "poi",
+        targetDistanceKm: 2,
+        mapInstance: mockMap,
+      });
+
+      expect(quest.type).toBe("poi");
+      expect(
+        ["Bois du Quesnoy", "Mairie de Cuignières", "Église Saint-Martin"].includes(
+          quest.targetPoiName || "",
+        ),
+      ).toBe(true);
+      expect(quest.title).toMatch(/Cap sur : (Bois du Quesnoy|Mairie de Cuignières|Église Saint-Martin)/);
+    });
   });
 });
+

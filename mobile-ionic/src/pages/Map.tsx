@@ -1169,6 +1169,7 @@ const MapPage: React.FC = () => {
           userLocation={pointA}
           currentMode={mode}
           mapboxToken={token}
+          mapInstance={mapInstance.current}
           onAcceptQuest={handleAcceptQuest}
         />
       </IonContent>

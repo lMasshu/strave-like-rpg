@@ -15,3 +15,7 @@ npm-debug.log*
 .env
 .env.local
 .env.*.local
+
+# Knowledge Graph & Artifacts
+graphify-out/
+

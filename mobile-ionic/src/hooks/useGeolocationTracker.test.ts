@@ -314,7 +314,9 @@ describe("useGeolocationTracker hook", () => {
     });
 
     expect(result.current.status).toBe("waiting");
-    expect(result.current.error).toBe("Signal GPS indisponible pour le moment.");
+    expect(result.current.error).toBe(
+      "Signal GPS indisponible pour le moment.",
+    );
   });
 
   it("should abort without calling watchPosition if unmounted while checking permissions", async () => {
@@ -427,7 +429,10 @@ describe("useGeolocationTracker hook", () => {
     });
 
     act(() => {
-      watchCallback?.(null, "User denied Geolocation access" as unknown as Error);
+      watchCallback?.(
+        null,
+        "User denied Geolocation access" as unknown as Error,
+      );
     });
 
     expect(result.current.status).toBe("denied");

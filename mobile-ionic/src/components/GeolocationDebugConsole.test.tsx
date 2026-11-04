@@ -136,7 +136,9 @@ describe("GeolocationDebugConsole component", () => {
   });
 
   it("should toggle between expanded and collapsed modes", () => {
-    render(<GeolocationDebugConsole {...defaultProps} defaultExpanded={true} />);
+    render(
+      <GeolocationDebugConsole {...defaultProps} defaultExpanded={true} />,
+    );
 
     const toggleBtn = screen.getByTestId("debug-toggle-btn");
     expect(toggleBtn).toHaveTextContent("▲ Réduire");

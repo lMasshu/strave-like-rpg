@@ -97,7 +97,9 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({ quest, map, onFinish }) => {
           <div className="quest-run-stat">
             <IonIcon icon={timeOutline} />
             <span
-              className={isUrgent ? "quest-run-value urgent" : "quest-run-value"}
+              className={
+                isUrgent ? "quest-run-value urgent" : "quest-run-value"
+              }
             >
               {formatTime(state.remainingSeconds)}
             </span>
@@ -112,7 +114,8 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({ quest, map, onFinish }) => {
                 : formatDistance(state.remainingMeters)}
             </span>
             <small>
-              Point {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
+              Point{" "}
+              {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
               {state.totalCheckpoints}
             </small>
           </div>

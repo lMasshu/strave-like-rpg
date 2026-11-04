@@ -121,11 +121,7 @@ export const GeolocationDebugConsole: React.FC<
       : "--";
 
   const formatSpeed = (value: number | null | undefined) => {
-    if (
-      typeof value !== "number" ||
-      !Number.isFinite(value) ||
-      value < 0
-    ) {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
       return "--";
     }
     const kmh = (value * 3.6).toFixed(1);
@@ -173,7 +169,9 @@ export const GeolocationDebugConsole: React.FC<
     >
       <header className="debug-console-header">
         <div className="debug-console-title-area">
-          <span className={`debug-status-indicator status-${effectiveStatus}`} />
+          <span
+            className={`debug-status-indicator status-${effectiveStatus}`}
+          />
           <h3 className="debug-console-title">Console Debug GPS</h3>
           <span
             className={`debug-status-pill status-${effectiveStatus}`}
@@ -238,60 +236,42 @@ export const GeolocationDebugConsole: React.FC<
           <div className="debug-grid">
             <div className="debug-cell">
               <span className="debug-cell-label">Latitude</span>
-              <span
-                className="debug-cell-value"
-                data-testid="debug-latitude"
-              >
+              <span className="debug-cell-value" data-testid="debug-latitude">
                 {position ? formatCoord(position.latitude, "lat") : "--"}
               </span>
             </div>
 
             <div className="debug-cell">
               <span className="debug-cell-label">Longitude</span>
-              <span
-                className="debug-cell-value"
-                data-testid="debug-longitude"
-              >
+              <span className="debug-cell-value" data-testid="debug-longitude">
                 {position ? formatCoord(position.longitude, "lng") : "--"}
               </span>
             </div>
 
             <div className="debug-cell">
               <span className="debug-cell-label">Altitude</span>
-              <span
-                className="debug-cell-value"
-                data-testid="debug-altitude"
-              >
+              <span className="debug-cell-value" data-testid="debug-altitude">
                 {formatAltitude(position?.altitude)}
               </span>
             </div>
 
             <div className="debug-cell">
               <span className="debug-cell-label">Vitesse</span>
-              <span
-                className="debug-cell-value"
-                data-testid="debug-speed"
-              >
+              <span className="debug-cell-value" data-testid="debug-speed">
                 {formatSpeed(position?.speed)}
               </span>
             </div>
 
             <div className="debug-cell">
               <span className="debug-cell-label">Précision</span>
-              <span
-                className="debug-cell-value"
-                data-testid="debug-accuracy"
-              >
+              <span className="debug-cell-value" data-testid="debug-accuracy">
                 {formatAccuracy(position?.accuracy)}
               </span>
             </div>
 
             <div className="debug-cell debug-cell-wide">
               <span className="debug-cell-label">Horodatage</span>
-              <span
-                className="debug-cell-value"
-                data-testid="debug-timestamp"
-              >
+              <span className="debug-cell-value" data-testid="debug-timestamp">
                 {formatTimestamp(position?.timestamp)}
               </span>
             </div>
@@ -314,10 +294,7 @@ export const GeolocationDebugConsole: React.FC<
               )}
             </div>
 
-            <ul
-              className="debug-log-list"
-              data-testid="debug-log-list"
-            >
+            <ul className="debug-log-list" data-testid="debug-log-list">
               {logs.length === 0 ? (
                 <li className="debug-log-empty">
                   {status === "waiting"
@@ -326,10 +303,7 @@ export const GeolocationDebugConsole: React.FC<
                 </li>
               ) : (
                 logs.map((log) => (
-                  <li
-                    key={log.id}
-                    className={`debug-log-item log-${log.type}`}
-                  >
+                  <li key={log.id} className={`debug-log-item log-${log.type}`}>
                     <time className="debug-log-time">[{log.timeStr}]</time>
                     <span className="debug-log-msg">{log.summary}</span>
                   </li>

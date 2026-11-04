@@ -453,4 +453,87 @@ describe("useGeolocationTracker hook", () => {
       );
     });
   });
+
+  it("should calculate derived speed when coords.speed is null on mobile browser", async () => {
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    // Fix 1 à t=1000s
+    act(() => {
+      watchCallback?.(
+        createMockPosition(
+          {
+            latitude: 48.8566,
+            longitude: 2.3522,
+            speed: null,
+            accuracy: 3,
+          },
+          1700000000000,
+        ),
+      );
+    });
+    expect(result.current.position?.speed).toBeNull();
+
+    // Fix 2 à t=1002s (déplacement de ~11.1 m en 2 secondes -> ~5.5 m/s)
+    act(() => {
+      watchCallback?.(
+        createMockPosition(
+          {
+            latitude: 48.8567, // +0.0001 deg lat ~= 11.12m
+            longitude: 2.3522,
+            speed: null,
+            accuracy: 3,
+          },
+          1700000002000,
+        ),
+      );
+    });
+
+    expect(result.current.position?.speed).not.toBeNull();
+    expect(result.current.position?.speed).toBeGreaterThan(4.5);
+    expect(result.current.position?.speed).toBeLessThan(6.5);
+  });
+
+  it("should consider speed as 0 when GPS displacement is within jitter threshold", async () => {
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    // Fix 1
+    act(() => {
+      watchCallback?.(
+        createMockPosition(
+          {
+            latitude: 48.8566,
+            longitude: 2.3522,
+            speed: null,
+            accuracy: 8,
+          },
+          1700000000000,
+        ),
+      );
+    });
+
+    // Fix 2 : micro-déplacement insignifiant (0.000005 deg ~= 0.5m)
+    act(() => {
+      watchCallback?.(
+        createMockPosition(
+          {
+            latitude: 48.856605,
+            longitude: 2.3522,
+            speed: null,
+            accuracy: 8,
+          },
+          1700000002000,
+        ),
+      );
+    });
+
+    expect(result.current.position?.speed).toBe(0);
+  });
 });

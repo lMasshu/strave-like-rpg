@@ -16,7 +16,7 @@ import {
 export const GPS_SIMULATION_AVAILABLE =
   import.meta.env.DEV || import.meta.env.VITE_GPS_SIMULATION === "true";
 
-const SIMULATION_SPEED_METERS_PER_SECOND = 25;
+const SIMULATION_SPEED_METERS_PER_SECOND = 3.0; // ~10.8 km/h (allure de course modérée)
 
 interface QuestRun {
   state: QuestRunState;

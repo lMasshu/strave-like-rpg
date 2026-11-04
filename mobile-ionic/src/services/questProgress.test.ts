@@ -155,4 +155,19 @@ describe("advanceQuestRun", () => {
 
     expect(advanceQuestRun(finished, linearQuest, null, 999)).toBe(finished);
   });
+
+  it("calcule la distance restante le long du tracé réel plutôt qu'à vol d'oiseau", () => {
+    // Dans loopQuest: coordinates = [START, FARTHER, FAR, START]
+    // START -> FARTHER (444m) + FARTHER -> FAR (222m) + FAR -> START (222m) = ~888m
+    // À vol d'oiseau direct, START -> FAR puis FAR -> START n'aurait fait que 444m.
+    const state = createQuestRun(loopQuest);
+    const next = advanceQuestRun(state, loopQuest, fix(START), 10);
+
+    expect(next.remainingMeters).toBeGreaterThan(800);
+  });
+
+  it("initialise remainingMeters à la distance totale du tracé dès la création de la quête", () => {
+    const state = createQuestRun(linearQuest);
+    expect(state.remainingMeters).toBeGreaterThan(200);
+  });
 });

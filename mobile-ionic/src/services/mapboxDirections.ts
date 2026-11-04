@@ -3,6 +3,8 @@
  * Supporte les profils walking, cycling et driving avec fallback OSRM & hors-ligne.
  */
 
+import { routeLengthMeters } from "./geo";
+
 export interface RoutePoint {
   lat: number;
   lng: number;
@@ -278,14 +280,7 @@ export async function fetchMultiPointRoute(
   }
 
   // 3. Fallback géométrique direct (Ligne brisée reliant les points) si hors-ligne
-  let totalApproxKm = 0;
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const dLat = (p2[1] - p1[1]) * 111;
-    const dLng = (p2[0] - p1[0]) * 111 * Math.cos((p1[1] * Math.PI) / 180);
-    totalApproxKm += Math.sqrt(dLat * dLat + dLng * dLng);
-  }
+  const totalApproxKm = routeLengthMeters(points) / 1000;
   const approxKm = Number(totalApproxKm.toFixed(2));
 
   const elev = await fetchElevationForCoordinates(points);

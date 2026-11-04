@@ -17,6 +17,7 @@ interface QuestRunHudProps {
   quest: GeneratedQuest;
   map: mapboxgl.Map | null;
   onFinish: () => void;
+  debugDefaultExpanded?: boolean;
 }
 
 function formatTime(totalSeconds: number): string {
@@ -35,7 +36,12 @@ function formatDistance(meters: number): string {
   return `${Math.round(meters)} m`;
 }
 
-const QuestRunHud: React.FC<QuestRunHudProps> = ({ quest, map, onFinish }) => {
+const QuestRunHud: React.FC<QuestRunHudProps> = ({
+  quest,
+  map,
+  onFinish,
+  debugDefaultExpanded = true,
+}) => {
   const { state, position, gpsStatus, gpsError, simulating, toggleSimulation } =
     useQuestRun(quest);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
@@ -148,6 +154,7 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({ quest, map, onFinish }) => {
           status={gpsStatus}
           error={gpsError}
           simulating={simulating}
+          defaultExpanded={debugDefaultExpanded}
         />
       </div>
 

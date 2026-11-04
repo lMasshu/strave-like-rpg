@@ -72,23 +72,12 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
               }
               return;
             }
-            if (
-              perm.location === "prompt" &&
-              typeof Geolocation.requestPermissions === "function"
-            ) {
-              const req = await Geolocation.requestPermissions();
-              if (req.location !== "granted") {
-                if (!cancelled) {
-                  setStatus("denied");
-                  setError("Permission de localisation refusée.");
-                }
-                return;
-              }
-            }
           } catch {
             // Ignorer si l'API permissions n'est pas supportée dans l'environnement web
           }
         }
+
+        if (cancelled) return;
 
         const id = await Geolocation.watchPosition(
           { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
@@ -119,6 +108,7 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
                 setStatus("denied");
                 setError("Permission de localisation refusée.");
               } else {
+                setStatus("waiting");
                 setError("Signal GPS indisponible pour le moment.");
               }
               return;

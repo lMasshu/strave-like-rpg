@@ -38,22 +38,45 @@ export const GeolocationDebugConsole: React.FC<
     if (!position) return;
 
     setUpdateCount((c) => c + 1);
-    const now = new Date(position.timestamp);
+    const now =
+      typeof position.timestamp === "number" &&
+      Number.isFinite(position.timestamp) &&
+      position.timestamp > 0
+        ? new Date(position.timestamp)
+        : new Date();
     const timeStr = `${now.toTimeString().split(" ")[0]}.${String(
       now.getMilliseconds(),
     ).padStart(3, "0")}`;
 
     const altStr =
-      position.altitude !== null ? `${position.altitude.toFixed(1)}m` : "N/A";
+      typeof position.altitude === "number" &&
+      Number.isFinite(position.altitude)
+        ? `${position.altitude.toFixed(1)}m`
+        : "N/A";
     const speedStr =
-      position.speed !== null
+      typeof position.speed === "number" && Number.isFinite(position.speed)
         ? `${(position.speed * 3.6).toFixed(1)}km/h`
         : "0km/h";
+    const latStr =
+      typeof position.latitude === "number" &&
+      Number.isFinite(position.latitude)
+        ? position.latitude.toFixed(5)
+        : "--";
+    const lngStr =
+      typeof position.longitude === "number" &&
+      Number.isFinite(position.longitude)
+        ? position.longitude.toFixed(5)
+        : "--";
+    const accStr =
+      typeof position.accuracy === "number" &&
+      Number.isFinite(position.accuracy)
+        ? `±${position.accuracy.toFixed(0)}m`
+        : "±--m";
 
     const entry: GpsLogEntry = {
       id: `${position.timestamp}-${Math.random().toString(36).slice(2, 6)}`,
       timeStr,
-      summary: `Lat: ${position.latitude.toFixed(5)}, Lng: ${position.longitude.toFixed(5)} | Alt: ${altStr} | Vit: ${speedStr} | ±${position.accuracy.toFixed(0)}m`,
+      summary: `Lat: ${latStr}, Lng: ${lngStr} | Alt: ${altStr} | Vit: ${speedStr} | ${accStr}`,
       type: "position",
     };
 
@@ -77,25 +100,34 @@ export const GeolocationDebugConsole: React.FC<
     }
   }, [error]);
 
-  const formatCoord = (value: number | undefined) =>
-    value !== undefined ? value.toFixed(6) : "--";
+  const formatCoord = (value: number | undefined | null) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? value.toFixed(6)
+      : "--";
 
   const formatAltitude = (value: number | null | undefined) =>
-    value !== null && value !== undefined ? `${value.toFixed(1)} m` : "--";
+    typeof value === "number" && Number.isFinite(value)
+      ? `${value.toFixed(1)} m`
+      : "--";
 
   const formatSpeed = (value: number | null | undefined) => {
-    if (value === null || value === undefined) return "--";
+    if (typeof value !== "number" || !Number.isFinite(value)) return "--";
     const kmh = (value * 3.6).toFixed(1);
     const ms = value.toFixed(1);
     return `${kmh} km/h (${ms} m/s)`;
   };
 
-  const formatAccuracy = (value: number | undefined) =>
-    value !== undefined ? `±${value.toFixed(1)} m` : "--";
+  const formatAccuracy = (value: number | undefined | null) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? `±${value.toFixed(1)} m`
+      : "--";
 
-  const formatTimestamp = (value: number | undefined) => {
-    if (!value) return "--";
+  const formatTimestamp = (value: number | undefined | null) => {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+      return "--";
+    }
     const date = new Date(value);
+    if (isNaN(date.getTime())) return "--";
     return `${date.toLocaleTimeString()} (${value})`;
   };
 
@@ -158,14 +190,23 @@ export const GeolocationDebugConsole: React.FC<
       {!isExpanded && (
         <div className="debug-collapsed-summary">
           <span>
-            {position
+            {position &&
+            typeof position.latitude === "number" &&
+            Number.isFinite(position.latitude) &&
+            typeof position.longitude === "number" &&
+            Number.isFinite(position.longitude)
               ? `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`
               : "En attente GPS…"}
           </span>
-          {position && <span>±{position.accuracy.toFixed(0)}m</span>}
-          {position?.speed !== null && position?.speed !== undefined && (
-            <span>{(position.speed * 3.6).toFixed(0)} km/h</span>
-          )}
+          {position &&
+            typeof position.accuracy === "number" &&
+            Number.isFinite(position.accuracy) && (
+              <span>±{position.accuracy.toFixed(0)}m</span>
+            )}
+          {typeof position?.speed === "number" &&
+            Number.isFinite(position.speed) && (
+              <span>{(position.speed * 3.6).toFixed(0)} km/h</span>
+            )}
         </div>
       )}
 

@@ -237,4 +237,32 @@ describe("GeolocationDebugConsole component", () => {
     // Le compteur d'événements doit afficher 25
     expect(screen.getByText("#25")).toBeInTheDocument();
   });
+
+  it("should safely handle corrupted or non-finite values without throwing", () => {
+    // Coordonnées avec NaN et valeurs anormales
+    const corruptedPosition = {
+      coords: [NaN, NaN] as [number, number],
+      latitude: NaN,
+      longitude: NaN,
+      altitude: Infinity,
+      speed: NaN,
+      accuracy: NaN,
+      timestamp: -1,
+    };
+
+    render(
+      <GeolocationDebugConsole
+        {...defaultProps}
+        position={corruptedPosition}
+        status="tracking"
+      />,
+    );
+
+    expect(screen.getByTestId("debug-latitude")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-longitude")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-altitude")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-speed")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-accuracy")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-timestamp")).toHaveTextContent("--");
+  });
 });

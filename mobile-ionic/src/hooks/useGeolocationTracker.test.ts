@@ -3,6 +3,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { Capacitor } from "@capacitor/core";
 import {
   Geolocation,
+  type PermissionStatus,
   type Position,
   type WatchPositionCallback,
 } from "@capacitor/geolocation";
@@ -284,5 +285,75 @@ describe("useGeolocationTracker hook", () => {
     expect(result.current.position?.altitude).toBeNull();
     expect(result.current.position?.speed).toBeNull();
     expect(result.current.position?.accuracy).toBe(12);
+  });
+
+  it("should transition status back to 'waiting' when GPS signal is lost after active tracking", async () => {
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    // Émettre d'abord un fix GPS valide
+    act(() => {
+      watchCallback?.(
+        createMockPosition({
+          latitude: 48.8566,
+          longitude: 2.3522,
+          accuracy: 5,
+        }),
+      );
+    });
+
+    expect(result.current.status).toBe("tracking");
+    expect(result.current.error).toBeNull();
+
+    // Perte soudaine du signal satellite
+    act(() => {
+      watchCallback?.(null, new Error("Location timeout / satellite lost"));
+    });
+
+    expect(result.current.status).toBe("waiting");
+    expect(result.current.error).toBe("Signal GPS indisponible pour le moment.");
+  });
+
+  it("should abort without calling watchPosition if unmounted while checking permissions", async () => {
+    let resolvePerm: ((val: PermissionStatus) => void) | undefined;
+    vi.mocked(Geolocation.checkPermissions).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePerm = resolve;
+        }),
+    );
+
+    const { unmount } = renderHook(() => useGeolocationTracker(true));
+
+    // Démonter pendant que la permission est en cours de résolution
+    unmount();
+
+    // Résoudre la permission après le démontage
+    const cb = resolvePerm as ((val: PermissionStatus) => void) | undefined;
+    cb?.({ location: "granted", coarseLocation: "granted" });
+
+    await Promise.resolve();
+
+    expect(Geolocation.watchPosition).not.toHaveBeenCalled();
+  });
+
+  it("should proceed to watchPosition on web when checkPermissions returns prompt", async () => {
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+    vi.mocked(Geolocation.checkPermissions).mockResolvedValue({
+      location: "prompt",
+      coarseLocation: "prompt",
+    });
+
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    expect(result.current.status).toBe("waiting");
+    expect(result.current.error).toBeNull();
   });
 });

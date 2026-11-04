@@ -92,50 +92,61 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({ quest, map, onFinish }) => {
 
   return (
     <>
-      <div className="quest-run-hud">
-        <div className="quest-run-stat">
-          <IonIcon icon={timeOutline} />
-          <span
-            className={isUrgent ? "quest-run-value urgent" : "quest-run-value"}
-          >
-            {formatTime(state.remainingSeconds)}
-          </span>
-          <small>Temps restant</small>
+      <div className="quest-run-hud-container">
+        <div className="quest-run-hud">
+          <div className="quest-run-stat">
+            <IonIcon icon={timeOutline} />
+            <span
+              className={isUrgent ? "quest-run-value urgent" : "quest-run-value"}
+            >
+              {formatTime(state.remainingSeconds)}
+            </span>
+            <small>Temps restant</small>
+          </div>
+
+          <div className="quest-run-stat">
+            <IonIcon icon={flagOutline} />
+            <span className="quest-run-value">
+              {state.remainingMeters === null
+                ? "--"
+                : formatDistance(state.remainingMeters)}
+            </span>
+            <small>
+              Point {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
+              {state.totalCheckpoints}
+            </small>
+          </div>
+
+          {GPS_SIMULATION_AVAILABLE && (
+            <button
+              type="button"
+              className="quest-run-sim-btn"
+              onClick={toggleSimulation}
+              title={
+                simulating
+                  ? "Arrêter la simulation de marche"
+                  : "Simuler la marche le long de l'itinéraire (test)"
+              }
+              aria-label={
+                simulating
+                  ? "Arrêter la simulation de marche"
+                  : "Simuler la marche le long de l'itinéraire"
+              }
+            >
+              <IonIcon icon={simulating ? stopOutline : playOutline} />
+            </button>
+          )}
+
+          {gpsMessage && <p className="quest-run-message">{gpsMessage}</p>}
         </div>
 
-        <div className="quest-run-stat">
-          <IonIcon icon={flagOutline} />
-          <span className="quest-run-value">
-            {state.remainingMeters === null
-              ? "--"
-              : formatDistance(state.remainingMeters)}
-          </span>
-          <small>
-            Point {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
-            {state.totalCheckpoints}
-          </small>
-        </div>
-
-        {GPS_SIMULATION_AVAILABLE && (
-          <button
-            type="button"
-            className="quest-run-sim-btn"
-            onClick={toggleSimulation}
-            title="Simuler la marche le long de l'itinéraire (test)"
-          >
-            <IonIcon icon={simulating ? stopOutline : playOutline} />
-          </button>
-        )}
-
-        {gpsMessage && <p className="quest-run-message">{gpsMessage}</p>}
+        <GeolocationDebugConsole
+          position={position}
+          status={gpsStatus}
+          error={gpsError}
+          simulating={simulating}
+        />
       </div>
-
-      <GeolocationDebugConsole
-        position={position}
-        status={gpsStatus}
-        error={gpsError}
-        simulating={simulating}
-      />
 
       <IonAlert
         isOpen={state.status !== "running"}

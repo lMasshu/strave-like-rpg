@@ -53,8 +53,11 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
         if (Capacitor.isNativePlatform()) {
           if (typeof Geolocation.requestPermissions === "function") {
             const permissions = await Geolocation.requestPermissions();
+            const isGranted =
+              permissions.location === "granted" ||
+              permissions.coarseLocation === "granted";
 
-            if (permissions.location !== "granted") {
+            if (!isGranted) {
               if (!cancelled) {
                 setStatus("denied");
                 setError("Permission de localisation refusée.");
@@ -65,7 +68,10 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
         } else if (typeof Geolocation.checkPermissions === "function") {
           try {
             const perm = await Geolocation.checkPermissions();
-            if (perm.location === "denied") {
+            if (
+              perm.location === "denied" &&
+              perm.coarseLocation !== "granted"
+            ) {
               if (!cancelled) {
                 setStatus("denied");
                 setError("Permission de localisation refusée.");
@@ -88,11 +94,13 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
               const errorMessage =
                 watchError instanceof Error
                   ? watchError.message
-                  : typeof watchError === "object" &&
-                      watchError !== null &&
-                      "message" in watchError
-                    ? String((watchError as { message: unknown }).message)
-                    : "";
+                  : typeof watchError === "string"
+                    ? watchError
+                    : typeof watchError === "object" &&
+                        watchError !== null &&
+                        "message" in watchError
+                      ? String((watchError as { message: unknown }).message)
+                      : "";
               const errorCode =
                 typeof watchError === "object" &&
                 watchError !== null &&
@@ -102,6 +110,7 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
 
               if (
                 errorCode === 1 ||
+                String(errorCode) === "1" ||
                 errorMessage.toLowerCase().includes("denied") ||
                 errorMessage.toLowerCase().includes("permission")
               ) {
@@ -114,35 +123,93 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
               return;
             }
 
+            const coords = nextPosition.coords;
+            if (
+              !coords ||
+              typeof coords.latitude !== "number" ||
+              typeof coords.longitude !== "number" ||
+              !Number.isFinite(coords.latitude) ||
+              !Number.isFinite(coords.longitude) ||
+              Math.abs(coords.latitude) > 90 ||
+              Math.abs(coords.longitude) > 180
+            ) {
+              setStatus("waiting");
+              setError("Coordonnées GPS reçues invalides.");
+              return;
+            }
+
+            const speed =
+              typeof coords.speed === "number" &&
+              Number.isFinite(coords.speed) &&
+              coords.speed >= 0
+                ? coords.speed
+                : null;
+
+            const accuracy =
+              typeof coords.accuracy === "number" &&
+              Number.isFinite(coords.accuracy) &&
+              coords.accuracy >= 0
+                ? coords.accuracy
+                : 0;
+
+            const altitude =
+              typeof coords.altitude === "number" &&
+              Number.isFinite(coords.altitude)
+                ? coords.altitude
+                : null;
+
+            const timestamp =
+              typeof nextPosition.timestamp === "number" &&
+              Number.isFinite(nextPosition.timestamp) &&
+              nextPosition.timestamp > 0
+                ? nextPosition.timestamp
+                : Date.now();
+
             setError(null);
             setStatus("tracking");
             setPosition({
-              coords: [
-                nextPosition.coords.longitude,
-                nextPosition.coords.latitude,
-              ],
-              latitude: nextPosition.coords.latitude,
-              longitude: nextPosition.coords.longitude,
-              altitude: nextPosition.coords.altitude ?? null,
-              speed: nextPosition.coords.speed ?? null,
-              accuracy: nextPosition.coords.accuracy,
-              heading: nextPosition.coords.heading ?? null,
-              altitudeAccuracy: nextPosition.coords.altitudeAccuracy ?? null,
-              timestamp: nextPosition.timestamp || Date.now(),
+              coords: [coords.longitude, coords.latitude],
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              altitude,
+              speed,
+              accuracy,
+              heading: coords.heading ?? null,
+              altitudeAccuracy: coords.altitudeAccuracy ?? null,
+              timestamp,
             });
           },
         );
 
         if (cancelled) {
-          await Geolocation.clearWatch({ id });
+          void Geolocation.clearWatch({ id }).catch(() => undefined);
         } else {
           watchId = id;
         }
       } catch (startError) {
         if (!cancelled) {
           console.warn("Erreur de géolocalisation :", startError);
-          setStatus("denied");
-          setError("Impossible d'accéder à la position GPS.");
+          const msg =
+            startError instanceof Error
+              ? startError.message
+              : typeof startError === "string"
+                ? startError
+                : typeof startError === "object" &&
+                    startError !== null &&
+                    "message" in startError
+                  ? String((startError as { message: unknown }).message)
+                  : "";
+          const isPermissionDenied =
+            msg.toLowerCase().includes("denied") ||
+            msg.toLowerCase().includes("permission");
+
+          if (isPermissionDenied) {
+            setStatus("denied");
+            setError("Permission de localisation refusée.");
+          } else {
+            setStatus("waiting");
+            setError("Impossible d'accéder à la position GPS.");
+          }
         }
       }
     };
@@ -153,7 +220,7 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
       cancelled = true;
 
       if (watchId !== null) {
-        void Geolocation.clearWatch({ id: watchId });
+        void Geolocation.clearWatch({ id: watchId }).catch(() => undefined);
       }
     };
   }, [enabled]);

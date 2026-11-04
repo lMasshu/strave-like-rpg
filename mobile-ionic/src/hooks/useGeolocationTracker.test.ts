@@ -356,4 +356,96 @@ describe("useGeolocationTracker hook", () => {
     expect(result.current.status).toBe("waiting");
     expect(result.current.error).toBeNull();
   });
+
+  it("should proceed on native platform when coarseLocation is granted (approximate location)", async () => {
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+    vi.mocked(Geolocation.requestPermissions).mockResolvedValue({
+      location: "prompt",
+      coarseLocation: "granted",
+    });
+
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    expect(result.current.status).toBe("waiting");
+  });
+
+  it("should reject corrupted coordinates (NaN or out of bounds) and remain in waiting state", async () => {
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    // Émettre des coordonnées aberrantes (lat > 90)
+    act(() => {
+      watchCallback?.(
+        createMockPosition({
+          latitude: 999.0,
+          longitude: 2.35,
+          accuracy: 5,
+        }),
+      );
+    });
+
+    expect(result.current.status).toBe("waiting");
+    expect(result.current.error).toBe("Coordonnées GPS reçues invalides.");
+    expect(result.current.position).toBeNull();
+  });
+
+  it("should sanitize negative speed and negative accuracy to null and 0", async () => {
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    act(() => {
+      watchCallback?.(
+        createMockPosition({
+          latitude: 48.85,
+          longitude: 2.35,
+          speed: -1,
+          accuracy: -5,
+        }),
+      );
+    });
+
+    expect(result.current.status).toBe("tracking");
+    expect(result.current.position?.speed).toBeNull();
+    expect(result.current.position?.accuracy).toBe(0);
+  });
+
+  it("should detect permission denial when watchError is a raw string", async () => {
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
+    act(() => {
+      watchCallback?.(null, "User denied Geolocation access" as unknown as Error);
+    });
+
+    expect(result.current.status).toBe("denied");
+    expect(result.current.error).toBe("Permission de localisation refusée.");
+  });
+
+  it("should classify startup non-permission errors as waiting instead of denied", async () => {
+    vi.mocked(Geolocation.watchPosition).mockRejectedValueOnce(
+      new Error("Location services unavailable / sensor disabled"),
+    );
+
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(result.current.status).toBe("waiting");
+      expect(result.current.error).toBe(
+        "Impossible d'accéder à la position GPS.",
+      );
+    });
+  });
 });

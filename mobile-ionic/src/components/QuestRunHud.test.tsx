@@ -248,4 +248,23 @@ describe("QuestRunHud integration with Geolocation & Debug Console", () => {
     unmount();
     expect(mockMarkerInstance.remove).toHaveBeenCalled();
   });
+
+  it("should render both quest HUD and debug console inside quest-run-hud-container", async () => {
+    const onFinish = vi.fn();
+
+    const { container } = render(
+      <QuestRunHud quest={dummyQuest} map={null} onFinish={onFinish} />,
+    );
+
+    const hudContainer = container.querySelector(".quest-run-hud-container");
+    expect(hudContainer).toBeInTheDocument();
+
+    const hudCard = hudContainer?.querySelector(".quest-run-hud");
+    expect(hudCard).toBeInTheDocument();
+
+    const debugConsole = hudContainer?.querySelector(
+      ".geolocation-debug-console",
+    );
+    expect(debugConsole).toBeInTheDocument();
+  });
 });

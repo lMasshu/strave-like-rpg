@@ -54,22 +54,27 @@ export const GeolocationDebugConsole: React.FC<
         ? `${position.altitude.toFixed(1)}m`
         : "N/A";
     const speedStr =
-      typeof position.speed === "number" && Number.isFinite(position.speed)
+      typeof position.speed === "number" &&
+      Number.isFinite(position.speed) &&
+      position.speed >= 0
         ? `${(position.speed * 3.6).toFixed(1)}km/h`
-        : "0km/h";
+        : "N/A";
     const latStr =
       typeof position.latitude === "number" &&
-      Number.isFinite(position.latitude)
+      Number.isFinite(position.latitude) &&
+      Math.abs(position.latitude) <= 90
         ? position.latitude.toFixed(5)
         : "--";
     const lngStr =
       typeof position.longitude === "number" &&
-      Number.isFinite(position.longitude)
+      Number.isFinite(position.longitude) &&
+      Math.abs(position.longitude) <= 180
         ? position.longitude.toFixed(5)
         : "--";
     const accStr =
       typeof position.accuracy === "number" &&
-      Number.isFinite(position.accuracy)
+      Number.isFinite(position.accuracy) &&
+      position.accuracy >= 0
         ? `±${position.accuracy.toFixed(0)}m`
         : "±--m";
 
@@ -90,7 +95,7 @@ export const GeolocationDebugConsole: React.FC<
       const timeStr = now.toTimeString().split(" ")[0];
       setLogs((prev) => [
         {
-          id: `err-${Date.now()}`,
+          id: `err-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           timeStr,
           summary: `Erreur: ${error}`,
           type: "error",
@@ -100,10 +105,15 @@ export const GeolocationDebugConsole: React.FC<
     }
   }, [error]);
 
-  const formatCoord = (value: number | undefined | null) =>
-    typeof value === "number" && Number.isFinite(value)
-      ? value.toFixed(6)
-      : "--";
+  const formatCoord = (
+    value: number | undefined | null,
+    type: "lat" | "lng" = "lat",
+  ) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "--";
+    const limit = type === "lat" ? 90 : 180;
+    if (Math.abs(value) > limit) return "--";
+    return value.toFixed(6);
+  };
 
   const formatAltitude = (value: number | null | undefined) =>
     typeof value === "number" && Number.isFinite(value)
@@ -111,14 +121,20 @@ export const GeolocationDebugConsole: React.FC<
       : "--";
 
   const formatSpeed = (value: number | null | undefined) => {
-    if (typeof value !== "number" || !Number.isFinite(value)) return "--";
+    if (
+      typeof value !== "number" ||
+      !Number.isFinite(value) ||
+      value < 0
+    ) {
+      return "--";
+    }
     const kmh = (value * 3.6).toFixed(1);
     const ms = value.toFixed(1);
     return `${kmh} km/h (${ms} m/s)`;
   };
 
   const formatAccuracy = (value: number | undefined | null) =>
-    typeof value === "number" && Number.isFinite(value)
+    typeof value === "number" && Number.isFinite(value) && value >= 0
       ? `±${value.toFixed(1)} m`
       : "--";
 
@@ -193,18 +209,22 @@ export const GeolocationDebugConsole: React.FC<
             {position &&
             typeof position.latitude === "number" &&
             Number.isFinite(position.latitude) &&
+            Math.abs(position.latitude) <= 90 &&
             typeof position.longitude === "number" &&
-            Number.isFinite(position.longitude)
+            Number.isFinite(position.longitude) &&
+            Math.abs(position.longitude) <= 180
               ? `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`
               : "En attente GPS…"}
           </span>
           {position &&
             typeof position.accuracy === "number" &&
-            Number.isFinite(position.accuracy) && (
+            Number.isFinite(position.accuracy) &&
+            position.accuracy >= 0 && (
               <span>±{position.accuracy.toFixed(0)}m</span>
             )}
           {typeof position?.speed === "number" &&
-            Number.isFinite(position.speed) && (
+            Number.isFinite(position.speed) &&
+            position.speed >= 0 && (
               <span>{(position.speed * 3.6).toFixed(0)} km/h</span>
             )}
         </div>
@@ -222,7 +242,7 @@ export const GeolocationDebugConsole: React.FC<
                 className="debug-cell-value"
                 data-testid="debug-latitude"
               >
-                {position ? formatCoord(position.latitude) : "--"}
+                {position ? formatCoord(position.latitude, "lat") : "--"}
               </span>
             </div>
 
@@ -232,7 +252,7 @@ export const GeolocationDebugConsole: React.FC<
                 className="debug-cell-value"
                 data-testid="debug-longitude"
               >
-                {position ? formatCoord(position.longitude) : "--"}
+                {position ? formatCoord(position.longitude, "lng") : "--"}
               </span>
             </div>
 
@@ -287,6 +307,7 @@ export const GeolocationDebugConsole: React.FC<
                   type="button"
                   className="debug-log-clear-btn"
                   onClick={() => setLogs([])}
+                  aria-label="Effacer le journal d'événements"
                 >
                   Effacer
                 </button>

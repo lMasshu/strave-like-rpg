@@ -265,4 +265,38 @@ describe("GeolocationDebugConsole component", () => {
     expect(screen.getByTestId("debug-accuracy")).toHaveTextContent("--");
     expect(screen.getByTestId("debug-timestamp")).toHaveTextContent("--");
   });
+
+  it("should format negative speed, negative accuracy, and out-of-bounds coordinates as dashes", () => {
+    const anomalousPosition = {
+      coords: [200, 100] as [number, number],
+      latitude: 100, // Latitude > 90 is invalid
+      longitude: 200, // Longitude > 180 is invalid
+      altitude: 25,
+      speed: -1, // Negative speed
+      accuracy: -10, // Negative accuracy
+      timestamp: 1700000000000,
+    };
+
+    render(
+      <GeolocationDebugConsole
+        {...defaultProps}
+        position={anomalousPosition}
+        status="tracking"
+        defaultExpanded={false}
+      />,
+    );
+
+    // En mode replié, les coordonnées invalides affichent "En attente GPS…"
+    expect(screen.getByText("En attente GPS…")).toBeInTheDocument();
+
+    // Déplier pour vérifier les cellules
+    const toggleBtn = screen.getByTestId("debug-toggle-btn");
+    fireEvent.click(toggleBtn);
+
+    expect(screen.getByTestId("debug-latitude")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-longitude")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-altitude")).toHaveTextContent("25.0 m");
+    expect(screen.getByTestId("debug-speed")).toHaveTextContent("--");
+    expect(screen.getByTestId("debug-accuracy")).toHaveTextContent("--");
+  });
 });

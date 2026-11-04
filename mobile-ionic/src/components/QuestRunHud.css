@@ -1,0 +1,78 @@
+.quest-run-hud {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top, 6px) + 54px + 66px);
+  left: 14px;
+  right: 14px;
+  max-width: 520px;
+  margin: 0 auto;
+  z-index: 24;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #262c3a;
+  border-radius: 12px;
+  background: #161922;
+  color: #e5e7eb;
+}
+
+.quest-run-stat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.quest-run-stat ion-icon {
+  color: var(--ion-color-primary, #16a34a);
+  font-size: 1.1rem;
+}
+
+.quest-run-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.quest-run-value.urgent {
+  color: #f87171;
+}
+
+.quest-run-stat small {
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+.quest-run-sim-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px dashed #475569;
+  border-radius: 50%;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+.quest-run-message {
+  flex-basis: 100%;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* Pastille de position du joueur */
+.quest-user-dot {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.3);
+}

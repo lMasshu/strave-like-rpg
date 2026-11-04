@@ -38,6 +38,8 @@ import {
 } from "../services/mapboxDirections";
 import { searchPointsOfInterest, PoiResult } from "../services/mapboxGeocoding";
 import QuestGeneratorModal from "../components/QuestGeneratorModal";
+import QuestRunHud from "../components/QuestRunHud";
+import { Geolocation } from "@capacitor/geolocation";
 import { GeneratedQuest } from "../services/questGenerator";
 import "./Map.css";
 
@@ -508,32 +510,29 @@ const MapPage: React.FC = () => {
     updateRoute(newA, newB, mode, false);
   };
 
-  // Position GPS actuelle
-  const handleUseMyLocation = () => {
-    if (!navigator.geolocation) {
-      alert("La géolocalisation n'est pas disponible sur cet appareil.");
-      return;
-    }
+  // Position GPS actuelle (plugin Capacitor : fonctionne sur mobile et dans le navigateur)
+  const handleUseMyLocation = async () => {
+    try {
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 15000,
+      });
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const myCoords: [number, number] = [
-          pos.coords.longitude,
-          pos.coords.latitude,
-        ];
-        setPointA(myCoords);
-        if (markerARef.current) markerARef.current.setLngLat(myCoords);
-        if (mapInstance.current) {
-          mapInstance.current.flyTo({ center: myCoords, zoom: 15 });
-        }
-        updateRoute(myCoords, pointBRef.current, modeRef.current, false);
-      },
-      (err) => {
-        console.warn("Erreur géolocalisation :", err);
-        alert("Impossible de récupérer votre position GPS.");
-      },
-      { enableHighAccuracy: true },
-    );
+      const myCoords: [number, number] = [
+        pos.coords.longitude,
+        pos.coords.latitude,
+      ];
+
+      setPointA(myCoords);
+      if (markerARef.current) markerARef.current.setLngLat(myCoords);
+      if (mapInstance.current) {
+        mapInstance.current.flyTo({ center: myCoords, zoom: 15 });
+      }
+      updateRoute(myCoords, pointBRef.current, modeRef.current, false);
+    } catch (err) {
+      console.warn("Erreur géolocalisation :", err);
+      alert("Impossible de récupérer votre position GPS.");
+    }
   };
 
   // Gestion de la recherche de points d'intérêt (POI)
@@ -733,6 +732,16 @@ const MapPage: React.FC = () => {
                 <IonIcon icon={closeCircleOutline} />
               </button>
             </div>
+          )}
+
+          {/* Suivi de la quête : chrono, distance restante, résultat */}
+          {activeQuest && (
+            <QuestRunHud
+              key={activeQuest.id}
+              quest={activeQuest}
+              map={mapInstance.current}
+              onFinish={() => setActiveQuest(null)}
+            />
           )}
 
           {/* Menu déroulant de recherche */}

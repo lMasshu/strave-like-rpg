@@ -3,7 +3,7 @@
  * Supporte les profils walking, cycling et driving avec fallback OSRM & hors-ligne.
  */
 
-import { routeLengthMeters } from "./geo";
+import { pruneRouteSpurs, routeLengthMeters } from "./geo";
 
 export interface RoutePoint {
   lat: number;
@@ -195,7 +195,7 @@ export async function fetchMultiPointRoute(
   // 1. Tenter l'API Mapbox Directions v5 officielle
   if (accessToken) {
     try {
-      const url = `https://api.mapbox.com/directions/v5/mapbox/${mapboxProfile}/${coordsStr}?geometries=geojson&overview=full&steps=true&access_token=${encodeURIComponent(
+      const url = `https://api.mapbox.com/directions/v5/mapbox/${mapboxProfile}/${coordsStr}?geometries=geojson&overview=full&steps=true&continue_straight=true&access_token=${encodeURIComponent(
         accessToken,
       )}`;
 
@@ -208,14 +208,24 @@ export async function fetchMultiPointRoute(
             number,
             number,
           ][];
-          const distanceKm = Number((mainRoute.distance / 1000).toFixed(2));
+
+          // 1. Raccordement exact : le tracé doit démarrer à origin et finir à destination
+          let coordinates = snapRouteToPoints(rawCoords, origin, destination);
+
+          // 2. Élagage automatique des antennes / culs-de-sac parasites
+          coordinates = pruneRouteSpurs(coordinates);
+
+          const distanceKm = Number(
+            (routeLengthMeters(coordinates) / 1000).toFixed(2),
+          );
           const durationMinutes = Math.max(
             1,
-            Math.round(mainRoute.duration / 60),
+            Math.round(
+              (distanceKm /
+                (costing === "bicycle" ? 15 : costing === "auto" ? 40 : 4.5)) *
+                60,
+            ),
           );
-
-          // Raccordement exact : le tracé doit démarrer à origin et finir à destination
-          const coordinates = snapRouteToPoints(rawCoords, origin, destination);
 
           // Calcul d'élévation
           const elev = await fetchElevationForCoordinates(coordinates);
@@ -248,7 +258,7 @@ export async function fetchMultiPointRoute(
   try {
     const osrmProfile =
       costing === "bicycle" ? "bike" : costing === "auto" ? "car" : "foot";
-    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordsStr}?overview=full&geometries=geojson`;
+    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordsStr}?overview=full&geometries=geojson&continue_straight=true`;
 
     const res = await fetch(osrmUrl);
     if (res.ok) {
@@ -256,10 +266,25 @@ export async function fetchMultiPointRoute(
       if (json.routes && json.routes.length > 0) {
         const route = json.routes[0];
         const rawCoords = route.geometry.coordinates as [number, number][];
-        const distanceKm = Number((route.distance / 1000).toFixed(2));
-        const durationMinutes = Math.max(1, Math.round(route.duration / 60));
 
-        const coordinates = snapRouteToPoints(rawCoords, origin, destination);
+        // 1. Raccordement exact
+        let coordinates = snapRouteToPoints(rawCoords, origin, destination);
+
+        // 2. Élagage automatique des antennes / culs-de-sac parasites
+        coordinates = pruneRouteSpurs(coordinates);
+
+        const distanceKm = Number(
+          (routeLengthMeters(coordinates) / 1000).toFixed(2),
+        );
+        const durationMinutes = Math.max(
+          1,
+          Math.round(
+            (distanceKm /
+              (costing === "bicycle" ? 15 : costing === "auto" ? 40 : 4.5)) *
+              60,
+          ),
+        );
+
         const elev = await fetchElevationForCoordinates(coordinates);
 
         return {

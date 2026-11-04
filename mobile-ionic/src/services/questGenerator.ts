@@ -5,6 +5,7 @@ import {
   TransportProfile,
 } from "./mapboxDirections";
 import { searchPointsOfInterest } from "./mapboxGeocoding";
+import { haversineMeters } from "./geo";
 
 export type QuestType = "loop" | "poi" | "linear";
 export type QuestDifficulty = "easy" | "medium" | "hard" | "epic";
@@ -175,50 +176,166 @@ export function calculateBearing(
   return (brng + 360) % 360;
 }
 
+export interface OverlapAnalysis {
+  overlapRatio: number; // Ratio [0, 1] de segments retour proches de l'aller en sens inverse
+  overlappingMeters: number; // Distance estimée en mètres parcourue en aller-retour
+  hasSignificantOverlap: boolean; // Vrai si overlapRatio >= 0.18
+}
+
 /**
- * Génère des étapes pour une boucle fermée asymétrique garantissant l'absence d'aller-retour (Clean Loop).
- * Séparation stricte de la branche aller et retour avec écartement angulaire minimal pour éviter les demi-tours.
+ * Détecte les allers-retours (superpositions de chemin) en comparant la branche aller
+ * (première moitié du tracé) et la branche retour (seconde moitié).
+ */
+export function detectRouteOverlap(
+  coordinates: [number, number][],
+  proximityThresholdMeters = 24,
+): OverlapAnalysis {
+  if (!coordinates || coordinates.length < 10) {
+    return {
+      overlapRatio: 0,
+      overlappingMeters: 0,
+      hasSignificantOverlap: false,
+    };
+  }
+
+  const mid = Math.floor(coordinates.length / 2);
+  const outward = coordinates.slice(0, mid);
+  const returnBranch = coordinates.slice(mid);
+
+  let overlappingCount = 0;
+  let overlappingMeters = 0;
+
+  // Échantillonnage fluide pour une analyse quasi-instantanée (< 2ms)
+  const sampleStep = Math.max(1, Math.floor(returnBranch.length / 60));
+  // Marge tampon pour ne pas compter le départ et l'arrivée comme superposition
+  const bufferMargin = Math.min(6, Math.floor(outward.length * 0.1));
+
+  for (let i = 0; i < returnBranch.length - 1; i += sampleStep) {
+    const ptReturn = returnBranch[i];
+    let isNearOutward = false;
+
+    for (let j = bufferMargin; j < outward.length - bufferMargin; j++) {
+      const d = haversineMeters(ptReturn, outward[j]);
+      if (d <= proximityThresholdMeters) {
+        isNearOutward = true;
+        break;
+      }
+    }
+
+    if (isNearOutward) {
+      overlappingCount++;
+      const nextIdx = Math.min(returnBranch.length - 1, i + sampleStep);
+      overlappingMeters += haversineMeters(ptReturn, returnBranch[nextIdx]);
+    }
+  }
+
+  const sampledTotal = Math.ceil((returnBranch.length - 1) / sampleStep);
+  const overlapRatio =
+    sampledTotal > 0 ? Number((overlappingCount / sampledTotal).toFixed(2)) : 0;
+
+  return {
+    overlapRatio,
+    overlappingMeters: Math.round(overlappingMeters),
+    hasSignificantOverlap: overlapRatio >= 0.18,
+  };
+}
+
+/**
+ * Décale et écarte latéralement les sommets de la boucle vers l'extérieur pour éliminer
+ * les superpositions de chemins et forcer le routeur à emprunter des rues ou sentiers parallèles.
+ */
+export function widenWaypointsOnOverlap(
+  waypoints: [number, number][],
+  center: [number, number],
+  widenFactor = 1.35,
+): [number, number][] {
+  if (!waypoints || waypoints.length < 4) return waypoints;
+
+  const result: [number, number][] = [center];
+
+  // Calcul de l'axe général du tracé depuis le premier et dernier point intermédiaire
+  const midIndex = Math.floor(waypoints.length / 2);
+  const apex = waypoints[midIndex];
+  const axis = calculateBearing(center, apex);
+
+  for (let i = 1; i < waypoints.length - 1; i++) {
+    const pt = waypoints[i];
+    const distKm = haversineMeters(center, pt) / 1000;
+    const brng = calculateBearing(center, pt);
+
+    // Écartement angulaire : pousser vers l'extérieur de l'axe
+    const angleDiff = ((brng - axis + 540) % 360) - 180;
+    const sign = angleDiff >= 0 ? 1 : -1;
+    const widenedAngle =
+      (axis + sign * (Math.abs(angleDiff) * 1.25 + 15) + 360) % 360;
+    const widenedDist = distKm * widenFactor;
+
+    result.push(projectPoint(center, widenedDist, widenedAngle));
+  }
+
+  result.push(center);
+  return result;
+}
+
+/**
+ * Génère des étapes pour une boucle fermée asymétrique basée sur le principe géométrique
+ * du "Circle Center Offset" : le joueur part du bord d'un cercle virtuel déporté,
+ * ce qui garantit un angle de divergence net au départ et élimine les allers-retours.
  */
 export function generateLoopWaypoints(
   center: [number, number],
   targetDistanceKm = 3,
   scaleFactor = 1.0,
+  axisAngle?: number,
+  isClockwise?: boolean,
+  lateralSpread = 1.0,
 ): [number, number][] {
   const effectiveDistance = targetDistanceKm * scaleFactor;
-  // L'apex (point le plus éloigné) est situé à environ 38% de la distance cible
-  const apexDistance = Math.max(0.35, effectiveDistance * 0.38);
-  // Les points d'ailes latérales (aller et retour) sont situés à environ 22% de la distance
-  const wingDistance = Math.max(0.22, effectiveDistance * 0.22);
 
-  // Direction principale de la boucle (axe d'exploration)
-  const mainAxis = Math.random() * 360;
-  // Sens de rotation (horaire ou anti-horaire)
-  const isClockwise = Math.random() > 0.5;
-  const sign = isClockwise ? 1 : -1;
+  // Rayon d'exploration calibré d'après la sinuosité réelle des rues (~1.25 à 1.30)
+  // Périmètre = 2 * PI * R * sinuosité
+  const baseRadius = Math.max(
+    0.22,
+    Math.min(
+      effectiveDistance * 0.26,
+      effectiveDistance / (2 * Math.PI * 1.25),
+    ),
+  );
+  const explorationRadius = baseRadius * lateralSpread;
 
-  // Écartement angulaire pour l'aller et le retour (entre 55° et 75° par rapport à l'axe)
-  const wingAngle1 = (mainAxis - sign * (55 + Math.random() * 20) + 360) % 360;
-  const wingAngle2 = (mainAxis + sign * (55 + Math.random() * 20) + 360) % 360;
+  // Axe d'exploration général
+  const mainAxis = axisAngle ?? Math.random() * 360;
+  const clockwise = isClockwise ?? Math.random() > 0.5;
+  const sign = clockwise ? 1 : -1;
+
+  // Centre virtuel déporté pour garantir une géométrie convexe sans demi-tour
+  const virtualCenter = projectPoint(center, explorationRadius, mainAxis);
+  const baseAngle = (mainAxis + 180) % 360; // Position initiale du coureur sur le cercle virtuel
 
   const waypoints: [number, number][] = [center];
 
-  // Si distance > 4.5 km, affiner avec un point intermédiaire supplémentaire pour courber la trajectoire
-  if (targetDistanceKm >= 4.5) {
-    const quarterDist = wingDistance * 0.7;
-    const preWingAngle =
-      (mainAxis - sign * (80 + Math.random() * 15) + 360) % 360;
-    waypoints.push(projectPoint(center, quarterDist, preWingAngle));
+  if (targetDistanceKm < 3.8) {
+    // 3 sommets intermédiaires (triangle équilibré)
+    const angles = [75, 155, 245];
+    for (const delta of angles) {
+      const a = (baseAngle + sign * delta + 360) % 360;
+      waypoints.push(projectPoint(virtualCenter, explorationRadius, a));
+    }
+  } else if (targetDistanceKm < 7.0) {
+    // 4 sommets intermédiaires (quadrilatère équilibré)
+    const angles = [65, 135, 210, 285];
+    for (const delta of angles) {
+      const a = (baseAngle + sign * delta + 360) % 360;
+      waypoints.push(projectPoint(virtualCenter, explorationRadius, a));
+    }
+  } else {
+    // 5 sommets intermédiaires (pentagone pour longues distances)
+    const angles = [55, 115, 180, 245, 305];
+    for (const delta of angles) {
+      const a = (baseAngle + sign * delta + 360) % 360;
+      waypoints.push(projectPoint(virtualCenter, explorationRadius, a));
+    }
   }
-
-  // Jalon 1 : Branche Aller (décalée latéralement)
-  waypoints.push(projectPoint(center, wingDistance, wingAngle1));
-
-  // Jalon 2 : Apex (point le plus éloigné dans l'axe)
-  const apexNoiseAngle = (mainAxis + (Math.random() - 0.5) * 20 + 360) % 360;
-  waypoints.push(projectPoint(center, apexDistance, apexNoiseAngle));
-
-  // Jalon 3 : Branche Retour (décalée sur le flanc opposé)
-  waypoints.push(projectPoint(center, wingDistance, wingAngle2));
 
   // Fermeture stricte sur le point de départ
   waypoints.push(center);
@@ -226,31 +343,43 @@ export function generateLoopWaypoints(
 }
 
 /**
- * Génère une boucle "Découverte" intégrant un POI réel en étape intermédiaire sans aller-retour direct.
+ * Génère une boucle "Découverte" intégrant un POI réel en évitant strictement l'aller-retour.
+ * Le jalon de retour est projeté orthogonalement (à 90°) depuis le milieu du segment,
+ * formant un triangle ou cerf-volant large garantissant des routes aller et retour disjointes.
  */
 export function generatePoiLoopWaypoints(
   center: [number, number],
   poiCoords: [number, number],
   targetDistanceKm = 3,
+  lateralScale = 1.0,
 ): [number, number][] {
-  // Calcul du cap et de la distance vers le POI
   const bearingToPoi = calculateBearing(center, poiCoords);
-  const dLat = (poiCoords[1] - center[1]) * 111.32;
-  const dLng =
-    (poiCoords[0] - center[0]) * 111.32 * Math.cos((center[1] * Math.PI) / 180);
-  const distToPoi = Math.sqrt(dLat * dLat + dLng * dLng);
+  const distToPoiMeters = haversineMeters(center, poiCoords);
+  const distToPoiKm = distToPoiMeters / 1000;
 
-  // Déterminer le sens de retour (latéral à ~75° de l'axe vers le POI)
-  const sideSign = Math.random() > 0.5 ? 1 : -1;
-  const returnAngle = (bearingToPoi + sideSign * 75 + 360) % 360;
-  const returnDist = Math.max(
-    0.3,
-    Math.min(distToPoi * 0.8, targetDistanceKm * 0.25),
+  // Calcul du point médian entre le départ et le POI
+  const midpoint: [number, number] = [
+    Number(((center[0] + poiCoords[0]) / 2).toFixed(6)),
+    Number(((center[1] + poiCoords[1]) / 2).toFixed(6)),
+  ];
+
+  // Déterminer le flanc de retour (orthogonal à 90° par rapport à l'axe vers le POI)
+  const isClockwise = Math.random() > 0.5;
+  const sign = isClockwise ? 1 : -1;
+  const orthogonalAngle = (bearingToPoi + sign * 90 + 360) % 360;
+
+  // Distance d'écartement latéral pour forcer la séparation des voies
+  const lateralDist = Math.max(
+    0.35,
+    Math.min(
+      distToPoiKm * 0.65 * lateralScale,
+      targetDistanceKm * 0.3 * lateralScale,
+    ),
   );
 
-  const returnWaypoint = projectPoint(center, returnDist, returnAngle);
+  const returnWaypoint = projectPoint(midpoint, lateralDist, orthogonalAngle);
 
-  // Séquence : Centre -> POI -> Flanc de retour alternatif -> Centre
+  // Séquence : Centre -> POI -> Flanc de retour latéral disjoint -> Centre
   return [center, poiCoords, returnWaypoint, center];
 }
 
@@ -861,7 +990,59 @@ export async function generateRandomQuest(
     costing: profile,
   });
 
-  // Phase 3 : Calibration dynamique pour les boucles géométriques si l'écart dépasse 22%
+  // Phase 2 : Détection et élimination des allers-retours / superpositions de tracé
+  if (
+    questType === "loop" &&
+    route.coordinates &&
+    route.coordinates.length >= 10
+  ) {
+    const overlap = detectRouteOverlap(route.coordinates);
+
+    // Si une superposition significative est détectée (demi-tour sur la même rue)
+    if (overlap.hasSignificantOverlap) {
+      // Stratégie 1 : Décaler et écarter latéralement les sommets vers l'extérieur
+      const widenedWaypoints = widenWaypointsOnOverlap(
+        waypoints,
+        userLocation,
+        1.35,
+      );
+
+      try {
+        const widenedRoute = await fetchMultiPointRoute(widenedWaypoints, {
+          accessToken: mapboxToken,
+          costing: profile,
+        });
+
+        const newOverlap = detectRouteOverlap(widenedRoute.coordinates);
+        // Si le décalage améliore l'anti-aller-retour, on retient ce tracé élargi
+        if (newOverlap.overlapRatio < overlap.overlapRatio) {
+          route = widenedRoute;
+          waypoints = widenedWaypoints;
+        } else if (newOverlap.hasSignificantOverlap && !isPoiLoop) {
+          // Stratégie 2 : Pivoter l'axe de la boucle de 60° pour explorer un quartier avec un meilleur maillage
+          const rotatedWaypoints = generateLoopWaypoints(
+            userLocation,
+            targetDistanceKm,
+            1.0,
+            (Math.random() * 360 + 60) % 360,
+          );
+          const rotatedRoute = await fetchMultiPointRoute(rotatedWaypoints, {
+            accessToken: mapboxToken,
+            costing: profile,
+          });
+          const rotOverlap = detectRouteOverlap(rotatedRoute.coordinates);
+          if (rotOverlap.overlapRatio < overlap.overlapRatio) {
+            route = rotatedRoute;
+            waypoints = rotatedWaypoints;
+          }
+        }
+      } catch (err) {
+        console.warn("Optimisation anti-aller-retour ignorée :", err);
+      }
+    }
+  }
+
+  // Phase 3 : Calibration dynamique de distance pour les boucles si l'écart dépasse 22%
   if (
     questType === "loop" &&
     !isPoiLoop &&
@@ -872,7 +1053,7 @@ export async function generateRandomQuest(
       Math.abs(route.distanceKm - targetDistanceKm) / targetDistanceKm;
     if (errorRatio > 0.22) {
       const correction = targetDistanceKm / route.distanceKm;
-      const clampedScale = Math.max(0.55, Math.min(1.85, correction));
+      const clampedScale = Math.max(0.6, Math.min(1.7, correction));
       const calibratedWaypoints = generateLoopWaypoints(
         userLocation,
         targetDistanceKm,

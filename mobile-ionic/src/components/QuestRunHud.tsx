@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { IonAlert, IonIcon } from "@ionic/react";
 import {
   flagOutline,
@@ -10,6 +10,7 @@ import { Haptics, NotificationType } from "@capacitor/haptics";
 import mapboxgl from "mapbox-gl";
 import type { GeneratedQuest } from "../services/questGenerator";
 import { GPS_SIMULATION_AVAILABLE, useQuestRun } from "../hooks/useQuestRun";
+import GeolocationDebugConsole from "./GeolocationDebugConsole";
 import "./QuestRunHud.css";
 
 interface QuestRunHudProps {
@@ -37,21 +38,32 @@ function formatDistance(meters: number): string {
 const QuestRunHud: React.FC<QuestRunHudProps> = ({ quest, map, onFinish }) => {
   const { state, position, gpsStatus, gpsError, simulating, toggleSimulation } =
     useQuestRun(quest);
+  const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
-  // Pastille bleue de la position du joueur sur la carte
+  // Nettoyage du marqueur lorsque la carte est changée ou démontée
+  useEffect(() => {
+    return () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+    };
+  }, [map]);
+
+  // Pastille bleue de la position du joueur sur la carte (mise à jour fluide sans recréer le DOM)
   useEffect(() => {
     if (!map || !position) return;
 
-    const element = document.createElement("div");
-    element.className = "quest-user-dot";
+    if (!userMarkerRef.current) {
+      const element = document.createElement("div");
+      element.className = "quest-user-dot";
 
-    const marker = new mapboxgl.Marker({ element })
-      .setLngLat(position.coords)
-      .addTo(map);
-
-    return () => {
-      marker.remove();
-    };
+      userMarkerRef.current = new mapboxgl.Marker({ element })
+        .setLngLat(position.coords)
+        .addTo(map);
+    } else {
+      userMarkerRef.current.setLngLat(position.coords);
+    }
   }, [map, position]);
 
   // Retour haptique à la fin de la quête (ignoré si indisponible)
@@ -117,6 +129,13 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({ quest, map, onFinish }) => {
 
         {gpsMessage && <p className="quest-run-message">{gpsMessage}</p>}
       </div>
+
+      <GeolocationDebugConsole
+        position={position}
+        status={gpsStatus}
+        error={gpsError}
+        simulating={simulating}
+      />
 
       <IonAlert
         isOpen={state.status !== "running"}

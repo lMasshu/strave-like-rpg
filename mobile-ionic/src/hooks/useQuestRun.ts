@@ -91,8 +91,13 @@ export function useQuestRun(quest: GeneratedQuest): QuestRun {
       if (coords) {
         setSimulatedPosition({
           coords,
+          latitude: coords[1],
+          longitude: coords[0],
+          altitude: 45,
           accuracy: 5,
           speed: SIMULATION_SPEED_METERS_PER_SECOND,
+          heading: 0,
+          altitudeAccuracy: 1,
           timestamp: Date.now(),
         });
       }

@@ -1,34 +1,301 @@
-.blank-shell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100%;
-  padding: 24px;
-  background: var(--ion-background-color, #f9fafb);
+/**
+ * Styles du Tableau de Bord d'Aventure (Home.tsx)
+ * Thème sombre athlétique - Stride Quest
+ */
+
+.sq-home-page-content {
+  --background: var(--sq-bg-base, #0b0f19);
 }
 
-.home-card {
-  width: 100%;
-  max-width: 440px;
-  padding: 32px 24px;
-  border-radius: 16px;
-  background: var(--ion-card-background, #ffffff);
-  border: 1px solid var(--ion-color-step-150, #e5e7eb);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+.sq-home-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 40px 16px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   En-tête Aventurier
+   ========================================================================== */
+
+.sq-home-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0 0 0;
+}
+
+.sq-home-greeting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+}
+
+.sq-home-greeting-title {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--sq-text-main, #f8fafc);
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   Hero Card : Quête du jour
+   ========================================================================== */
+
+.sq-home-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(
+    180deg,
+    var(--sq-surface-card, #151e2e) 0%,
+    rgba(21, 30, 46, 0.95) 100%
+  );
+  border: 1px solid var(--sq-border, #233248);
+  border-left: 3px solid var(--sq-green-athletic, #16a34a);
+  box-shadow: var(--sq-shadow-md);
+}
+
+.sq-home-hero-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.sq-home-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sq-home-hero-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--sq-text-main, #f8fafc);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.sq-home-hero-desc {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--sq-text-muted, #94a3b8);
+}
+
+.sq-home-hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.sq-hero-metric-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--sq-surface-muted, #1e293b);
+  border: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: var(--sq-radius-md, 12px);
   text-align: center;
 }
 
-.home-card h2 {
-  font-size: 1.35rem;
+.sq-hero-metric-label {
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  margin-bottom: 8px;
-  color: var(--ion-text-color, #111827);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sq-text-subtle, #64748b);
 }
 
-.home-card p {
-  font-size: 0.92rem;
-  color: var(--ion-color-step-600, #4b5563);
-  margin-bottom: 24px;
-  line-height: 1.45;
+.sq-hero-metric-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-text-main, #f8fafc);
+}
+
+.sq-home-hero-cta {
+  --background: var(--sq-green-athletic, #16a34a);
+  --background-hover: var(--sq-green-athletic-shade, #15803d);
+  --background-activated: var(--sq-green-athletic-shade, #15803d);
+  --color: #ffffff;
+  --border-radius: var(--sq-radius-md, 12px);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+  min-height: 48px;
+}
+
+/* ==========================================================================
+   Sections Communes
+   ========================================================================== */
+
+.sq-home-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sq-home-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.sq-home-section-sub {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--sq-text-subtle, #64748b);
+}
+
+/* ==========================================================================
+   Synthèse Hebdomadaire (Grille de Métriques)
+   ========================================================================== */
+
+.sq-home-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 520px) {
+  .sq-home-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ==========================================================================
+   Dernières Expéditions (Liste d'Activités)
+   ========================================================================== */
+
+.sq-home-activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sq-home-activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.sq-activity-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sq-activity-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--sq-radius-md, 12px);
+  background-color: var(--sq-green-athletic-bg, rgba(22, 163, 74, 0.15));
+  color: var(--sq-green-athletic-tint, #22c55e);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.sq-activity-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sq-activity-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sq-activity-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--sq-text-main, #f8fafc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sq-activity-xp {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+  flex-shrink: 0;
+}
+
+.sq-activity-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--sq-text-subtle, #64748b);
+}
+
+.sq-activity-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sq-activity-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.sq-activity-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sq-activity-metric-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sq-text-subtle, #64748b);
+}
+
+.sq-activity-metric-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sq-text-main, #f8fafc);
+}
+
+.sq-activity-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--sq-radius-sm, 8px);
+  background: var(--sq-gold-rpg-bg, rgba(217, 119, 6, 0.15));
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+  font-size: 0.78rem;
+  font-weight: 600;
 }

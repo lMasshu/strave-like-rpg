@@ -28,7 +28,13 @@ Ce document sert de passerelle complète pour transférer la session, le context
 4. **Cartographie & Résilience** :
    - Fallback automatique transparent vers des tuiles raster libres (CARTO Voyager, CARTO Dark, OSM, Esri Satellite) en cas d'erreur de clé Mapbox (401/403) ou d'absence de réseau Mapbox vectoriel.
 
-5. **Gestion Git & GitHub CLI** :
+5. **Plateforme Android & Permissions GPS** :
+   - Résolution du problème d'évaluation Gradle (`cordova.variables.gradle`) via l'installation de `@capacitor/android` et `cap sync`.
+   - Déclaration des permissions `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` et `ACCESS_NETWORK_STATE` dans `AndroidManifest.xml`.
+   - Détection proactive des services GPS désactivés et gestion des refus de permission avec messages explicites.
+   - Ajout d'`android` aux exclusions ESLint (`eslint.config.js`).
+
+6. **Gestion Git & GitHub CLI** :
    - `gh` CLI installé sous `~/.local/bin/gh` (v2.103.3) et authentifié pour l'utilisateur GitHub `lMasshu`.
    - Pull Request créée : **[PR #8 : feat(gps): console de debug geolocalisation, fiabilisation des parcours et HUD de quete](https://github.com/lMasshu/strave-like-rpg/pull/8)** (branche `feat/geolocation-debug-console` vers `develop`).
    - `.gitignore` mis à jour pour ignorer `graphify-out/`.
@@ -40,7 +46,7 @@ Ce document sert de passerelle complète pour transférer la session, le context
 - **Dépôt** : `https://github.com/lMasshu/strave-like-rpg`
 - **Branche courante** : `feat/geolocation-debug-console`
 - **Branche cible** : `develop`
-- **Dernier commit** : `6e31caa` (`chore(git): ignorer le repertoire graphify-out`)
+- **Dernier commit** : `ecd5515` (`fix(gps): declaration des permissions android et fiabilisation de l'acces geolocalisation`)
 - **Working Tree** : Propre (`clean`), tout est poussé sur `origin`.
 - **Pull Request active** : https://github.com/lMasshu/strave-like-rpg/pull/8
 

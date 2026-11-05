@@ -26,14 +26,10 @@
   flex-direction: column;
   gap: 18px;
   padding: 20px;
-  background: linear-gradient(
-    180deg,
-    var(--sq-surface-card, #151e2e) 0%,
-    rgba(21, 30, 46, 0.95) 100%
-  );
-  border: 1px solid var(--sq-border, #233248);
-  border-top: 3px solid var(--sq-gold-rpg, #d97706);
-  box-shadow: var(--sq-shadow-md);
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg, 16px);
+  box-shadow: var(--sq-shadow-sm);
 }
 
 .sq-profile-avatar-row {
@@ -49,17 +45,11 @@
 }
 
 .sq-profile-avatar-ring {
-  width: 82px;
-  height: 82px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
-  padding: 3px;
-  background: conic-gradient(
-    from 180deg at 50% 50%,
-    var(--sq-gold-rpg, #d97706) 0deg,
-    var(--sq-green-athletic, #16a34a) 180deg,
-    var(--sq-gold-rpg, #d97706) 360deg
-  );
-  box-shadow: 0 0 16px rgba(217, 119, 6, 0.25);
+  padding: 2px;
+  border: 2px solid var(--sq-green-athletic);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -201,6 +191,73 @@
 }
 
 /* ==========================================================================
+   Histogramme Distance par Semaine (Nature Remix CSS Bar Chart)
+   ========================================================================== */
+
+.sq-profile-barchart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+}
+
+.sq-profile-barchart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  height: 140px;
+  padding-top: 10px;
+}
+
+.sq-barchart-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  height: 100%;
+}
+
+.sq-barchart-val {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sq-text-muted);
+}
+
+.sq-barchart-bar-track {
+  width: 100%;
+  max-width: 36px;
+  flex: 1;
+  background: var(--sq-surface-card-subtle);
+  border-radius: var(--sq-radius-sm);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.sq-barchart-bar-fill {
+  width: 100%;
+  background: var(--sq-border);
+  border-radius: var(--sq-radius-sm);
+  transition: height 0.4s ease-out;
+}
+
+.sq-barchart-bar-fill.is-current {
+  background: var(--sq-green-athletic);
+}
+
+.sq-barchart-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sq-text-muted);
+}
+
+/* ==========================================================================
    Grille de Statistiques
    ========================================================================== */
 
@@ -259,13 +316,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--sq-radius-md, 12px);
-  background-color: var(--sq-green-athletic-bg, rgba(22, 163, 74, 0.15));
-  color: var(--sq-green-athletic-tint, #22c55e);
-  font-size: 1.2rem;
+  color: var(--sq-green-athletic);
+  font-size: 1.35rem;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .sq-profile-activity-card .sq-activity-identity {

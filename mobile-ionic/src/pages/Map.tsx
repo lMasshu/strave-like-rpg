@@ -196,6 +196,9 @@ const MapPage: React.FC = () => {
 
   // Ergonomie & Visibilité
   const [isHudCollapsed, setIsHudCollapsed] = useState(false);
+  const [workoutSegment, setWorkoutSegment] = useState<"map" | "stats">("map");
+  const [isWorkoutPaused, setIsWorkoutPaused] = useState(false);
+  const [workoutFinishedModal, setWorkoutFinishedModal] = useState(false);
   const [hideUiForImmersion, setHideUiForImmersion] = useState(false);
   const [activeTheme, setActiveTheme] = useState<MapTheme>("outdoors");
   const activeThemeRef = useRef<MapTheme>("outdoors");
@@ -766,8 +769,95 @@ const MapPage: React.FC = () => {
           {/* Conteneur Plein Écran de la Carte Mapbox */}
           <div ref={mapContainer} className="map-mapbox-container" />
 
+          {/* Sélecteur de Segment : Statistiques / Carte GPS (Maquette Pages 2 et 3) */}
+          <div className="map-workout-segment-container">
+            <div className="map-workout-segment-bar" role="tablist">
+              <button
+                type="button"
+                className={`map-workout-segment-btn ${workoutSegment === "stats" ? "is-active" : ""}`}
+                onClick={() => setWorkoutSegment("stats")}
+              >
+                Statistiques
+              </button>
+              <button
+                type="button"
+                className={`map-workout-segment-btn ${workoutSegment === "map" ? "is-active" : ""}`}
+                onClick={() => setWorkoutSegment("map")}
+              >
+                Carte GPS
+              </button>
+            </div>
+          </div>
+
+          {/* Écran Plein Format Statistiques (Maquette Page 2) */}
+          {workoutSegment === "stats" && (
+            <div className="sq-workout-stats-screen">
+              <div className="sq-workout-stats-header">
+                <span className="sq-workout-activity-label">Course à pied</span>
+                <span className="sq-workout-status-badge">En cours</span>
+              </div>
+
+              <div className="sq-workout-realtime-pace">
+                <span className="sq-workout-pace-label">Rythme réel</span>
+                <div className="sq-workout-pace-value sq-tabular">
+                  {routeInfo && routeInfo.distanceKm > 0
+                    ? `${Math.floor(routeInfo.durationMinutes / routeInfo.distanceKm)}:${String(Math.round(((routeInfo.durationMinutes / routeInfo.distanceKm) % 1) * 60)).padStart(2, "0")}`
+                    : "5:12"}
+                </div>
+                <span className="sq-workout-pace-unit">
+                  min/km • à cet instant
+                </span>
+              </div>
+
+              <div className="sq-workout-stats-grid">
+                <div className="sq-card sq-workout-stat-card">
+                  <span className="sq-workout-stat-val sq-tabular">
+                    {routeInfo ? routeInfo.distanceKm.toFixed(2).replace(".", ",") : "3,42"}{" "}
+                    km
+                  </span>
+                  <span className="sq-workout-stat-lbl">Distance</span>
+                </div>
+                <div className="sq-card sq-workout-stat-card">
+                  <span className="sq-workout-stat-val sq-tabular">
+                    {routeInfo ? `${routeInfo.durationMinutes}:00` : "18:06"}
+                  </span>
+                  <span className="sq-workout-stat-lbl">Temps</span>
+                </div>
+                <div className="sq-card sq-workout-stat-card">
+                  <span className="sq-workout-stat-val sq-tabular">
+                    {routeInfo?.elevationGain ?? 46} m
+                  </span>
+                  <span className="sq-workout-stat-lbl">Dénivelé</span>
+                </div>
+                <div className="sq-card sq-workout-stat-card">
+                  <span className="sq-workout-stat-val sq-tabular">
+                    +{Math.round((routeInfo ? routeInfo.distanceKm : 3.42) * 14)}
+                  </span>
+                  <span className="sq-workout-stat-lbl">Points gagnés</span>
+                </div>
+              </div>
+
+              <div className="sq-workout-actions-row">
+                <button
+                  type="button"
+                  className="sq-button-secondary sq-workout-action-btn"
+                  onClick={() => setIsWorkoutPaused(!isWorkoutPaused)}
+                >
+                  {isWorkoutPaused ? "Reprendre" : "Pause"}
+                </button>
+                <button
+                  type="button"
+                  className="sq-button-primary sq-workout-action-btn"
+                  onClick={() => setWorkoutFinishedModal(true)}
+                >
+                  Terminer
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Top Bar Mobile Épurée (Navigation & Recherche) */}
-          {!hideUiForImmersion && (
+          {!hideUiForImmersion && workoutSegment === "map" && (
             <div className="map-mobile-top-bar">
               <div className="mobile-search-pill">
                 <IonIcon icon={searchOutline} className="search-pill-icon" />
@@ -1278,6 +1368,18 @@ const MapPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        <IonAlert
+          isOpen={workoutFinishedModal}
+          onDidDismiss={() => {
+            setWorkoutFinishedModal(false);
+            setWorkoutSegment("map");
+          }}
+          header="Sortie enregistrée !"
+          subHeader="Félicitations pour votre effort"
+          message="Votre sortie a été enregistrée avec succès dans votre journal et contribue à la progression de votre guilde."
+          buttons={["Super !"]}
+        />
 
         <IonAlert
           isOpen={showConfigNotice}

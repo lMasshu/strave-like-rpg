@@ -7,15 +7,15 @@
 }
 
 .friends-search-toolbar {
-  --background: rgba(11, 15, 25, 0.88);
+  --background: var(--sq-bg-header, var(--sq-surface-card));
   --border-width: 0 0 1px 0;
   --border-color: var(--sq-border, #1f293d);
   padding: 0 12px 6px;
 }
 
 .friends-searchbar {
-  --background: var(--sq-surface-card, #131926);
-  --color: var(--sq-text-main, #f1f5f9);
+  --background: var(--sq-surface-card-subtle, #f1f5f9);
+  --color: var(--sq-text-main, #0f172a);
   --placeholder-color: var(--sq-text-muted, #94a3b8);
   --icon-color: var(--sq-text-muted, #94a3b8);
   --box-shadow: none;
@@ -33,21 +33,146 @@
 }
 
 /* ==========================================================================
+   Rangée horizontale d'amis & Flux Social (Maquette Page 5)
+   ========================================================================== */
+
+.friends-bubbles-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+}
+
+.friends-bubbles-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.friends-bubbles-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.friends-bubble-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.friends-bubble-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--sq-green-athletic);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.friends-bubble-avatar.bubble-more {
+  background: var(--sq-surface-card-subtle);
+  border: 1px solid var(--sq-border);
+  color: var(--sq-text-muted);
+  font-size: 0.85rem;
+}
+
+.friends-bubble-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sq-text-main);
+}
+
+.friends-feed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.friends-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.friends-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+}
+
+.friends-activity-trace-col {
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.friends-activity-mini-trace .sq-trace-canvas-wrap {
+  padding: 4px 6px;
+}
+
+.friends-activity-mini-trace .sq-trace-svg {
+  max-height: 55px;
+}
+
+.friends-activity-mini-trace .sq-trace-elevation-chip {
+  display: none;
+}
+
+.friends-activity-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.friends-activity-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.friends-activity-time {
+  font-size: 0.75rem;
+  color: var(--sq-text-subtle);
+}
+
+.friends-activity-stats {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--sq-text-muted);
+}
+
+/* ==========================================================================
    Encart Classement de la Guilde (Podium)
    ========================================================================== */
 
 .guild-leaderboard-card {
-  background: linear-gradient(
-    180deg,
-    rgba(22, 163, 74, 0.08) 0%,
-    var(--sq-surface-card, #131926) 40%
-  );
-  border: 1px solid var(--sq-border, #1f293d);
-  border-radius: var(--sq-radius-lg, 12px);
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg, 16px);
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  box-shadow: var(--sq-shadow-sm);
 }
 
 .guild-leaderboard-header {
@@ -57,16 +182,11 @@
 }
 
 .guild-leaderboard-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--sq-radius-md, 8px);
-  background: rgba(22, 163, 74, 0.15);
-  border: 1px solid rgba(22, 163, 74, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--sq-color-primary, #16a34a);
-  font-size: 1.25rem;
+  color: var(--sq-green-athletic, #16a34a);
+  font-size: 1.35rem;
 }
 
 .guild-leaderboard-titles {

@@ -316,6 +316,126 @@ export const DEMO_USER_PROFILE: UserProfile = {
   },
 };
 
+export interface PublicRoute {
+  id: string;
+  title: string;
+  distanceKm: number;
+  elevationMeters: number;
+  proximityKm: number;
+  author: string;
+  type: "run" | "cycle" | "walk";
+}
+
+export interface FriendActivityItem {
+  id: string;
+  friendName: string;
+  type: "run" | "cycle" | "walk";
+  timeLabel: string;
+  distanceKm: number;
+  durationFormatted: string;
+  paceOrSpeed: string;
+}
+
+export interface NearbyQuestItem {
+  id: string;
+  title: string;
+  distanceKm: number;
+  estimatedMinutes: number;
+  xpReward: number;
+}
+
+export interface WeeklyDistanceBar {
+  label: string;
+  km: number;
+  isCurrent?: boolean;
+}
+
+export const DEMO_PUBLIC_ROUTES: PublicRoute[] = [
+  {
+    id: "r1",
+    title: "Boucle du parc",
+    distanceKm: 5.2,
+    elevationMeters: 40,
+    proximityKm: 1.1,
+    author: "Léa",
+    type: "run",
+  },
+  {
+    id: "r2",
+    title: "Le long des quais",
+    distanceKm: 8.7,
+    elevationMeters: 15,
+    proximityKm: 2.3,
+    author: "Hugo",
+    type: "run",
+  },
+  {
+    id: "r3",
+    title: "Montée de la colline",
+    distanceKm: 12.4,
+    elevationMeters: 220,
+    proximityKm: 3.8,
+    author: "Sarah",
+    type: "cycle",
+  },
+];
+
+export const DEMO_FRIEND_ACTIVITIES: FriendActivityItem[] = [
+  {
+    id: "fa1",
+    friendName: "Léa",
+    type: "run",
+    timeLabel: "Aujourd'hui à 12:40",
+    distanceKm: 6.4,
+    durationFormatted: "34:12",
+    paceOrSpeed: "5:20 /km",
+  },
+  {
+    id: "fa2",
+    friendName: "Hugo",
+    type: "cycle",
+    timeLabel: "Hier à 18:05",
+    distanceKm: 24.0,
+    durationFormatted: "1:02:30",
+    paceOrSpeed: "23 km/h",
+  },
+  {
+    id: "fa3",
+    friendName: "Sarah",
+    type: "run",
+    timeLabel: "Hier à 07:30",
+    distanceKm: 10.1,
+    durationFormatted: "52:40",
+    paceOrSpeed: "5:13 /km",
+  },
+];
+
+export const DEMO_NEARBY_QUESTS: NearbyQuestItem[] = [
+  {
+    id: "nq1",
+    title: "Rejoindre le parc",
+    distanceKm: 1.2,
+    estimatedMinutes: 8,
+    xpReward: 80,
+  },
+  {
+    id: "nq2",
+    title: "Atteindre le monument",
+    distanceKm: 2.5,
+    estimatedMinutes: 16,
+    xpReward: 150,
+  },
+];
+
+export const DEMO_WEEKLY_BARS: WeeklyDistanceBar[] = [
+  { label: "S1", km: 18 },
+  { label: "S2", km: 22 },
+  { label: "S3", km: 19 },
+  { label: "S4", km: 28 },
+  { label: "S5", km: 25 },
+  { label: "Act.", km: 24.6, isCurrent: true },
+];
+
 export function getUnreadCount(): number {
   return DEMO_NOTIFICATIONS.filter((notification) => !notification.read).length;
 }

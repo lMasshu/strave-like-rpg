@@ -1,26 +1,13 @@
 import React from "react";
-import { IonButton, IonContent, IonIcon, IonPage } from "@ionic/react";
+import { IonContent, IonIcon, IonPage } from "@ionic/react";
 import { useNavigate } from "react-router-dom";
-import {
-  bicycleOutline,
-  compassOutline,
-  fitnessOutline,
-  flameOutline,
-  radioButtonOnOutline,
-  ribbonOutline,
-  sparklesOutline,
-  timeOutline,
-  walkOutline,
-} from "ionicons/icons";
+import { playCircle } from "ionicons/icons";
 import TopBar from "../components/TopBar";
-import StatMetric from "../components/StatMetric";
-import RaidBossBanner from "../components/RaidBossBanner";
+import QuestTracePreview from "../components/QuestTracePreview";
 import {
   DEMO_ACTIVE_RAID,
-  DEMO_DAILY_QUEST,
   DEMO_USER_ACTIVITIES,
   DEMO_USER_PROFILE,
-  UserActivity,
 } from "../data/demo";
 import "./Home.css";
 
@@ -30,43 +17,13 @@ function formatDuration(minutes: number): string {
   if (hours === 0) {
     return `${remainingMinutes}m`;
   }
-  return `${hours}h${remainingMinutes > 0 ? String(remainingMinutes).padStart(2, "0") : ""}`;
-}
-
-function getActivityIcon(type: UserActivity["type"]) {
-  switch (type) {
-    case "quest":
-      return compassOutline;
-    case "run":
-      return fitnessOutline;
-    case "walk":
-      return walkOutline;
-    case "cycle":
-      return bicycleOutline;
-    default:
-      return fitnessOutline;
-  }
-}
-
-function getActivityTypeLabel(type: UserActivity["type"]): string {
-  switch (type) {
-    case "quest":
-      return "Quête GPS";
-    case "run":
-      return "Course à pied";
-    case "walk":
-      return "Marche active";
-    case "cycle":
-      return "Sortie vélo";
-    default:
-      return "Activité";
-  }
+  return `${hours} h ${remainingMinutes > 0 ? String(remainingMinutes).padStart(2, "0") : ""}`;
 }
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleJoinRaid = () => {
+  const handleStartWorkout = () => {
     navigate("/enregistrer");
   };
 
@@ -74,219 +31,149 @@ const Home: React.FC = () => {
     DEMO_USER_PROFILE.weeklyStats.durationMinutes,
   );
 
+  const lastActivity = DEMO_USER_ACTIVITIES[0];
+
   return (
     <IonPage>
       <TopBar title="Stride Quest" />
 
       <IonContent fullscreen className="sq-home-page-content">
         <main className="sq-home-container">
-          {/* En-tête Aventurier */}
+          {/* En-tête : Salutation & Niveau (Maquette Page 1) */}
           <header className="sq-home-greeting">
             <div className="sq-home-greeting-text">
-              <span className="sq-home-greeting-badge">
-                <IonIcon icon={flameOutline} />
-                Niveau {DEMO_USER_PROFILE.level} • {DEMO_USER_PROFILE.title}
+              <span className="sq-home-greeting-sub">
+                Bonjour {DEMO_USER_PROFILE.username}
               </span>
-              <h1 className="sq-home-greeting-title">
-                Bonjour, {DEMO_USER_PROFILE.username}
-              </h1>
+              <h1 className="sq-home-greeting-title">Prêt à bouger ?</h1>
+            </div>
+            <div className="sq-home-level-badge">
+              N{DEMO_USER_PROFILE.level}
             </div>
           </header>
 
-          {/* Hero Card : Quête du jour recommandée */}
-          <section
-            className="sq-card sq-home-hero"
-            aria-label="Quête du jour recommandée"
+          {/* Grand Bouton Hero : Démarrer une sortie (Maquette Page 1) */}
+          <div
+            className="sq-home-start-hero"
+            onClick={handleStartWorkout}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleStartWorkout();
+              }
+            }}
           >
-            <div className="sq-home-hero-header">
-              <span className="sq-badge sq-badge-green">
-                <IonIcon icon={compassOutline} />
-                Quête du jour
-              </span>
-              <span className="sq-badge sq-badge-muted">
-                {DEMO_DAILY_QUEST.difficulty}
-              </span>
-              <span className="sq-badge sq-badge-gold">
-                <IonIcon icon={sparklesOutline} />+{DEMO_DAILY_QUEST.xpReward}{" "}
-                XP
-              </span>
+            <div className="sq-start-hero-text">
+              <h2 className="sq-start-hero-title">Démarrer une sortie</h2>
+              <p className="sq-start-hero-sub">Enregistrement en un geste</p>
             </div>
+            <IonIcon icon={playCircle} className="sq-start-hero-play-icon" />
+          </div>
 
-            <div className="sq-home-hero-content">
-              <h2 className="sq-home-hero-title">{DEMO_DAILY_QUEST.title}</h2>
-              <p className="sq-home-hero-desc">
-                Boucle asymétrique optimisée pour votre secteur. Validez les
-                points d'intérêt et cumulez de l'expérience.
-              </p>
+          {/* Section Cette Semaine (Maquette Page 1 : 3 métriques) */}
+          <section
+            className="sq-card sq-home-week-card"
+            aria-label="Cette semaine"
+          >
+            <div className="sq-week-header">
+              <h2 className="sq-week-title">Cette semaine</h2>
             </div>
-
-            <div className="sq-home-hero-metrics">
-              <div className="sq-hero-metric-chip">
-                <span className="sq-hero-metric-label">Distance</span>
-                <span className="sq-hero-metric-value sq-tabular">
-                  {DEMO_DAILY_QUEST.targetDistanceKm} km
+            <div className="sq-week-grid">
+              <div className="sq-week-metric">
+                <span className="sq-week-val sq-tabular">
+                  {DEMO_USER_PROFILE.weeklyStats.distanceKm
+                    .toString()
+                    .replace(".", ",")}{" "}
+                  km
                 </span>
+                <span className="sq-week-lbl">Distance</span>
               </div>
-              <div className="sq-hero-metric-chip">
-                <span className="sq-hero-metric-label">Durée est.</span>
-                <span className="sq-hero-metric-value sq-tabular">
-                  ~{DEMO_DAILY_QUEST.estimatedMinutes} min
+              <div className="sq-week-metric">
+                <span className="sq-week-val sq-tabular">
+                  {formattedWeeklyDuration}
                 </span>
+                <span className="sq-week-lbl">Temps</span>
               </div>
-              <div className="sq-hero-metric-chip">
-                <span className="sq-hero-metric-label">Dénivelé</span>
-                <span className="sq-hero-metric-value sq-tabular">
-                  +{DEMO_DAILY_QUEST.elevationMeters} m
+              <div className="sq-week-metric">
+                <span className="sq-week-val sq-tabular">
+                  {DEMO_USER_PROFILE.weeklyStats.elevationMeters} m
                 </span>
+                <span className="sq-week-lbl">Dénivelé</span>
               </div>
             </div>
+          </section>
 
-            <IonButton
-              routerLink="/enregistrer"
-              expand="block"
-              shape="round"
-              className="sq-home-hero-cta"
+          {/* Dernière sortie (Maquette Page 1) */}
+          {lastActivity && (
+            <section
+              className="sq-card sq-card-interactive sq-home-last-activity-card"
+              aria-label="Dernière sortie"
+              onClick={handleStartWorkout}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleStartWorkout();
+                }
+              }}
             >
-              <IonIcon slot="start" icon={radioButtonOnOutline} />
-              Démarrer la sortie
-            </IonButton>
-          </section>
-
-          {/* Section Raid Boss Communautaire */}
-          <section className="sq-home-section" aria-label="Raid communautaire">
-            <div className="sq-home-section-header">
-              <div>
-                <h2 className="sq-section-title">Raid en cours</h2>
-                <p className="sq-home-section-sub">
-                  Coopération asynchrone sur le terrain
-                </p>
+              <div className="sq-last-activity-header">
+                <span className="sq-last-activity-name">
+                  Dernière sortie • Course à pied
+                </span>
+                <span className="sq-last-activity-pts">
+                  +{lastActivity.xpEarned} pts
+                </span>
               </div>
-            </div>
 
-            <RaidBossBanner
-              name={DEMO_ACTIVE_RAID.name}
-              location={DEMO_ACTIVE_RAID.location}
-              currentHp={DEMO_ACTIVE_RAID.currentHp}
-              maxHp={DEMO_ACTIVE_RAID.maxHp}
-              endsIn={DEMO_ACTIVE_RAID.endsIn}
-              tier="Raid Régional"
-              onJoinRaid={handleJoinRaid}
-            />
-          </section>
+              <QuestTracePreview
+                distanceKm={lastActivity.distanceKm}
+                elevationMeters={lastActivity.elevationMeters}
+                className="sq-home-last-trace"
+              />
 
-          {/* Section Synthèse Hebdomadaire */}
+              <div className="sq-last-activity-stats-row">
+                <div className="sq-last-stat">
+                  <span className="sq-last-stat-val sq-tabular">
+                    {lastActivity.distanceKm.toString().replace(".", ",")} km
+                  </span>
+                  <span className="sq-last-stat-lbl">Distance</span>
+                </div>
+                <div className="sq-last-stat">
+                  <span className="sq-last-stat-val sq-tabular">
+                    {Math.floor(lastActivity.durationMinutes)}:
+                    {String(
+                      Math.round((lastActivity.durationMinutes % 1) * 60),
+                    ).padStart(2, "0")}
+                  </span>
+                  <span className="sq-last-stat-lbl">Temps</span>
+                </div>
+                <div className="sq-last-stat">
+                  <span className="sq-last-stat-val sq-tabular">5:23</span>
+                  <span className="sq-last-stat-lbl">min/km</span>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Boss en cours (Maquette Page 1) */}
           <section
-            className="sq-home-section"
-            aria-label="Synthèse d'entraînement hebdomadaire"
+            className="sq-card sq-home-boss-preview"
+            aria-label="Raid en cours"
           >
-            <div className="sq-home-section-header">
-              <div>
-                <h2 className="sq-section-title">Cette semaine</h2>
-                <p className="sq-home-section-sub">
-                  Activité et progression athlétique
-                </p>
-              </div>
+            <div className="sq-home-boss-header">
+              <span className="sq-home-boss-title">
+                Boss en cours • {DEMO_ACTIVE_RAID.name}
+              </span>
+              <span className="sq-home-boss-percent sq-tabular">58 %</span>
             </div>
-
-            <div className="sq-home-stats-grid">
-              <StatMetric
-                label="Distance"
-                value={DEMO_USER_PROFILE.weeklyStats.distanceKm}
-                unit="km"
-                trend="+12% vs sem. passée"
-              />
-              <StatMetric
-                label="Temps actif"
-                value={formattedWeeklyDuration}
-                trend="3 séances"
-              />
-              <StatMetric
-                label="Dénivelé"
-                value={DEMO_USER_PROFILE.weeklyStats.elevationMeters}
-                unit="m D+"
-                trend="Parcours vallonné"
-              />
-              <StatMetric
-                label="Quêtes validées"
-                value={DEMO_USER_PROFILE.weeklyStats.questsCompleted}
-                unit="succès"
-                trend="Objectif 5"
-              />
+            <div className="sq-home-boss-bar">
+              <div className="sq-home-boss-fill" style={{ width: "58%" }} />
             </div>
-          </section>
-
-          {/* Section Dernières Expéditions */}
-          <section
-            className="sq-home-section"
-            aria-label="Dernières expéditions"
-          >
-            <div className="sq-home-section-header">
-              <div>
-                <h2 className="sq-section-title">Dernières expéditions</h2>
-                <p className="sq-home-section-sub">
-                  Vos récentes sorties et points d'intérêt validés
-                </p>
-              </div>
-            </div>
-
-            <div className="sq-home-activities-list">
-              {DEMO_USER_ACTIVITIES.map((activity) => (
-                <article
-                  key={activity.id}
-                  className="sq-card sq-home-activity-card"
-                >
-                  <div className="sq-activity-card-header">
-                    <div className="sq-activity-type-icon">
-                      <IonIcon icon={getActivityIcon(activity.type)} />
-                    </div>
-                    <div className="sq-activity-identity">
-                      <div className="sq-activity-title-row">
-                        <h3 className="sq-activity-title">{activity.title}</h3>
-                        <span className="sq-activity-xp sq-tabular">
-                          +{activity.xpEarned} XP
-                        </span>
-                      </div>
-                      <div className="sq-activity-sub">
-                        <span>{getActivityTypeLabel(activity.type)}</span>
-                        <span>•</span>
-                        <span className="sq-activity-date">
-                          <IonIcon icon={timeOutline} />
-                          {activity.date}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="sq-activity-metrics-row">
-                    <div className="sq-activity-metric">
-                      <span className="sq-activity-metric-label">Distance</span>
-                      <span className="sq-activity-metric-value sq-tabular">
-                        {activity.distanceKm} km
-                      </span>
-                    </div>
-                    <div className="sq-activity-metric">
-                      <span className="sq-activity-metric-label">Durée</span>
-                      <span className="sq-activity-metric-value sq-tabular">
-                        {activity.durationMinutes} min
-                      </span>
-                    </div>
-                    <div className="sq-activity-metric">
-                      <span className="sq-activity-metric-label">D+</span>
-                      <span className="sq-activity-metric-value sq-tabular">
-                        +{activity.elevationMeters} m
-                      </span>
-                    </div>
-                  </div>
-
-                  {activity.badgeUnlocked && (
-                    <div className="sq-activity-badge-pill">
-                      <IonIcon icon={ribbonOutline} />
-                      <span>Badge débloqué : {activity.badgeUnlocked}</span>
-                    </div>
-                  )}
-                </article>
-              ))}
-            </div>
+            <span className="sq-home-boss-sub">Points de vie restants</span>
           </section>
         </main>
       </IonContent>

@@ -1,0 +1,220 @@
+.sq-defis-content {
+  --background: var(--sq-bg-base);
+}
+
+.sq-defis-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 40px 16px;
+  box-sizing: border-box;
+}
+
+.sq-defis-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-defis-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  letter-spacing: -0.02em;
+}
+
+.sq-defis-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sq-text-muted);
+}
+
+/* Carte Boss */
+.sq-defis-boss-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-left: 3px solid var(--sq-green-athletic);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.sq-defis-boss-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sq-defis-boss-meta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sq-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sq-defis-boss-icon {
+  font-size: 1.4rem;
+  color: var(--sq-text-muted);
+}
+
+.sq-defis-boss-name {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+}
+
+/* Jauge de vie */
+.sq-defis-hp-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sq-defis-hp-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--sq-surface-card-subtle);
+  border-radius: var(--sq-radius-full);
+  overflow: hidden;
+}
+
+.sq-defis-hp-fill {
+  height: 100%;
+  background: var(--sq-green-athletic);
+  border-radius: var(--sq-radius-full);
+  transition: width 0.3s ease;
+}
+
+.sq-defis-hp-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--sq-text-muted);
+}
+
+.sq-defis-hp-percent {
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-defis-contribution {
+  font-size: 0.85rem;
+  color: var(--sq-text-muted);
+  padding-top: 8px;
+  border-top: 1px solid var(--sq-border);
+}
+
+.sq-defis-contribution strong {
+  color: var(--sq-green-athletic);
+}
+
+/* Scope Tabs (Local / National / Mondial) */
+.sq-defis-scope-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--sq-surface-card-subtle);
+  padding: 4px;
+  border-radius: var(--sq-radius-md);
+  border: 1px solid var(--sq-border);
+}
+
+.sq-defis-scope-tab {
+  flex: 1;
+  padding: 8px 12px;
+  font-family: var(--sq-font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--sq-text-muted);
+  border-radius: var(--sq-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+
+.sq-defis-scope-tab.is-active {
+  background: var(--sq-surface-card);
+  color: var(--sq-text-main);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+/* Quêtes près de toi */
+.sq-defis-quests-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sq-defis-section-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-defis-quests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sq-defis-quest-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  cursor: pointer;
+}
+
+.sq-defis-quest-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-defis-quest-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-defis-quest-metrics {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--sq-text-muted);
+}
+
+.sq-defis-quest-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sq-defis-xp-pill {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sq-gold-rpg);
+  background: var(--sq-surface-card-subtle);
+  border: 1px solid var(--sq-border);
+  padding: 4px 8px;
+  border-radius: var(--sq-radius-full);
+}
+
+.sq-defis-arrow {
+  color: var(--sq-text-muted);
+  font-size: 1rem;
+}

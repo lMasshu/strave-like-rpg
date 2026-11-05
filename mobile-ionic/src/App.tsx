@@ -11,15 +11,21 @@ import {
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import {
+  flag,
+  flagOutline,
   home,
   homeOutline,
-  person,
-  personOutline,
+  map,
+  mapOutline,
+  people,
+  peopleOutline,
   radioButtonOn,
   radioButtonOnOutline,
 } from "ionicons/icons";
 import Home from "./pages/Home";
 import MapPage from "./pages/Map";
+import Defis from "./pages/Defis";
+import Parcours from "./pages/Parcours";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import FriendSearch from "./pages/FriendSearch";
@@ -42,8 +48,8 @@ import "./theme/navigation.css";
 
 setupIonicReact();
 
-// Pages "poussées" : la barre d'onglets du bas y est masquée.
-const ROUTES_WITHOUT_TAB_BAR = ["/notifications", "/amis"];
+// Pages "poussées" où la barre d'onglets est masquée
+const ROUTES_WITHOUT_TAB_BAR = ["/notifications"];
 
 const AppTabs: React.FC = () => {
   const { pathname } = useLocation();
@@ -56,11 +62,13 @@ const AppTabs: React.FC = () => {
       <IonRouterOutlet>
         <Route path="/" element={<Navigate to="/accueil" replace />} />
         <Route path="/accueil" element={<Home />} />
+        <Route path="/parcours" element={<Parcours />} />
         <Route path="/enregistrer" element={<MapPage />} />
+        <Route path="/defis" element={<Defis />} />
+        <Route path="/amis" element={<FriendSearch />} />
         <Route path="/profil" element={<Profile />} />
 
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/amis" element={<FriendSearch />} />
 
         {/* Anciennes URLs de la carte */}
         <Route path="/map" element={<Navigate to="/enregistrer" replace />} />
@@ -73,6 +81,11 @@ const AppTabs: React.FC = () => {
           <IonLabel>Accueil</IonLabel>
         </IonTabButton>
 
+        <IonTabButton tab="parcours" href="/parcours">
+          <IonIcon icon={isActive("/parcours") ? map : mapOutline} />
+          <IonLabel>Parcours</IonLabel>
+        </IonTabButton>
+
         <IonTabButton tab="enregistrer" href="/enregistrer">
           <IonIcon
             icon={
@@ -82,9 +95,14 @@ const AppTabs: React.FC = () => {
           <IonLabel>Enregistrer</IonLabel>
         </IonTabButton>
 
-        <IonTabButton tab="profil" href="/profil">
-          <IonIcon icon={isActive("/profil") ? person : personOutline} />
-          <IonLabel>Profil</IonLabel>
+        <IonTabButton tab="defis" href="/defis">
+          <IonIcon icon={isActive("/defis") ? flag : flagOutline} />
+          <IonLabel>Défis</IonLabel>
+        </IonTabButton>
+
+        <IonTabButton tab="amis" href="/amis">
+          <IonIcon icon={isActive("/amis") ? people : peopleOutline} />
+          <IonLabel>Amis</IonLabel>
         </IonTabButton>
       </IonTabBar>
     </IonTabs>

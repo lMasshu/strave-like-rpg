@@ -20,6 +20,7 @@ import {
   DEMO_BADGES,
   DEMO_USER_ACTIVITIES,
   DEMO_USER_PROFILE,
+  DEMO_WEEKLY_BARS,
   UserActivity,
 } from "../data/demo";
 import "./Profile.css";
@@ -224,6 +225,43 @@ const Profile: React.FC = () => {
                 unit="succès"
                 trend="100% complétées"
               />
+            </div>
+          </section>
+
+          {/* Histogramme de Distance par semaine (km) */}
+          <section
+            className="sq-card sq-profile-barchart-card"
+            aria-label="Distance par semaine"
+          >
+            <div className="sq-profile-section-header">
+              <div>
+                <h2 className="sq-section-title">Distance par semaine</h2>
+                <p className="sq-profile-section-sub">
+                  Volume d'entraînement en kilomètres
+                </p>
+              </div>
+            </div>
+
+            <div className="sq-profile-barchart">
+              {DEMO_WEEKLY_BARS.map((bar) => {
+                const maxKm = 30;
+                const heightPercent = Math.min(
+                  100,
+                  Math.round((bar.km / maxKm) * 100),
+                );
+                return (
+                  <div key={bar.label} className="sq-barchart-col">
+                    <span className="sq-barchart-val sq-tabular">{bar.km}</span>
+                    <div className="sq-barchart-bar-track">
+                      <div
+                        className={`sq-barchart-bar-fill ${bar.isCurrent ? "is-current" : ""}`}
+                        style={{ height: `${heightPercent}%` }}
+                      />
+                    </div>
+                    <span className="sq-barchart-label">{bar.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </section>
 

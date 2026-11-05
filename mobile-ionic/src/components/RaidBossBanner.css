@@ -1,11 +1,8 @@
 .sq-raid-boss-card {
-  background: linear-gradient(
-    145deg,
-    rgba(35, 20, 30, 0.9) 0%,
-    var(--sq-surface-card) 60%
-  );
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.12);
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-left: 3px solid var(--sq-danger-raid, #ef4444);
+  box-shadow: var(--sq-shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 12px;

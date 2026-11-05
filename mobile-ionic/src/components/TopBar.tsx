@@ -7,8 +7,15 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import { notificationsOutline, personAddOutline } from "ionicons/icons";
+import {
+  moonOutline,
+  notificationsOutline,
+  personAddOutline,
+  personOutline,
+  sunnyOutline,
+} from "ionicons/icons";
 import { getUnreadCount } from "../data/demo";
+import { useThemeMode } from "../hooks/useThemeMode";
 import "./TopBar.css";
 
 interface TopBarProps {
@@ -20,6 +27,8 @@ const TopBar: React.FC<TopBarProps> = ({
   title = "Stride Quest",
   unreadCount = getUnreadCount(),
 }) => {
+  const { resolvedTheme, toggleTheme } = useThemeMode();
+
   return (
     <IonHeader className="top-bar" translucent>
       <IonToolbar>
@@ -38,6 +47,21 @@ const TopBar: React.FC<TopBarProps> = ({
 
         <IonButtons slot="end">
           <IonButton
+            onClick={toggleTheme}
+            aria-label={
+              resolvedTheme === "dark"
+                ? "Activer le mode lumineux"
+                : "Activer le mode sombre"
+            }
+            className="top-bar-action-btn top-bar-theme-btn"
+          >
+            <IonIcon
+              slot="icon-only"
+              icon={resolvedTheme === "dark" ? sunnyOutline : moonOutline}
+            />
+          </IonButton>
+
+          <IonButton
             routerLink="/notifications"
             routerDirection="forward"
             aria-label="Notifications"
@@ -50,6 +74,15 @@ const TopBar: React.FC<TopBarProps> = ({
                 {unreadCount > 9 ? "9+" : unreadCount}
               </IonBadge>
             )}
+          </IonButton>
+
+          <IonButton
+            routerLink="/profil"
+            routerDirection="forward"
+            aria-label="Mon Profil"
+            className="top-bar-action-btn"
+          >
+            <IonIcon slot="icon-only" icon={personOutline} />
           </IonButton>
         </IonButtons>
       </IonToolbar>

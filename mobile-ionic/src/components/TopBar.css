@@ -1,7 +1,7 @@
 .top-bar ion-toolbar {
-  --background: rgba(11, 15, 25, 0.88);
+  --background: var(--sq-bg-header, var(--sq-surface-card, #ffffff));
   --border-width: 0 0 1px 0;
-  --border-color: var(--sq-border, #1f293d);
+  --border-color: var(--sq-border, #e2e8f0);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   padding: 0 4px;

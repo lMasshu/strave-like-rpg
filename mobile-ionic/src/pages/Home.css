@@ -1,10 +1,10 @@
 /**
- * Styles du Tableau de Bord d'Aventure (Home.tsx)
- * Thème sombre athlétique - Stride Quest
+ * Styles de l'Accueil (Home.tsx) - Thème Nature Remix (21st.dev)
+ * Alignement strict sur la Maquette Produit (Page 1)
  */
 
 .sq-home-page-content {
-  --background: var(--sq-bg-base, #0b0f19);
+  --background: var(--sq-bg-base);
 }
 
 .sq-home-container {
@@ -18,284 +18,277 @@
 }
 
 /* ==========================================================================
-   En-tête Aventurier
+   En-tête : Salutation & Badge Niveau (Maquette Page 1)
    ========================================================================== */
 
 .sq-home-greeting {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
   padding: 4px 0 0 0;
 }
 
-.sq-home-greeting-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--sq-gold-rpg-tint, #f59e0b);
+.sq-home-greeting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sq-home-greeting-sub {
+  font-size: 0.95rem;
+  color: var(--sq-text-muted);
+  font-weight: 500;
 }
 
 .sq-home-greeting-title {
   margin: 0;
-  font-size: 1.45rem;
-  font-weight: 700;
+  font-size: 1.75rem;
+  font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--sq-text-main, #f8fafc);
+  color: var(--sq-text-main);
   line-height: 1.2;
 }
 
-/* ==========================================================================
-   Hero Card : Quête du jour
-   ========================================================================== */
-
-.sq-home-hero {
+.sq-home-level-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--sq-surface-card);
+  border: 2px solid var(--sq-border);
+  color: var(--sq-text-main);
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.1rem;
+  font-weight: 800;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  background: linear-gradient(
-    180deg,
-    var(--sq-surface-card, #151e2e) 0%,
-    rgba(21, 30, 46, 0.95) 100%
-  );
-  border: 1px solid var(--sq-border, #233248);
-  border-left: 3px solid var(--sq-green-athletic, #16a34a);
-  box-shadow: var(--sq-shadow-md);
-}
-
-.sq-home-hero-header {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-}
-
-.sq-home-hero-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.sq-home-hero-title {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--sq-text-main, #f8fafc);
-  letter-spacing: -0.01em;
-  line-height: 1.25;
-}
-
-.sq-home-hero-desc {
-  margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.45;
-  color: var(--sq-text-muted, #94a3b8);
-}
-
-.sq-home-hero-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.sq-hero-metric-chip {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
-  background: var(--sq-surface-muted, #1e293b);
-  border: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.08));
-  border-radius: var(--sq-radius-md, 12px);
-  text-align: center;
-}
-
-.sq-hero-metric-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--sq-text-subtle, #64748b);
-}
-
-.sq-hero-metric-value {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--sq-text-main, #f8fafc);
-}
-
-.sq-home-hero-cta {
-  --background: var(--sq-green-athletic, #16a34a);
-  --background-hover: var(--sq-green-athletic-shade, #15803d);
-  --background-activated: var(--sq-green-athletic-shade, #15803d);
-  --color: #ffffff;
-  --border-radius: var(--sq-radius-md, 12px);
-  font-weight: 600;
-  font-size: 0.95rem;
-  margin: 0;
-  min-height: 48px;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--sq-shadow-sm);
 }
 
 /* ==========================================================================
-   Sections Communes
+   Grand Bouton Hero : Démarrer une sortie (Maquette Page 1)
    ========================================================================== */
 
-.sq-home-section {
+.sq-home-start-hero {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sq-home-section-header {
-  display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  padding: 0 2px;
+  padding: 24px;
+  background: var(--sq-green-athletic);
+  color: #ffffff;
+  border-radius: var(--sq-radius-xl, 20px);
+  cursor: pointer;
+  box-shadow: var(--sq-shadow-md);
+  transition:
+    transform 0.15s ease-out,
+    filter 0.15s ease-out;
 }
 
-.sq-home-section-sub {
-  margin: 2px 0 0 0;
-  font-size: 0.8rem;
-  color: var(--sq-text-subtle, #64748b);
+.sq-home-start-hero:hover {
+  filter: brightness(1.05);
+}
+
+.sq-home-start-hero:active {
+  transform: scale(0.98);
+}
+
+.sq-start-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-start-hero-title {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.sq-start-hero-sub {
+  margin: 0;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.sq-start-hero-play-icon {
+  font-size: 3.5rem;
+  color: #ffffff;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
-   Synthèse Hebdomadaire (Grille de Métriques)
+   Section Cette Semaine (Maquette Page 1 : 3 métriques)
    ========================================================================== */
 
-.sq-home-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-@media (min-width: 520px) {
-  .sq-home-stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-/* ==========================================================================
-   Dernières Expéditions (Liste d'Activités)
-   ========================================================================== */
-
-.sq-home-activities-list {
+.sq-home-week-card {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 16px 20px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
 }
 
-.sq-home-activity-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 16px;
+.sq-week-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
 }
 
-.sq-activity-card-header {
+.sq-week-grid {
   display: flex;
+  justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
 }
 
-.sq-activity-type-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--sq-radius-md, 12px);
-  background-color: var(--sq-green-athletic-bg, rgba(22, 163, 74, 0.15));
-  color: var(--sq-green-athletic-tint, #22c55e);
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
-
-.sq-activity-identity {
+.sq-week-metric {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
-  min-width: 0;
 }
 
-.sq-activity-title-row {
+.sq-week-val {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  line-height: 1.1;
+}
+
+.sq-week-lbl {
+  font-size: 0.8rem;
+  color: var(--sq-text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Dernière Sortie (Maquette Page 1)
+   ========================================================================== */
+
+.sq-home-last-activity-card {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
+  cursor: pointer;
+}
+
+.sq-last-activity-header {
+  display: flex;
   justify-content: space-between;
-  gap: 8px;
+  align-items: center;
 }
 
-.sq-activity-title {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--sq-text-main, #f8fafc);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.sq-last-activity-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
 }
 
-.sq-activity-xp {
+.sq-last-activity-pts {
+  font-family: var(--sq-font-mono, monospace);
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--sq-gold-rpg-tint, #f59e0b);
-  flex-shrink: 0;
+  color: var(--sq-gold-rpg);
+  background: var(--sq-surface-card-subtle);
+  border: 1px solid var(--sq-border);
+  padding: 2px 8px;
+  border-radius: var(--sq-radius-full);
 }
 
-.sq-activity-sub {
+.sq-home-last-trace {
+  width: 100%;
+}
+
+.sq-last-activity-stats-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: var(--sq-text-subtle, #64748b);
+  padding-top: 10px;
+  border-top: 1px solid var(--sq-border);
 }
 
-.sq-activity-date {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.sq-activity-metrics-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.08));
-}
-
-.sq-activity-metric {
+.sq-last-stat {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.sq-activity-metric-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--sq-text-subtle, #64748b);
+.sq-last-stat-val {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
 }
 
-.sq-activity-metric-value {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--sq-text-main, #f8fafc);
+.sq-last-stat-lbl {
+  font-size: 0.75rem;
+  color: var(--sq-text-muted);
+  font-weight: 500;
 }
 
-.sq-activity-badge-pill {
-  display: inline-flex;
+/* ==========================================================================
+   Boss en cours (Maquette Page 1)
+   ========================================================================== */
+
+.sq-home-boss-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.sq-home-boss-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: var(--sq-radius-sm, 8px);
-  background: var(--sq-gold-rpg-bg, rgba(217, 119, 6, 0.15));
-  border: 1px solid rgba(217, 119, 6, 0.35);
-  color: var(--sq-gold-rpg-tint, #f59e0b);
+}
+
+.sq-home-boss-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-home-boss-percent {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--sq-green-athletic);
+}
+
+.sq-home-boss-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--sq-surface-card-subtle);
+  border-radius: var(--sq-radius-full);
+  overflow: hidden;
+}
+
+.sq-home-boss-fill {
+  height: 100%;
+  background: var(--sq-green-athletic);
+  border-radius: var(--sq-radius-full);
+}
+
+.sq-home-boss-sub {
   font-size: 0.78rem;
-  font-weight: 600;
+  color: var(--sq-text-muted);
 }

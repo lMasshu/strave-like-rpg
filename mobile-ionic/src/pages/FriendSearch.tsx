@@ -12,7 +12,8 @@ import {
 } from "@ionic/react";
 import { trophyOutline } from "ionicons/icons";
 import { useMemo, useState } from "react";
-import { DEMO_ATHLETES, Athlete } from "../data/demo";
+import QuestTracePreview from "../components/QuestTracePreview";
+import { DEMO_ATHLETES, DEMO_FRIEND_ACTIVITIES, Athlete } from "../data/demo";
 import "./FriendSearch.css";
 
 const FriendSearch: React.FC = () => {
@@ -112,6 +113,72 @@ const FriendSearch: React.FC = () => {
 
       <IonContent className="friends-page-content">
         <main className="friends-container">
+          {/* Rangée horizontale d'amis (Maquette Page 5) */}
+          <section
+            className="sq-card friends-bubbles-section"
+            aria-label="Mes amis"
+          >
+            <div className="friends-bubbles-header">
+              <span className="friends-bubbles-title">Mes amis • 12</span>
+            </div>
+            <div className="friends-bubbles-row">
+              <div className="friends-bubble-item">
+                <div className="friends-bubble-avatar">L</div>
+                <span className="friends-bubble-name">Léa</span>
+              </div>
+              <div className="friends-bubble-item">
+                <div className="friends-bubble-avatar">H</div>
+                <span className="friends-bubble-name">Hugo</span>
+              </div>
+              <div className="friends-bubble-item">
+                <div className="friends-bubble-avatar">S</div>
+                <span className="friends-bubble-name">Sarah</span>
+              </div>
+              <div className="friends-bubble-item">
+                <div className="friends-bubble-avatar">T</div>
+                <span className="friends-bubble-name">Tom</span>
+              </div>
+              <div className="friends-bubble-item">
+                <div className="friends-bubble-avatar bubble-more">+8</div>
+                <span className="friends-bubble-name">Voir tout</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Flux : Activités de mes amis (Maquette Page 5) */}
+          <section
+            className="friends-feed-section"
+            aria-label="Activités de mes amis"
+          >
+            <h2 className="sq-section-title">Activités de mes amis</h2>
+            <div className="friends-feed-list">
+              {DEMO_FRIEND_ACTIVITIES.map((act) => (
+                <article key={act.id} className="sq-card friends-activity-item">
+                  <div className="friends-activity-trace-col">
+                    <QuestTracePreview
+                      distanceKm={act.distanceKm}
+                      elevationMeters={45}
+                      className="friends-activity-mini-trace"
+                    />
+                  </div>
+                  <div className="friends-activity-info-col">
+                    <h3 className="friends-activity-title">
+                      {act.friendName} •{" "}
+                      {act.type === "cycle" ? "Vélo" : "Course à pied"}
+                    </h3>
+                    <span className="friends-activity-time">
+                      {act.timeLabel}
+                    </span>
+                    <p className="friends-activity-stats">
+                      {act.distanceKm} km • {act.durationFormatted} •{" "}
+                      {act.paceOrSpeed}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
           {/* Classement de la Guilde (Top 3 de la semaine) */}
           <section
             className="sq-card guild-leaderboard-card"

@@ -372,16 +372,20 @@
   transition: bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.map-floating-actions.with-live-hud {
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 16px + 145px + 12px);
+}
+
 .map-floating-actions.hud-min {
-  bottom: calc(76px + env(safe-area-inset-bottom, 0));
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 64px);
 }
 
 .map-floating-actions.hud-exp {
-  bottom: calc(365px + env(safe-area-inset-bottom, 0));
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 330px);
 }
 
 .map-floating-actions.immersed {
-  bottom: calc(20px + env(safe-area-inset-bottom, 0));
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 16px);
 }
 
 .fab-action-btn {
@@ -516,7 +520,7 @@
 ======================================================= */
 .rpg-bottom-hud {
   position: absolute;
-  bottom: 0;
+  bottom: var(--sq-tab-bar-height, 60px);
   left: 0;
   right: 0;
   z-index: 25;
@@ -528,7 +532,7 @@
   flex-direction: column;
   overflow: hidden;
   transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  padding-bottom: env(safe-area-inset-bottom, 8px);
+  padding-bottom: 8px;
 }
 
 .rpg-bottom-hud.collapsed {
@@ -1048,7 +1052,7 @@
 
 .map-workout-live-hud {
   position: absolute;
-  bottom: 16px;
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 16px);
   left: 16px;
   right: 16px;
   z-index: 30;
@@ -1058,13 +1062,13 @@
   background: var(--sq-bg-header, var(--sq-surface-card));
   border: 1px solid var(--sq-border);
   border-radius: var(--sq-radius-xl, 20px);
-  padding: 18px 20px;
+  padding: 16px 20px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--sq-shadow-md);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .map-workout-live-metrics {
@@ -1112,14 +1116,16 @@
 /* Écran Statistiques Plein Écran (Maquette Page 2) */
 .sq-workout-stats-screen {
   position: absolute;
-  inset: 0;
-  top: 60px;
+  top: calc(56px + env(safe-area-inset-top, 6px));
+  left: 0;
+  right: 0;
+  bottom: var(--sq-tab-bar-height, 60px);
   z-index: 35;
   background: var(--sq-bg-base);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 24px 20px 40px 20px;
+  padding: 20px 20px 24px 20px;
   box-sizing: border-box;
   overflow-y: auto;
 }

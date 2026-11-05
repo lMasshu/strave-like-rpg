@@ -1055,7 +1055,13 @@ const MapPage: React.FC = () => {
 
           {/* Boutons d'Action Flottants (Disposés au-dessus du HUD) */}
           <div
-            className={`map-floating-actions ${isHudCollapsed ? "hud-min" : "hud-exp"} ${hideUiForImmersion ? "immersed" : ""}`}
+            className={`map-floating-actions ${
+              !showRoutePlanner && workoutSegment === "map"
+                ? "with-live-hud"
+                : isHudCollapsed
+                  ? "hud-min"
+                  : "hud-exp"
+            } ${hideUiForImmersion ? "immersed" : ""}`}
           >
             <button
               type="button"

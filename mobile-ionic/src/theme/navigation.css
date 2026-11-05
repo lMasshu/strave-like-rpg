@@ -2,6 +2,10 @@
    Navigation par onglets (Bottom Tab Bar) - Nature Remix Theme
    ========================================================================== */
 
+:root {
+  --sq-tab-bar-height: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+
 ion-tab-bar {
   --background: var(--sq-bg-header, var(--sq-surface-card));
   --border: 1px solid var(--sq-border);

@@ -199,6 +199,7 @@ const MapPage: React.FC = () => {
   const [workoutSegment, setWorkoutSegment] = useState<"map" | "stats">("map");
   const [isWorkoutPaused, setIsWorkoutPaused] = useState(false);
   const [workoutFinishedModal, setWorkoutFinishedModal] = useState(false);
+  const [showRoutePlanner, setShowRoutePlanner] = useState(false);
   const [hideUiForImmersion, setHideUiForImmersion] = useState(false);
   const [activeTheme, setActiveTheme] = useState<MapTheme>("outdoors");
   const activeThemeRef = useRef<MapTheme>("outdoors");
@@ -769,25 +770,88 @@ const MapPage: React.FC = () => {
           {/* Conteneur Plein Écran de la Carte Mapbox */}
           <div ref={mapContainer} className="map-mapbox-container" />
 
-          {/* Sélecteur de Segment : Statistiques / Carte GPS (Maquette Pages 2 et 3) */}
-          <div className="map-workout-segment-container">
-            <div className="map-workout-segment-bar" role="tablist">
+          {/* Barre Supérieure Unifiée : Sélecteur de Segment & Outils (Maquette Pages 2 et 3) */}
+          {!hideUiForImmersion && (
+            <div className="map-unified-header">
               <button
                 type="button"
-                className={`map-workout-segment-btn ${workoutSegment === "stats" ? "is-active" : ""}`}
-                onClick={() => setWorkoutSegment("stats")}
+                className={`top-mobile-icon-btn ${showRoutePlanner ? "active" : ""}`}
+                onClick={() => setShowRoutePlanner(!showRoutePlanner)}
+                title="Planificateur et recherche de lieux"
+                aria-label="Recherche et itinéraire"
               >
-                Statistiques
+                <IonIcon icon={searchOutline} />
               </button>
+
+              <div className="map-workout-segment-bar" role="tablist">
+                <button
+                  type="button"
+                  className={`map-workout-segment-btn ${workoutSegment === "stats" ? "is-active" : ""}`}
+                  onClick={() => setWorkoutSegment("stats")}
+                >
+                  Statistiques
+                </button>
+                <button
+                  type="button"
+                  className={`map-workout-segment-btn ${workoutSegment === "map" ? "is-active" : ""}`}
+                  onClick={() => setWorkoutSegment("map")}
+                >
+                  Carte GPS
+                </button>
+              </div>
+
               <button
                 type="button"
-                className={`map-workout-segment-btn ${workoutSegment === "map" ? "is-active" : ""}`}
-                onClick={() => setWorkoutSegment("map")}
+                className={`top-mobile-icon-btn ${showStyleMenu ? "active" : ""}`}
+                onClick={() => setShowStyleMenu(!showStyleMenu)}
+                title="Style de carte"
+                aria-label="Style de carte"
               >
-                Carte GPS
+                <IonIcon icon={layersOutline} />
               </button>
             </div>
-          </div>
+          )}
+
+          {/* Tiroir de Recherche dépliable sous l'en-tête */}
+          {showRoutePlanner &&
+            !hideUiForImmersion &&
+            workoutSegment === "map" && (
+              <div className="map-route-search-drawer">
+                <div className="mobile-search-pill">
+                  <IonIcon icon={searchOutline} className="search-pill-icon" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchInput(e.target.value)}
+                    placeholder="Rechercher un lieu, monument..."
+                    className="search-pill-input"
+                    autoFocus
+                  />
+                  {isSearching ? (
+                    <IonSpinner
+                      name="crescent"
+                      style={{
+                        width: 16,
+                        height: 16,
+                        color: "var(--sq-green-athletic)",
+                      }}
+                    />
+                  ) : searchQuery ? (
+                    <button
+                      type="button"
+                      className="clear-pill-btn"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSearchResults([]);
+                        setSelectedPoi(null);
+                      }}
+                    >
+                      <IonIcon icon={closeCircleOutline} />
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            )}
 
           {/* Écran Plein Format Statistiques (Maquette Page 2) */}
           {workoutSegment === "stats" && (
@@ -812,7 +876,9 @@ const MapPage: React.FC = () => {
               <div className="sq-workout-stats-grid">
                 <div className="sq-card sq-workout-stat-card">
                   <span className="sq-workout-stat-val sq-tabular">
-                    {routeInfo ? routeInfo.distanceKm.toFixed(2).replace(".", ",") : "3,42"}{" "}
+                    {routeInfo
+                      ? routeInfo.distanceKm.toFixed(2).replace(".", ",")
+                      : "3,42"}{" "}
                     km
                   </span>
                   <span className="sq-workout-stat-lbl">Distance</span>
@@ -831,7 +897,8 @@ const MapPage: React.FC = () => {
                 </div>
                 <div className="sq-card sq-workout-stat-card">
                   <span className="sq-workout-stat-val sq-tabular">
-                    +{Math.round((routeInfo ? routeInfo.distanceKm : 3.42) * 14)}
+                    +
+                    {Math.round((routeInfo ? routeInfo.distanceKm : 3.42) * 14)}
                   </span>
                   <span className="sq-workout-stat-lbl">Points gagnés</span>
                 </div>
@@ -853,49 +920,6 @@ const MapPage: React.FC = () => {
                   Terminer
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* Top Bar Mobile Épurée (Navigation & Recherche) */}
-          {!hideUiForImmersion && workoutSegment === "map" && (
-            <div className="map-mobile-top-bar">
-              <div className="mobile-search-pill">
-                <IonIcon icon={searchOutline} className="search-pill-icon" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchInput(e.target.value)}
-                  placeholder="Rechercher un lieu, monument..."
-                  className="search-pill-input"
-                />
-                {isSearching ? (
-                  <IonSpinner
-                    name="crescent"
-                    style={{ width: 16, height: 16, color: "#38bdf8" }}
-                  />
-                ) : searchQuery ? (
-                  <button
-                    type="button"
-                    className="clear-pill-btn"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSearchResults([]);
-                      setSelectedPoi(null);
-                    }}
-                  >
-                    <IonIcon icon={closeCircleOutline} />
-                  </button>
-                ) : null}
-              </div>
-
-              <button
-                type="button"
-                className={`top-mobile-icon-btn ${showStyleMenu ? "active" : ""}`}
-                onClick={() => setShowStyleMenu(!showStyleMenu)}
-                title="Style de carte"
-              >
-                <IonIcon icon={layersOutline} />
-              </button>
             </div>
           )}
 
@@ -1072,8 +1096,63 @@ const MapPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Bottom Sheet HUD Mobile Épuré */}
-          {!hideUiForImmersion && (
+          {/* HUD d'enregistrement Live sur Carte (Maquette Page 3) */}
+          {!hideUiForImmersion &&
+            workoutSegment === "map" &&
+            !showRoutePlanner && (
+              <div
+                className="map-workout-live-hud"
+                aria-label="Données d'enregistrement"
+              >
+                <div className="map-workout-live-metrics">
+                  <div className="live-metric-item">
+                    <span className="live-metric-val sq-tabular">
+                      {routeInfo && routeInfo.distanceKm > 0
+                        ? `${Math.floor(routeInfo.durationMinutes / routeInfo.distanceKm)}:${String(Math.round(((routeInfo.durationMinutes / routeInfo.distanceKm) % 1) * 60)).padStart(2, "0")}`
+                        : "5:12"}
+                    </span>
+                    <span className="live-metric-lbl">Rythme réel</span>
+                  </div>
+
+                  <div className="live-metric-item">
+                    <span className="live-metric-val sq-tabular">
+                      {routeInfo
+                        ? routeInfo.distanceKm.toFixed(2).replace(".", ",")
+                        : "3,42"}{" "}
+                      km
+                    </span>
+                    <span className="live-metric-lbl">Distance</span>
+                  </div>
+
+                  <div className="live-metric-item">
+                    <span className="live-metric-val sq-tabular">
+                      {routeInfo ? `${routeInfo.durationMinutes}:00` : "18:06"}
+                    </span>
+                    <span className="live-metric-lbl">Temps</span>
+                  </div>
+                </div>
+
+                <div className="map-workout-live-actions">
+                  <button
+                    type="button"
+                    className="sq-button-secondary live-action-btn"
+                    onClick={() => setIsWorkoutPaused(!isWorkoutPaused)}
+                  >
+                    {isWorkoutPaused ? "Reprendre" : "Pause"}
+                  </button>
+                  <button
+                    type="button"
+                    className="sq-button-primary live-action-btn"
+                    onClick={() => setWorkoutFinishedModal(true)}
+                  >
+                    Terminer
+                  </button>
+                </div>
+              </div>
+            )}
+
+          {/* Bottom Sheet Itinéraire A -> B (Seulement si mode planificateur activé) */}
+          {!hideUiForImmersion && showRoutePlanner && (
             <div
               className={`rpg-bottom-hud ${isHudCollapsed ? "collapsed" : "expanded"}`}
             >

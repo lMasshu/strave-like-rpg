@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Knowledge Graph & Artifacts
+graphify-out/
+

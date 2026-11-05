@@ -3,6 +3,8 @@ import {
   haversineMeters,
   pointAlongRoute,
   routeLengthMeters,
+  calculateBearing,
+  pruneRouteSpurs,
   type LngLat,
 } from "./geo";
 
@@ -64,5 +66,59 @@ describe("pointAlongRoute", () => {
 
   it("renvoie null pour un tracé vide", () => {
     expect(pointAlongRoute([], 10)).toBeNull();
+  });
+});
+
+describe("calculateBearing", () => {
+  it("calcule le cap azimutal correct", () => {
+    const north = calculateBearing([2.0, 48.0], [2.0, 49.0]);
+    expect(north).toBeCloseTo(0, 0);
+
+    const east = calculateBearing([2.0, 48.0], [3.0, 48.0]);
+    expect(east).toBeCloseTo(90, 0);
+  });
+});
+
+describe("pruneRouteSpurs", () => {
+  it("élague automatiquement les antennes et demi-tours en cul-de-sac", () => {
+    // Tracé qui s'engage dans une impasse, fait demi-tour à l'apex et ressort au même carrefour
+    const trackWithSpur: LngLat[] = [
+      [2.35, 48.85], // Carrefour A
+      [2.35, 48.8504], // Impasse aller
+      [2.35, 48.8508], // Impasse aller
+      [2.35, 48.8512], // Apex de l'impasse (~130m de A)
+      [2.35, 48.8508], // Impasse retour
+      [2.35, 48.8504], // Impasse retour
+      [2.35, 48.85], // Retour au Carrefour A
+      [2.352, 48.85], // Poursuite de la boucle vers l'est
+      [2.354, 48.85],
+      [2.356, 48.85],
+    ];
+
+    const pruned = pruneRouteSpurs(trackWithSpur);
+
+    // L'antenne de 130m doit avoir été court-circuitée
+    expect(pruned.length).toBeLessThan(trackWithSpur.length);
+    expect(pruned[0]).toEqual([2.35, 48.85]);
+    expect(pruned[pruned.length - 1]).toEqual([2.356, 48.85]);
+    // L'apex ne doit plus être dans le tracé
+    expect(pruned.some((p) => p[1] === 48.8512)).toBe(false);
+  });
+
+  it("conserve intact un circuit fluide et ouvert", () => {
+    const cleanLoop: LngLat[] = [
+      [2.35, 48.85],
+      [2.352, 48.852],
+      [2.354, 48.854],
+      [2.354, 48.858],
+      [2.35, 48.86],
+      [2.346, 48.858],
+      [2.346, 48.854],
+      [2.348, 48.852],
+      [2.35, 48.85],
+    ];
+
+    const result = pruneRouteSpurs(cleanLoop);
+    expect(result).toHaveLength(cleanLoop.length);
   });
 });

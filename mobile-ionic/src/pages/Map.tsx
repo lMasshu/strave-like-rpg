@@ -39,6 +39,7 @@ import {
 import { searchPointsOfInterest, PoiResult } from "../services/mapboxGeocoding";
 import QuestGeneratorModal from "../components/QuestGeneratorModal";
 import QuestRunHud from "../components/QuestRunHud";
+import { Capacitor } from "@capacitor/core";
 import { Geolocation } from "@capacitor/geolocation";
 import { GeneratedQuest } from "../services/questGenerator";
 import "./Map.css";
@@ -54,6 +55,61 @@ const MAP_STYLES: Record<MapTheme, string> = {
   dark: "mapbox://styles/mapbox/dark-v11",
   streets: "mapbox://styles/mapbox/streets-v12",
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
+};
+
+function createRasterStyle(
+  tiles: string[],
+  attribution: string,
+): mapboxgl.Style {
+  return {
+    version: 8,
+    sources: {
+      "raster-tiles": {
+        type: "raster",
+        tiles,
+        tileSize: 256,
+        attribution,
+      },
+    },
+    layers: [
+      {
+        id: "raster-layer",
+        type: "raster",
+        source: "raster-tiles",
+        minzoom: 0,
+        maxzoom: 20,
+      },
+    ],
+  };
+}
+
+const FALLBACK_STYLES: Record<MapTheme, mapboxgl.Style> = {
+  outdoors: createRasterStyle(
+    [
+      "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+      "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+      "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+    ],
+    "&copy; OpenStreetMap contributors &copy; CARTO",
+  ),
+  dark: createRasterStyle(
+    [
+      "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+      "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+      "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+    ],
+    "&copy; OpenStreetMap contributors &copy; CARTO",
+  ),
+  streets: createRasterStyle(
+    ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+    "&copy; OpenStreetMap contributors",
+  ),
+  satellite: createRasterStyle(
+    [
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    ],
+    "&copy; Esri, USGS",
+  ),
 };
 
 function getElevationChartPaths(
@@ -142,7 +198,12 @@ const MapPage: React.FC = () => {
   const [isHudCollapsed, setIsHudCollapsed] = useState(false);
   const [hideUiForImmersion, setHideUiForImmersion] = useState(false);
   const [activeTheme, setActiveTheme] = useState<MapTheme>("outdoors");
+  const activeThemeRef = useRef<MapTheme>("outdoors");
   const [showStyleMenu, setShowStyleMenu] = useState(false);
+
+  useEffect(() => {
+    activeThemeRef.current = activeTheme;
+  }, [activeTheme]);
 
   const [showConfigNotice, setShowConfigNotice] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -158,6 +219,8 @@ const MapPage: React.FC = () => {
   useIonViewDidEnter(() => {
     if (mapInstance.current) {
       mapInstance.current.resize();
+      setTimeout(() => mapInstance.current?.resize(), 150);
+      setTimeout(() => mapInstance.current?.resize(), 400);
     }
   });
 
@@ -301,11 +364,11 @@ const MapPage: React.FC = () => {
 
   // Résolution du style en fonction du thème sélectionné
   const getStyleForTheme = useCallback(
-    (theme: MapTheme): string => {
+    (theme: MapTheme): string | mapboxgl.Style => {
       if (token) {
         return MAP_STYLES[theme] || MAP_STYLES.outdoors;
       }
-      return "https://demotiles.maplibre.org/style.json";
+      return FALLBACK_STYLES[theme] || FALLBACK_STYLES.outdoors;
     },
     [token],
   );
@@ -441,17 +504,20 @@ const MapPage: React.FC = () => {
     });
 
     map.on("error", (e) => {
-      console.error("Mapbox error:", e);
+      console.warn("Mapbox error:", e);
       const errMsg = e.error?.message || "";
       if (
         errMsg.includes("401") ||
         errMsg.includes("403") ||
         errMsg.includes("Unauthorized") ||
-        errMsg.includes("Forbidden")
+        errMsg.includes("Forbidden") ||
+        errMsg.includes("access token")
       ) {
-        setLoadError(
-          "Jeton Mapbox invalide ou non autorisé. Vérifiez VITE_MAPBOX_TOKEN dans votre fichier .env.",
-        );
+        setLoadError("Mode carte libre actif (CARTO / OpenStreetMap).");
+        setTimeout(() => setLoadError(null), 4500);
+        const fallback =
+          FALLBACK_STYLES[activeThemeRef.current] || FALLBACK_STYLES.outdoors;
+        map.setStyle(fallback);
       }
     });
 
@@ -513,6 +579,22 @@ const MapPage: React.FC = () => {
   // Position GPS actuelle (plugin Capacitor : fonctionne sur mobile et dans le navigateur)
   const handleUseMyLocation = async () => {
     try {
+      if (
+        Capacitor.isNativePlatform() &&
+        typeof Geolocation.requestPermissions === "function"
+      ) {
+        const perms = await Geolocation.requestPermissions();
+        if (
+          perms.location !== "granted" &&
+          perms.coarseLocation !== "granted"
+        ) {
+          alert(
+            "Permission de localisation refusée. Veuillez autoriser l'accès GPS dans les paramètres.",
+          );
+          return;
+        }
+      }
+
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 15000,
@@ -529,9 +611,34 @@ const MapPage: React.FC = () => {
         mapInstance.current.flyTo({ center: myCoords, zoom: 15 });
       }
       updateRoute(myCoords, pointBRef.current, modeRef.current, false);
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn("Erreur géolocalisation :", err);
-      alert("Impossible de récupérer votre position GPS.");
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : typeof err === "object" && err !== null && "message" in err
+              ? String((err as { message: unknown }).message)
+              : "";
+
+      if (
+        errMsg.toLowerCase().includes("disabled") ||
+        errMsg.toLowerCase().includes("services are not enabled")
+      ) {
+        alert(
+          "Veuillez activer la localisation (GPS) dans les réglages de votre téléphone.",
+        );
+      } else if (
+        errMsg.toLowerCase().includes("denied") ||
+        errMsg.toLowerCase().includes("permission")
+      ) {
+        alert("Permission de localisation refusée.");
+      } else {
+        alert(
+          "Impossible de récupérer votre position GPS (signal faible ou délai dépassé).",
+        );
+      }
     }
   };
 
@@ -741,6 +848,7 @@ const MapPage: React.FC = () => {
               quest={activeQuest}
               map={mapInstance.current}
               onFinish={() => setActiveQuest(null)}
+              debugDefaultExpanded={false}
             />
           )}
 
@@ -1151,9 +1259,22 @@ const MapPage: React.FC = () => {
           )}
 
           {/* Notification d'erreur discrète */}
+          {/* Notification d'information temporaire */}
           {loadError && (
-            <div className="mapbox-error-pill">
-              <span>⚠️ {loadError}</span>
+            <div
+              className="mapbox-error-pill"
+              onClick={() => setLoadError(null)}
+              role="button"
+              tabIndex={0}
+              style={{
+                cursor: "pointer",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>ℹ️ {loadError}</span>
+              <span style={{ marginLeft: 8, opacity: 0.7 }}>✕</span>
             </div>
           )}
         </div>

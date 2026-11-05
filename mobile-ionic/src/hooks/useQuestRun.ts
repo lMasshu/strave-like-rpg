@@ -16,7 +16,7 @@ import {
 export const GPS_SIMULATION_AVAILABLE =
   import.meta.env.DEV || import.meta.env.VITE_GPS_SIMULATION === "true";
 
-const SIMULATION_SPEED_METERS_PER_SECOND = 25;
+const SIMULATION_SPEED_METERS_PER_SECOND = 3.0; // ~10.8 km/h (allure de course modérée)
 
 interface QuestRun {
   state: QuestRunState;
@@ -91,8 +91,13 @@ export function useQuestRun(quest: GeneratedQuest): QuestRun {
       if (coords) {
         setSimulatedPosition({
           coords,
+          latitude: coords[1],
+          longitude: coords[0],
+          altitude: 45,
           accuracy: 5,
           speed: SIMULATION_SPEED_METERS_PER_SECOND,
+          heading: 0,
+          altitudeAccuracy: 1,
           timestamp: Date.now(),
         });
       }

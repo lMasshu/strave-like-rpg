@@ -7,6 +7,8 @@ import {
   generateRandomQuest,
   calculateBearing,
   generatePoiLoopWaypoints,
+  detectRouteOverlap,
+  widenWaypointsOnOverlap,
 } from "./questGenerator";
 
 describe("questGenerator service", () => {
@@ -184,6 +186,66 @@ describe("questGenerator service", () => {
       // Le waypoint de retour (index 2) ne doit être ni le centre ni le POI
       expect(waypoints[2]).not.toEqual(PARIS_COORDS);
       expect(waypoints[2]).not.toEqual(poiCoords);
+    });
+  });
+
+  describe("detectRouteOverlap and widenWaypointsOnOverlap", () => {
+    it("should detect significant overlap on pure out-and-back tracks", () => {
+      // Tracé aller-retour pur sur la même ligne droite
+      const outAndBackTrack: [number, number][] = [
+        [2.35, 48.85],
+        [2.352, 48.85],
+        [2.354, 48.85],
+        [2.356, 48.85],
+        [2.358, 48.85],
+        [2.36, 48.85], // demi-tour
+        [2.358, 48.85],
+        [2.356, 48.85],
+        [2.354, 48.85],
+        [2.352, 48.85],
+        [2.35, 48.85],
+      ];
+
+      const analysis = detectRouteOverlap(outAndBackTrack);
+      expect(analysis.hasSignificantOverlap).toBe(true);
+      expect(analysis.overlapRatio).toBeGreaterThan(0.3);
+    });
+
+    it("should report zero significant overlap on circular wide loops", () => {
+      // Boucle circulaire propre à 8 sommets distincts
+      const cleanCircleTrack: [number, number][] = [
+        [2.35, 48.85],
+        [2.355, 48.852],
+        [2.36, 48.856],
+        [2.358, 48.862],
+        [2.35, 48.865],
+        [2.342, 48.862],
+        [2.34, 48.856],
+        [2.345, 48.852],
+        [2.35, 48.85],
+      ];
+
+      const analysis = detectRouteOverlap(cleanCircleTrack);
+      expect(analysis.hasSignificantOverlap).toBe(false);
+      expect(analysis.overlapRatio).toBe(0);
+    });
+
+    it("should widen intermediate waypoints laterally when shift is applied", () => {
+      const initialWaypoints = generateLoopWaypoints(PARIS_COORDS, 3);
+      const widened = widenWaypointsOnOverlap(
+        initialWaypoints,
+        PARIS_COORDS,
+        1.4,
+      );
+
+      expect(widened.length).toBe(initialWaypoints.length);
+      expect(widened[0]).toEqual(PARIS_COORDS);
+      expect(widened[widened.length - 1]).toEqual(PARIS_COORDS);
+
+      // Les points intermédiaires doivent être décalés
+      for (let i = 1; i < widened.length - 1; i++) {
+        expect(widened[i]).not.toEqual(initialWaypoints[i]);
+      }
     });
   });
 });

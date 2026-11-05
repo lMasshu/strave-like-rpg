@@ -59,6 +59,13 @@
     sans-serif;
   --sq-font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Alias & Compatibilité composants */
+  --sq-color-primary: var(--sq-green-athletic);
+  --sq-font-sans: var(--sq-font-family);
+  --sq-text-secondary: var(--sq-text-muted);
+  --sq-border-highlight: rgba(22, 163, 74, 0.35);
+  --sq-surface-card-subtle: rgba(255, 255, 255, 0.04);
 }
 
 /* Base de l'application */

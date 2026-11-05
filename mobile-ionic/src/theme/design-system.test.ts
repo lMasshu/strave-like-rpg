@@ -22,6 +22,19 @@ describe("Design System CSS tokens", () => {
     expect(cssContent).toContain("--sq-gold-rpg: #d97706");
     expect(cssContent).toContain("--sq-danger-raid: #ef4444");
 
+    // Alias tokens
+    expect(cssContent).toContain(
+      "--sq-color-primary: var(--sq-green-athletic);",
+    );
+    expect(cssContent).toContain("--sq-font-sans: var(--sq-font-family);");
+    expect(cssContent).toContain("--sq-text-secondary: var(--sq-text-muted);");
+    expect(cssContent).toContain(
+      "--sq-border-highlight: rgba(22, 163, 74, 0.35);",
+    );
+    expect(cssContent).toContain(
+      "--sq-surface-card-subtle: rgba(255, 255, 255, 0.04);",
+    );
+
     // Required utility classes
     expect(cssContent).toContain(".sq-card");
     expect(cssContent).toContain(".sq-button-primary");

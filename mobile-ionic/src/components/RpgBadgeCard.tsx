@@ -28,6 +28,18 @@ const RpgBadgeCard: React.FC<RpgBadgeCardProps> = ({
     <div
       className={`sq-card sq-badge-card ${unlocked ? "unlocked" : "locked"} ${onClick ? "sq-card-interactive" : ""} ${className}`.trim()}
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
     >
       <div className="sq-badge-card-icon-wrapper">
         {unlocked ? (

@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import RpgBadgeCard from "./RpgBadgeCard";
 
 describe("RpgBadgeCard Component", () => {
@@ -31,5 +31,28 @@ describe("RpgBadgeCard Component", () => {
     );
     expect(screen.getByText("Conquérant des Cimes")).toBeInTheDocument();
     expect(screen.getByText(/Verrouillé/i)).toBeInTheDocument();
+  });
+
+  it("supports keyboard accessibility when onClick is provided", () => {
+    const handleClick = vi.fn();
+    render(
+      <RpgBadgeCard
+        name="Pionnier 10K"
+        description="Parcourir 10km en une sortie"
+        onClick={handleClick}
+      />,
+    );
+
+    const buttonCard = screen.getByRole("button", { name: /Pionnier 10K/i });
+    expect(buttonCard).toHaveAttribute("tabindex", "0");
+
+    fireEvent.keyDown(buttonCard, { key: "Enter" });
+    expect(handleClick).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(buttonCard, { key: " " });
+    expect(handleClick).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(buttonCard);
+    expect(handleClick).toHaveBeenCalledTimes(3);
   });
 });

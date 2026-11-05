@@ -96,4 +96,23 @@ describe("Notifications Page", () => {
 
     expect(unreadItem?.classList.contains("is-read")).toBe(true);
   });
+
+  it("marks an individual notification as read with Enter and Space keys", () => {
+    const { container } = render(
+      <IonReactRouter>
+        <Notifications />
+      </IonReactRouter>,
+    );
+
+    const unreadItems = container.querySelectorAll(".notif-card.is-unread");
+    expect(unreadItems.length).toBeGreaterThanOrEqual(2);
+
+    // Test Enter key on first unread item
+    fireEvent.keyDown(unreadItems[0], { key: "Enter" });
+    expect(unreadItems[0].classList.contains("is-read")).toBe(true);
+
+    // Test Space key on second unread item
+    fireEvent.keyDown(unreadItems[1], { key: " " });
+    expect(unreadItems[1].classList.contains("is-read")).toBe(true);
+  });
 });

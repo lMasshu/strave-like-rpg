@@ -186,8 +186,15 @@ const Notifications: React.FC = () => {
                   className={`notif-card ${
                     notification.read ? "is-read" : "is-unread notif-unread"
                   }`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => markAsRead(notification.id)}
-                  role="listitem"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      markAsRead(notification.id);
+                    }
+                  }}
                 >
                   <div className={`notif-icon-wrap type-${notification.type}`}>
                     <IonIcon icon={ICONS[notification.type]} />

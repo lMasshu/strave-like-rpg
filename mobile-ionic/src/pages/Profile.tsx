@@ -74,8 +74,12 @@ function getActivityTypeLabel(type: UserActivity["type"]): string {
 function formatPace(distanceKm: number, durationMinutes: number): string {
   if (distanceKm <= 0) return "-";
   const paceMinutesDecimal = durationMinutes / distanceKm;
-  const paceMinutes = Math.floor(paceMinutesDecimal);
-  const paceSeconds = Math.round((paceMinutesDecimal - paceMinutes) * 60);
+  let paceMinutes = Math.floor(paceMinutesDecimal);
+  let paceSeconds = Math.round((paceMinutesDecimal - paceMinutes) * 60);
+  if (paceSeconds >= 60) {
+    paceMinutes += 1;
+    paceSeconds = 0;
+  }
   return `${paceMinutes}'${paceSeconds < 10 ? "0" : ""}${paceSeconds}"/km`;
 }
 
@@ -85,10 +89,18 @@ function formatElevation(meters: number): string {
 
 const Profile: React.FC = () => {
   const profile = DEMO_USER_PROFILE;
-  const progressPercent = Math.min(
-    100,
-    Math.round((profile.experience / profile.nextLevelExperience) * 100),
-  );
+  const progressPercent =
+    profile.nextLevelExperience <= 0
+      ? 100
+      : Math.min(
+          100,
+          Math.max(
+            0,
+            Math.round(
+              (profile.experience / profile.nextLevelExperience) * 100,
+            ),
+          ),
+        );
   const remainingXp = Math.max(
     0,
     profile.nextLevelExperience - profile.experience,

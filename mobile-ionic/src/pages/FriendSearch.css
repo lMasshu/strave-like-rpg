@@ -1,16 +1,434 @@
+/* ==========================================================================
+   Page Recherche d'Amis & Classement de Guilde - Stride Quest Design System
+   ========================================================================== */
+
+.friends-page-content {
+  --background: var(--sq-bg-base, #0b0f19);
+}
+
+.friends-search-toolbar {
+  --background: rgba(11, 15, 25, 0.88);
+  --border-width: 0 0 1px 0;
+  --border-color: var(--sq-border, #1f293d);
+  padding: 0 12px 6px;
+}
+
+.friends-searchbar {
+  --background: var(--sq-surface-card, #131926);
+  --color: var(--sq-text-main, #f1f5f9);
+  --placeholder-color: var(--sq-text-muted, #94a3b8);
+  --icon-color: var(--sq-text-muted, #94a3b8);
+  --box-shadow: none;
+  --border-radius: var(--sq-radius-md, 8px);
+  padding: 0;
+}
+
+.friends-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ==========================================================================
+   Encart Classement de la Guilde (Podium)
+   ========================================================================== */
+
+.guild-leaderboard-card {
+  background: linear-gradient(
+    180deg,
+    rgba(22, 163, 74, 0.08) 0%,
+    var(--sq-surface-card, #131926) 40%
+  );
+  border: 1px solid var(--sq-border, #1f293d);
+  border-radius: var(--sq-radius-lg, 12px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guild-leaderboard-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guild-leaderboard-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--sq-radius-md, 8px);
+  background: rgba(22, 163, 74, 0.15);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sq-color-primary, #16a34a);
+  font-size: 1.25rem;
+}
+
+.guild-leaderboard-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.guild-leaderboard-title {
+  margin: 0;
+  font-family: var(--sq-font-sans, system-ui, sans-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--sq-text-main, #f1f5f9);
+}
+
+.guild-leaderboard-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--sq-text-secondary, #94a3b8);
+}
+
+/* Grille du Podium */
+.guild-podium {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  align-items: flex-end;
+  padding-top: 8px;
+}
+
+.guild-podium-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: var(--sq-surface-card-subtle, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: var(--sq-radius-md, 8px);
+  padding: 12px 6px 10px;
+  position: relative;
+  transition: transform 0.15s ease-out;
+}
+
+.guild-podium-step.podium-gold {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: linear-gradient(
+    180deg,
+    rgba(245, 158, 11, 0.12) 0%,
+    var(--sq-surface-card, #131926) 100%
+  );
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.12);
+  transform: translateY(-6px);
+}
+
+.guild-podium-step.podium-silver {
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.guild-podium-step.podium-bronze {
+  border-color: rgba(217, 119, 6, 0.35);
+}
+
+.guild-podium-medal {
+  font-size: 1.3rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.guild-podium-avatar-container {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+.guild-podium-avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 1.05rem;
+}
+
+.podium-gold .guild-podium-avatar {
+  width: 50px;
+  height: 50px;
+  font-size: 1.2rem;
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.podium-silver .guild-podium-avatar {
+  box-shadow: 0 0 0 2px #94a3b8;
+}
+
+.podium-bronze .guild-podium-avatar {
+  box-shadow: 0 0 0 2px #d97706;
+}
+
+.guild-podium-rank-tag {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--sq-bg-base, #0b0f19);
+  color: var(--sq-text-main, #f1f5f9);
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--sq-border, #1f293d);
+}
+
+.guild-podium-username {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--sq-text-main, #f1f5f9);
+  max-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guild-podium-score {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sq-color-primary, #16a34a);
+  margin-top: 2px;
+}
+
+.podium-gold .guild-podium-score {
+  color: #fbbf24;
+}
+
+.guild-podium-level {
+  font-size: 0.68rem;
+  color: var(--sq-text-muted, #94a3b8);
+  margin-top: 1px;
+}
+
+/* ==========================================================================
+   Liste des Membres / Résultats
+   ========================================================================== */
+
+.friends-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.friends-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.friends-list-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--sq-text-secondary, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friends-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--sq-surface-card, #131926);
+  border: 1px solid var(--sq-border, #1f293d);
+  border-radius: var(--sq-radius-md, 8px);
+  padding: 12px 14px;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.friends-card:hover {
+  border-color: var(--sq-border-highlight, rgba(22, 163, 74, 0.4));
+}
+
+.friends-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.friends-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .friends-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ion-color-primary, #16a34a);
-  color: var(--ion-color-primary-contrast, #ffffff);
-  font-weight: 600;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(
+    135deg,
+    var(--sq-color-primary, #16a34a) 0%,
+    #0d682f 100%
+  );
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.05rem;
   border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.friends-level-tag {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--sq-bg-base, #0b0f19);
+  color: var(--sq-text-main, #f1f5f9);
+  border: 1px solid var(--sq-border, #1f293d);
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 999px;
+  line-height: 1.1;
+}
+
+.friends-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.friends-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.friends-username {
+  font-family: var(--sq-font-sans, system-ui, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-text-main, #f1f5f9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friends-role-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--sq-color-primary, #16a34a);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+}
+
+.friends-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--sq-text-secondary, #94a3b8);
+}
+
+.friends-distance {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--sq-text-muted, #94a3b8);
+}
+
+/* Statut d'activité */
+.friends-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.friends-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.friends-status-badge.status-en_course {
+  color: #4ade80;
+}
+
+.friends-status-badge.status-en_course .friends-status-dot {
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
+  animation: pulse-dot 1.5s infinite ease-in-out;
+}
+
+.friends-status-badge.status-actif_recemment {
+  color: #38bdf8;
+}
+
+.friends-status-badge.status-actif_recemment .friends-status-dot {
+  background: #38bdf8;
+}
+
+.friends-status-badge.status-au_repos {
+  color: var(--sq-text-muted, #94a3b8);
+}
+
+.friends-status-badge.status-au_repos .friends-status-dot {
+  background: #64748b;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.3);
+  }
+}
+
+.friends-follow-btn {
+  --color: #ffffff;
+  --background: var(--sq-color-primary, #16a34a);
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin: 0;
+  flex-shrink: 0;
+  min-width: 76px;
+  transition: all 0.15s ease;
+}
+
+.friends-follow-btn.is-following {
+  --color: var(--sq-text-secondary, #94a3b8);
+  --border-color: var(--sq-border, #1f293d);
+  --background: transparent;
+}
+
+.friends-empty-card {
+  background: var(--sq-surface-card, #131926);
+  border: 1px solid var(--sq-border, #1f293d);
+  border-radius: var(--sq-radius-md, 8px);
+  padding: 32px 16px;
+  text-align: center;
 }
 
 .friends-empty {
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--ion-color-step-500, #6b7280);
+  margin: 0;
+  color: var(--sq-text-secondary, #94a3b8);
   font-size: 0.9rem;
 }

@@ -21,13 +21,14 @@ const TopBar: React.FC<TopBarProps> = ({
   unreadCount = getUnreadCount(),
 }) => {
   return (
-    <IonHeader className="top-bar">
+    <IonHeader className="top-bar" translucent>
       <IonToolbar>
         <IonButtons slot="start">
           <IonButton
             routerLink="/amis"
             routerDirection="forward"
             aria-label="Trouver des amis"
+            className="top-bar-action-btn"
           >
             <IonIcon slot="icon-only" icon={personAddOutline} />
           </IonButton>
@@ -40,7 +41,7 @@ const TopBar: React.FC<TopBarProps> = ({
             routerLink="/notifications"
             routerDirection="forward"
             aria-label="Notifications"
-            className="top-bar-notif-btn"
+            className="top-bar-action-btn top-bar-notif-btn"
           >
             <IonIcon slot="icon-only" icon={notificationsOutline} />
 

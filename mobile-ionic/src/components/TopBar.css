@@ -1,14 +1,34 @@
 .top-bar ion-toolbar {
-  --background: var(--ion-background-color, #ffffff);
+  --background: rgba(11, 15, 25, 0.88);
   --border-width: 0 0 1px 0;
-  --border-color: var(--ion-color-step-150, #e5e7eb);
+  --border-color: var(--sq-border, #1f293d);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 0 4px;
 }
 
 .top-bar ion-title {
+  font-family: var(--sq-font-sans, system-ui, sans-serif);
   font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   text-align: center;
+  color: var(--sq-text-main, #f1f5f9);
+}
+
+.top-bar-action-btn {
+  --color: var(--sq-text-secondary, #94a3b8);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--sq-radius-md, 8px);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.top-bar-action-btn:hover {
+  --color: var(--sq-text-main, #f1f5f9);
+  background: var(--sq-surface-card-subtle, rgba(255, 255, 255, 0.04));
 }
 
 .top-bar-notif-btn {
@@ -17,12 +37,20 @@
 
 .top-bar-badge {
   position: absolute;
-  top: 4px;
+  top: 2px;
   right: 2px;
-  min-width: 16px;
-  padding: 2px 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
   border-radius: 999px;
+  font-family: var(--sq-font-mono, monospace);
   font-size: 0.65rem;
-  font-weight: 600;
-  line-height: 1;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background: #ef4444;
+  color: #ffffff;
+  border: 2px solid var(--sq-bg-base, #0b0f19);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.55);
 }

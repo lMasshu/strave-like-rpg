@@ -8,11 +8,18 @@ export interface AppNotification {
   read: boolean;
 }
 
+export type AthleteActivityStatus =
+  "en_course" | "actif_recemment" | "au_repos";
+
 export interface Athlete {
   id: string;
   username: string;
   level: number;
   city: string;
+  weeklyDistanceKm?: number;
+  status?: AthleteActivityStatus;
+  statusLabel?: string;
+  role?: string;
 }
 
 export interface RpgBadge {
@@ -108,15 +115,83 @@ export const DEMO_NOTIFICATIONS: AppNotification[] = [
     time: "Hier",
     read: true,
   },
+  {
+    id: "n5",
+    type: "raid",
+    message: "Le Titan d'Acier est entré en phase de rage.",
+    time: "Il y a 2 jours",
+    read: true,
+  },
+  {
+    id: "n6",
+    type: "level",
+    message: "Trophée débloqué : Pionnier 10K !",
+    time: "Il y a 3 jours",
+    read: true,
+  },
 ];
 
 export const DEMO_ATHLETES: Athlete[] = [
-  { id: "a1", username: "Lucas_Run", level: 12, city: "Amiens" },
-  { id: "a2", username: "Emma_Trail", level: 8, city: "Lille" },
-  { id: "a3", username: "Hugo_Bike", level: 15, city: "Paris" },
-  { id: "a4", username: "Chloe_Hike", level: 6, city: "Arras" },
-  { id: "a5", username: "Nathan_Sprint", level: 10, city: "Amiens" },
-  { id: "a6", username: "Lea_Walk", level: 3, city: "Rouen" },
+  {
+    id: "a1",
+    username: "Lucas_Run",
+    level: 12,
+    city: "Amiens",
+    weeklyDistanceKm: 42.8,
+    status: "en_course",
+    statusLabel: "En pleine quête",
+    role: "Ranger Élite",
+  },
+  {
+    id: "a2",
+    username: "Emma_Trail",
+    level: 8,
+    city: "Lille",
+    weeklyDistanceKm: 38.2,
+    status: "actif_recemment",
+    statusLabel: "Actif il y a 2h",
+    role: "Arpenteur",
+  },
+  {
+    id: "a3",
+    username: "Hugo_Bike",
+    level: 15,
+    city: "Paris",
+    weeklyDistanceKm: 64.5,
+    status: "actif_recemment",
+    statusLabel: "Sortie vélo il y a 4h",
+    role: "Paladin du Vent",
+  },
+  {
+    id: "a4",
+    username: "Chloe_Hike",
+    level: 6,
+    city: "Arras",
+    weeklyDistanceKm: 18.3,
+    status: "au_repos",
+    statusLabel: "Au repos",
+    role: "Sentinelle",
+  },
+  {
+    id: "a5",
+    username: "Nathan_Sprint",
+    level: 10,
+    city: "Amiens",
+    weeklyDistanceKm: 29.4,
+    status: "en_course",
+    statusLabel: "Sur un raid",
+    role: "Éclaireur",
+  },
+  {
+    id: "a6",
+    username: "Lea_Walk",
+    level: 3,
+    city: "Rouen",
+    weeklyDistanceKm: 12.1,
+    status: "au_repos",
+    statusLabel: "Au repos",
+    role: "Novice",
+  },
 ];
 
 export const DEMO_BADGES: RpgBadge[] = [

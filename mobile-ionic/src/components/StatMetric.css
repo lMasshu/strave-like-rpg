@@ -1,0 +1,44 @@
+.sq-stat-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-stat-metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sq-stat-metric-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sq-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sq-stat-metric-body {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.sq-stat-metric-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+  line-height: 1.1;
+}
+
+.sq-stat-metric-unit {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sq-green-athletic-tint);
+}
+
+.sq-stat-metric-trend {
+  font-size: 0.75rem;
+  color: var(--sq-green-athletic-tint);
+  font-weight: 500;
+}

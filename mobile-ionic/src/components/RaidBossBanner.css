@@ -1,0 +1,88 @@
+.sq-raid-boss-card {
+  background: linear-gradient(
+    145deg,
+    rgba(35, 20, 30, 0.9) 0%,
+    var(--sq-surface-card) 60%
+  );
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sq-raid-boss-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sq-raid-boss-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sq-raid-boss-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-raid-boss-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  letter-spacing: -0.01em;
+}
+
+.sq-raid-boss-location {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--sq-text-muted);
+}
+
+.sq-raid-boss-hp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.sq-raid-boss-hp-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+
+.sq-raid-hp-label {
+  color: var(--sq-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sq-raid-hp-percent {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-danger-raid-tint);
+}
+
+.sq-raid-boss-hp-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--sq-text-subtle);
+}
+
+.sq-raid-boss-cta {
+  width: 100%;
+  margin-top: 4px;
+}

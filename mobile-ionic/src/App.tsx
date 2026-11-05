@@ -37,6 +37,7 @@ import "@ionic/react/css/display.css";
 import "@ionic/react/css/palettes/dark.system.css";
 
 import "./theme/variables.css";
+import "./theme/design-system.css";
 import "./theme/navigation.css";
 
 setupIonicReact();

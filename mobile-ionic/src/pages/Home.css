@@ -76,7 +76,7 @@
   justify-content: space-between;
   padding: 24px;
   background: var(--sq-green-athletic);
-  color: #ffffff;
+  color: var(--sq-primary-fg, #000000);
   border-radius: var(--sq-radius-xl, 20px);
   cursor: pointer;
   box-shadow: var(--sq-shadow-md);
@@ -104,20 +104,20 @@
   font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--sq-primary-fg, #000000);
   line-height: 1.2;
 }
 
 .sq-start-hero-sub {
   margin: 0;
   font-size: 0.92rem;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
+  color: rgba(0, 0, 0, 0.72);
+  font-weight: 600;
 }
 
 .sq-start-hero-play-icon {
   font-size: 3.5rem;
-  color: #ffffff;
+  color: var(--sq-primary-fg, #000000);
   flex-shrink: 0;
 }
 

@@ -4,49 +4,52 @@
  */
 
 /* ==========================================================================
-   Tokens Thème Clair (Défaut & Explicite [data-theme="light"]) - Nature Remix
+   Tokens Thème Clair (Défaut & Explicite [data-theme="light"]) - Lime Frost
    ========================================================================== */
 :root,
 [data-theme="light"] {
-  /* Surfaces & Fonds Naturels */
-  --sq-bg-base: #faf9f5;
-  --sq-surface-card: #f5f4ef;
-  --sq-surface-card-hover: #ede9de;
-  --sq-surface-card-subtle: #ede9de;
-  --sq-surface-muted: #e9e6dc;
-  --sq-surface-overlay: rgba(250, 249, 245, 0.92);
+  /* Surfaces & Fonds Givrés */
+  --sq-bg-base: #fbfcf8;
+  --sq-surface-card: #ffffff;
+  --sq-surface-card-hover: #f8fafc;
+  --sq-surface-card-subtle: #f1f5f9;
+  --sq-surface-muted: #e2e8f0;
+  --sq-surface-overlay: rgba(251, 252, 248, 0.92);
 
-  /* Bordures Minérales */
-  --sq-border: #dad9d4;
-  --sq-border-subtle: rgba(61, 57, 41, 0.08);
-  --sq-border-highlight: rgba(47, 127, 51, 0.35);
-  --sq-border-focus: #2f7f33;
+  /* Bordures */
+  --sq-border: #e2e8f0;
+  --sq-border-subtle: rgba(15, 23, 42, 0.08);
+  --sq-border-highlight: rgba(175, 243, 62, 0.45);
+  --sq-border-focus: #aff33e;
 
-  /* Couleurs sémantiques & Accents Nature Remix */
-  --sq-green-athletic: #2f7f33;
-  --sq-green-athletic-tint: #48b42d;
-  --sq-green-athletic-shade: #1e5c21;
-  --sq-green-athletic-bg: rgba(47, 127, 51, 0.12);
+  /* Couleurs sémantiques & Accents Lime Frost */
+  --sq-green-athletic: #aff33e;
+  --sq-green-athletic-tint: #c3f668;
+  --sq-green-athletic-shade: #8ec72f;
+  --sq-green-athletic-bg: rgba(175, 243, 62, 0.15);
 
-  --sq-gold-rpg: #c96442;
-  --sq-gold-rpg-tint: #d97757;
-  --sq-gold-rpg-shade: #a84e30;
-  --sq-gold-rpg-bg: rgba(201, 100, 66, 0.12);
+  --sq-color-primary: var(--sq-green-athletic);
+  --sq-primary-fg: #000000;
 
-  --sq-danger-raid: #dc2626;
-  --sq-danger-raid-tint: #ef4444;
-  --sq-danger-raid-shade: #b91c1c;
-  --sq-danger-raid-bg: rgba(220, 38, 38, 0.12);
+  --sq-gold-rpg: #f59e0b;
+  --sq-gold-rpg-tint: #fbbf24;
+  --sq-gold-rpg-shade: #d97706;
+  --sq-gold-rpg-bg: rgba(245, 158, 11, 0.12);
+
+  --sq-danger-raid: #ef4444;
+  --sq-danger-raid-tint: #f87171;
+  --sq-danger-raid-shade: #dc2626;
+  --sq-danger-raid-bg: rgba(239, 68, 68, 0.12);
 
   --sq-accent-cyan: #0284c7;
   --sq-accent-cyan-bg: rgba(2, 132, 199, 0.12);
 
   /* Textes & Contrastes */
-  --sq-text-main: #3d3929;
-  --sq-text-muted: #6e6d68;
-  --sq-text-secondary: #6e6d68;
-  --sq-text-subtle: #8a8880;
-  --sq-text-inverse: #faf9f5;
+  --sq-text-main: #0f172a;
+  --sq-text-muted: #64748b;
+  --sq-text-secondary: #64748b;
+  --sq-text-subtle: #94a3b8;
+  --sq-text-inverse: #f8fafc;
 
   /* Rayons de courbure */
   --sq-radius-sm: 8px;
@@ -55,19 +58,19 @@
   --sq-radius-xl: 20px;
   --sq-radius-full: 9999px;
 
-  /* Ombres Douces Minérales */
-  --sq-shadow-sm: 0 1px 3px rgba(61, 57, 41, 0.06);
-  --sq-shadow-md: 0 4px 12px rgba(61, 57, 41, 0.08);
-  --sq-bg-header: rgba(250, 249, 245, 0.92);
-  --sq-shadow-lg: 0 8px 24px rgba(61, 57, 41, 0.12);
+  /* Ombres Douces Givrés */
+  --sq-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --sq-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --sq-bg-header: rgba(251, 252, 248, 0.92);
+  --sq-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12);
 
-  /* Typographie */
+  /* Typographie Lime Frost */
   --sq-font-family:
-    "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", sans-serif;
   --sq-font-sans: var(--sq-font-family);
   --sq-font-mono:
-    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     monospace;
 
   /* Alias & Compatibilité composants */
@@ -75,48 +78,51 @@
 }
 
 /* ==========================================================================
-   Tokens Thème Sombre (Explicite [data-theme="dark"] et media query) - Nature Remix Dark
+   Tokens Thème Sombre (Explicite [data-theme="dark"] et media query) - Lime Frost Dark
    ========================================================================== */
 [data-theme="dark"] {
-  /* Surfaces & Fonds Sombre Écorce & Minéral */
-  --sq-bg-base: #262624;
-  --sq-surface-card: #2c2c2b;
-  --sq-surface-card-hover: #363634;
-  --sq-surface-card-subtle: #1f1e1d;
-  --sq-surface-muted: #1b1b19;
-  --sq-surface-overlay: rgba(38, 38, 36, 0.92);
+  /* Surfaces & Fonds Nuit Noire & Ardoise */
+  --sq-bg-base: #020617;
+  --sq-surface-card: #0f172a;
+  --sq-surface-card-hover: #1e293b;
+  --sq-surface-card-subtle: #1e293b;
+  --sq-surface-muted: #1e293b;
+  --sq-surface-overlay: rgba(2, 6, 23, 0.92);
 
   /* Bordures */
-  --sq-border: #3e3e38;
-  --sq-border-subtle: #343430;
-  --sq-border-highlight: rgba(72, 180, 45, 0.4);
-  --sq-border-focus: #48b42d;
+  --sq-border: #1e293b;
+  --sq-border-subtle: #293548;
+  --sq-border-highlight: rgba(175, 243, 62, 0.45);
+  --sq-border-focus: #aff33e;
 
-  /* Couleurs sémantiques & Accents */
-  --sq-green-athletic: #48b42d;
-  --sq-green-athletic-tint: #47c940;
-  --sq-green-athletic-shade: #2f7f33;
-  --sq-green-athletic-bg: rgba(72, 180, 45, 0.15);
+  /* Couleurs sémantiques & Accents Lime Frost */
+  --sq-green-athletic: #aff33e;
+  --sq-green-athletic-tint: #c3f668;
+  --sq-green-athletic-shade: #8ec72f;
+  --sq-green-athletic-bg: rgba(175, 243, 62, 0.15);
 
-  --sq-gold-rpg: #d97757;
-  --sq-gold-rpg-tint: #e58d71;
-  --sq-gold-rpg-shade: #b05730;
-  --sq-gold-rpg-bg: rgba(217, 119, 87, 0.15);
+  --sq-color-primary: var(--sq-green-athletic);
+  --sq-primary-fg: #000000;
+
+  --sq-gold-rpg: #f59e0b;
+  --sq-gold-rpg-tint: #fbbf24;
+  --sq-gold-rpg-shade: #d97706;
+  --sq-gold-rpg-bg: rgba(245, 158, 11, 0.15);
 
   --sq-danger-raid: #ef4444;
   --sq-danger-raid-tint: #f87171;
-  --sq-danger-raid-shade: #b91c1c;
+  --sq-danger-raid-shade: #dc2626;
   --sq-danger-raid-bg: rgba(239, 68, 68, 0.15);
 
   --sq-accent-cyan: #38bdf8;
   --sq-accent-cyan-bg: rgba(56, 189, 248, 0.15);
 
   /* Textes & Contrastes */
-  --sq-text-main: #f1f1ef;
-  --sq-text-muted: #b7b5a9;
-  --sq-text-secondary: #b7b5a9;
-  --sq-text-subtle: #8a8880;
-  --sq-text-inverse: #262624;
+  --sq-text-main: #f8fafc;
+  --sq-text-muted: #94a3b8;
+  --sq-text-secondary: #94a3b8;
+  --sq-text-subtle: #64748b;
+  --sq-text-inverse: #020617;
 
   /* Rayons de courbure */
   --sq-radius-sm: 8px;
@@ -128,16 +134,16 @@
   /* Ombres */
   --sq-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --sq-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
-  --sq-bg-header: rgba(38, 38, 36, 0.92);
+  --sq-bg-header: rgba(2, 6, 23, 0.92);
   --sq-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
 
   /* Typographie */
   --sq-font-family:
-    "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", sans-serif;
   --sq-font-sans: var(--sq-font-family);
   --sq-font-mono:
-    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     monospace;
 
   /* Alias & Compatibilité composants */
@@ -146,25 +152,28 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --sq-bg-base: #262624;
-    --sq-surface-card: #2c2c2b;
-    --sq-surface-card-subtle: #1f1e1d;
-    --sq-surface-muted: #1b1b19;
-    --sq-bg-header: rgba(38, 38, 36, 0.92);
-    --sq-border: #3e3e38;
-    --sq-border-subtle: #343430;
-    --sq-border-highlight: rgba(72, 180, 45, 0.4);
-    --sq-text-main: #f1f1ef;
-    --sq-text-muted: #b7b5a9;
-    --sq-text-subtle: #8a8880;
-    --sq-text-secondary: #b7b5a9;
-    --sq-green-athletic: #48b42d;
-    --sq-green-athletic-tint: #47c940;
-    --sq-color-primary: #48b42d;
-    --sq-primary-fg: #141413;
-    --sq-gold-rpg: #d97757;
-    --sq-gold-rpg-tint: #e58d71;
-    --sq-terracotta: #d97757;
+    --sq-bg-base: #020617;
+    --sq-surface-card: #0f172a;
+    --sq-surface-card-subtle: #1e293b;
+    --sq-surface-muted: #1e293b;
+    --sq-bg-header: rgba(2, 6, 23, 0.92);
+    --sq-border: #1e293b;
+    --sq-border-subtle: #293548;
+    --sq-border-highlight: rgba(175, 243, 62, 0.45);
+    --sq-border-focus: #aff33e;
+    --sq-text-main: #f8fafc;
+    --sq-text-muted: #94a3b8;
+    --sq-text-subtle: #64748b;
+    --sq-text-secondary: #94a3b8;
+    --sq-green-athletic: #aff33e;
+    --sq-green-athletic-tint: #c3f668;
+    --sq-green-athletic-shade: #8ec72f;
+    --sq-green-athletic-bg: rgba(175, 243, 62, 0.15);
+    --sq-color-primary: #aff33e;
+    --sq-primary-fg: #000000;
+    --sq-gold-rpg: #f59e0b;
+    --sq-gold-rpg-tint: #fbbf24;
+    --sq-terracotta: #f59e0b;
     --sq-danger-raid: #ef4444;
   }
 }
@@ -242,8 +251,8 @@ ion-tab-bar {
   justify-content: center;
   gap: 8px;
   background-color: var(--sq-green-athletic);
-  color: #ffffff;
-  font-weight: 600;
+  color: var(--sq-primary-fg, #000000);
+  font-weight: 700;
   font-size: 0.95rem;
   padding: 12px 20px;
   border-radius: var(--sq-radius-md);

@@ -19,34 +19,34 @@ describe("Design System CSS tokens", () => {
     expect(cssContent).toMatch(/:root\s*,\s*\[data-theme=["']light["']\]/);
 
     // Light theme surface and background
-    expect(cssContent).toContain("--sq-bg-base: #faf9f5;");
-    expect(cssContent).toContain("--sq-surface-card: #f5f4ef;");
-    expect(cssContent).toContain("--sq-surface-card-subtle: #ede9de;");
+    expect(cssContent).toContain("--sq-bg-base: #fbfcf8;");
+    expect(cssContent).toContain("--sq-surface-card: #ffffff;");
+    expect(cssContent).toContain("--sq-surface-card-subtle: #f1f5f9;");
 
     // Light theme borders
-    expect(cssContent).toContain("--sq-border: #dad9d4;");
+    expect(cssContent).toContain("--sq-border: #e2e8f0;");
 
     // Light theme text
-    expect(cssContent).toContain("--sq-text-main: #3d3929;");
-    expect(cssContent).toContain("--sq-text-muted: #6e6d68;");
-    expect(cssContent).toContain("--sq-text-secondary: #6e6d68;");
+    expect(cssContent).toContain("--sq-text-main: #0f172a;");
+    expect(cssContent).toContain("--sq-text-muted: #64748b;");
+    expect(cssContent).toContain("--sq-text-secondary: #64748b;");
 
     // Light theme accents
-    expect(cssContent).toContain("--sq-green-athletic: #2f7f33;");
-    expect(cssContent).toContain("--sq-green-athletic-tint: #48b42d;");
+    expect(cssContent).toContain("--sq-green-athletic: #aff33e;");
+    expect(cssContent).toContain("--sq-green-athletic-tint: #c3f668;");
     expect(cssContent).toContain(
       "--sq-color-primary: var(--sq-green-athletic);",
     );
-    expect(cssContent).toContain("--sq-gold-rpg: #c96442;");
-    expect(cssContent).toContain("--sq-gold-rpg-tint: #d97757;");
-    expect(cssContent).toContain("--sq-danger-raid: #dc2626;");
+    expect(cssContent).toContain("--sq-gold-rpg: #f59e0b;");
+    expect(cssContent).toContain("--sq-gold-rpg-tint: #fbbf24;");
+    expect(cssContent).toContain("--sq-danger-raid: #ef4444;");
 
     // Light theme shadows
     expect(cssContent).toContain(
-      "--sq-shadow-sm: 0 1px 3px rgba(61, 57, 41, 0.06);",
+      "--sq-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);",
     );
     expect(cssContent).toContain(
-      "--sq-shadow-md: 0 4px 12px rgba(61, 57, 41, 0.08);",
+      "--sq-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);",
     );
   });
 
@@ -60,23 +60,23 @@ describe("Design System CSS tokens", () => {
     );
 
     // Dark theme surface and background
-    expect(cssContent).toContain("--sq-bg-base: #262624;");
-    expect(cssContent).toContain("--sq-surface-card: #2c2c2b;");
-    expect(cssContent).toContain("--sq-surface-card-subtle: #1f1e1d;");
+    expect(cssContent).toContain("--sq-bg-base: #020617;");
+    expect(cssContent).toContain("--sq-surface-card: #0f172a;");
+    expect(cssContent).toContain("--sq-surface-card-subtle: #1e293b;");
 
     // Dark theme borders
-    expect(cssContent).toContain("--sq-border: #3e3e38;");
+    expect(cssContent).toContain("--sq-border: #1e293b;");
 
     // Dark theme text
-    expect(cssContent).toContain("--sq-text-main: #f1f1ef;");
-    expect(cssContent).toContain("--sq-text-muted: #b7b5a9;");
-    expect(cssContent).toContain("--sq-text-secondary: #b7b5a9;");
+    expect(cssContent).toContain("--sq-text-main: #f8fafc;");
+    expect(cssContent).toContain("--sq-text-muted: #94a3b8;");
+    expect(cssContent).toContain("--sq-text-secondary: #94a3b8;");
 
     // Dark theme accents
-    expect(cssContent).toContain("--sq-green-athletic: #48b42d;");
-    expect(cssContent).toContain("--sq-green-athletic-tint: #47c940;");
-    expect(cssContent).toContain("--sq-gold-rpg: #d97757;");
-    expect(cssContent).toContain("--sq-gold-rpg-tint: #e58d71;");
+    expect(cssContent).toContain("--sq-green-athletic: #aff33e;");
+    expect(cssContent).toContain("--sq-green-athletic-tint: #c3f668;");
+    expect(cssContent).toContain("--sq-gold-rpg: #f59e0b;");
+    expect(cssContent).toContain("--sq-gold-rpg-tint: #fbbf24;");
     expect(cssContent).toContain("--sq-danger-raid: #ef4444;");
   });
 

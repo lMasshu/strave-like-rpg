@@ -86,7 +86,7 @@
 
 .top-mobile-icon-btn.active {
   border-color: var(--sq-green-athletic);
-  color: #ffffff;
+  color: var(--sq-primary-fg, #000000);
   background: var(--sq-green-athletic);
 }
 
@@ -1043,7 +1043,8 @@
 
 .map-workout-segment-btn.is-active {
   background: var(--sq-green-athletic);
-  color: #ffffff;
+  color: var(--sq-primary-fg, #000000);
+  font-weight: 700;
 }
 
 /* =======================================================

@@ -67,7 +67,8 @@
 .sq-parcours-filter-btn.is-active {
   background: var(--sq-green-athletic);
   border-color: var(--sq-green-athletic);
-  color: #ffffff;
+  color: var(--sq-primary-fg, #000000);
+  font-weight: 700;
 }
 
 /* Liste des parcours */

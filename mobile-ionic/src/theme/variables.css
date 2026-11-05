@@ -4,13 +4,13 @@
  */
 
 :root {
-  /* Couleur d'accentuation principale : Vert Forêt Nature Remix */
-  --ion-color-primary: #2f7f33;
-  --ion-color-primary-rgb: 47, 127, 51;
-  --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #1e5c21;
-  --ion-color-primary-tint: #48b42d;
+  /* Couleur d'accentuation principale : Lime Frost */
+  --ion-color-primary: #aff33e;
+  --ion-color-primary-rgb: 175, 243, 62;
+  --ion-color-primary-contrast: #000000;
+  --ion-color-primary-contrast-rgb: 0, 0, 0;
+  --ion-color-primary-shade: #8ec72f;
+  --ion-color-primary-tint: #c3f668;
 
   /* Teinte secondaire : Ardoise technique */
   --ion-color-secondary: #475569;
@@ -64,12 +64,12 @@
 /* Synchronisation du mode sombre pour Ionic */
 [data-theme="dark"],
 .ion-palette-dark {
-  --ion-color-primary: #48b42d;
-  --ion-color-primary-rgb: 72, 180, 45;
-  --ion-color-primary-contrast: #141413;
-  --ion-color-primary-contrast-rgb: 20, 20, 19;
-  --ion-color-primary-shade: #2f7f33;
-  --ion-color-primary-tint: #47c940;
+  --ion-color-primary: #aff33e;
+  --ion-color-primary-rgb: 175, 243, 62;
+  --ion-color-primary-contrast: #000000;
+  --ion-color-primary-contrast-rgb: 0, 0, 0;
+  --ion-color-primary-shade: #8ec72f;
+  --ion-color-primary-tint: #c3f668;
 
   --ion-color-secondary: #334155;
   --ion-color-secondary-rgb: 51, 65, 85;

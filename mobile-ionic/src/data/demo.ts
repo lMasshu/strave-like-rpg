@@ -69,6 +69,7 @@ export interface UserProfile {
   activitiesCount: number;
   totalKm: number;
   totalElevationMeters: number;
+  totalQuestsCompleted?: number;
   weeklyStats: {
     distanceKm: number;
     durationMinutes: number;
@@ -231,6 +232,7 @@ export const DEMO_USER_PROFILE: UserProfile = {
   activitiesCount: 32,
   totalKm: 218.4,
   totalElevationMeters: 1450,
+  totalQuestsCompleted: 18,
   weeklyStats: {
     distanceKm: 28.4,
     durationMinutes: 165,

@@ -1,71 +1,355 @@
-.profile-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 28px 20px 16px;
-  text-align: center;
+/**
+ * Styles de la Fiche d'Aventurier (Profile.tsx)
+ * Thème sombre athlétique & RPG - Stride Quest
+ */
+
+.sq-profile-page-content {
+  --background: var(--sq-bg-base, #0b0f19);
 }
 
-.profile-avatar {
+.sq-profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 40px 16px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   En-tête Aventurier (Hero Card)
+   ========================================================================== */
+
+.sq-profile-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  background: linear-gradient(
+    180deg,
+    var(--sq-surface-card, #151e2e) 0%,
+    rgba(21, 30, 46, 0.95) 100%
+  );
+  border: 1px solid var(--sq-border, #233248);
+  border-top: 3px solid var(--sq-gold-rpg, #d97706);
+  box-shadow: var(--sq-shadow-md);
+}
+
+.sq-profile-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sq-profile-avatar-container {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.sq-profile-avatar-ring {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(
+    from 180deg at 50% 50%,
+    var(--sq-gold-rpg, #d97706) 0deg,
+    var(--sq-green-athletic, #16a34a) 180deg,
+    var(--sq-gold-rpg, #d97706) 360deg
+  );
+  box-shadow: 0 0 16px rgba(217, 119, 6, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: var(--ion-color-primary, #16a34a);
-  color: var(--ion-color-primary-contrast, #ffffff);
-  font-size: 1.8rem;
-  font-weight: 600;
 }
 
-.profile-hero h2 {
-  margin: 12px 0 2px;
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--ion-text-color, #111827);
-}
-
-.profile-hero p {
-  margin: 0 0 14px;
-  font-size: 0.88rem;
-  color: var(--ion-color-step-600, #4b5563);
-}
-
-.profile-xp {
+.sq-profile-avatar {
   width: 100%;
-  max-width: 260px;
-  height: 6px;
-  border-radius: 999px;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--sq-surface-card, #151e2e);
+  border: 2px solid var(--sq-bg-base, #0b0f19);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+  letter-spacing: -0.02em;
 }
 
-.profile-hero small {
-  margin-top: 6px;
+.sq-profile-avatar-level-chip {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: var(--sq-surface-muted, #1e293b);
+  border: 1px solid var(--sq-gold-rpg, #d97706);
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--sq-radius-full, 9999px);
+  box-shadow: var(--sq-shadow-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sq-profile-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sq-profile-identity-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.sq-profile-username {
+  margin: 4px 0 0 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--sq-text-main, #f8fafc);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.sq-profile-social-row {
+  margin-top: 4px;
+}
+
+.sq-profile-friends-chip {
+  --color: var(--sq-text-muted, #94a3b8);
+  --padding-start: 0;
+  --padding-end: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  height: 28px;
+  margin: 0;
+  text-transform: none;
+}
+
+.sq-profile-friends-chip ion-icon {
+  color: var(--sq-green-athletic-tint, #22c55e);
+  font-size: 1rem;
+}
+
+/* Progression XP */
+.sq-profile-xp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.sq-profile-xp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.sq-profile-xp-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sq-text-subtle, #64748b);
+  font-size: 0.72rem;
+}
+
+.sq-profile-xp-val {
+  font-weight: 700;
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+}
+
+.sq-profile-xp-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 0.75rem;
-  color: var(--ion-color-step-500, #6b7280);
+  color: var(--sq-text-subtle, #64748b);
 }
 
-.profile-stats {
+/* ==========================================================================
+   Sections Communes
+   ========================================================================== */
+
+.sq-profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sq-profile-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.sq-profile-section-sub {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--sq-text-subtle, #64748b);
+}
+
+/* ==========================================================================
+   Grille de Statistiques
+   ========================================================================== */
+
+.sq-profile-stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  margin: 16px;
-  padding: 14px 8px;
-  border-radius: 12px;
-  background: var(--ion-card-background, #ffffff);
-  border: 1px solid var(--ion-color-step-150, #e5e7eb);
-  text-align: center;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 520px) {
+  .sq-profile-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ==========================================================================
+   Étagère de Badges
+   ========================================================================== */
+
+.sq-profile-badges-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 540px) {
+  .sq-profile-badges-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==========================================================================
+   Historique des Sorties
+   ========================================================================== */
+
+.sq-profile-activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sq-profile-activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.sq-profile-activity-card .sq-activity-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sq-profile-activity-card .sq-activity-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--sq-radius-md, 12px);
+  background-color: var(--sq-green-athletic-bg, rgba(22, 163, 74, 0.15));
+  color: var(--sq-green-athletic-tint, #22c55e);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.sq-profile-activity-card .sq-activity-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sq-profile-activity-card .sq-activity-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 8px;
 }
 
-.profile-stats strong {
-  display: block;
-  font-size: 1.2rem;
+.sq-profile-activity-card .sq-activity-title {
+  margin: 0;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--ion-text-color, #111827);
+  color: var(--sq-text-main, #f8fafc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.profile-stats span {
-  font-size: 0.75rem;
-  color: var(--ion-color-step-500, #6b7280);
+.sq-profile-activity-card .sq-activity-xp {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+  flex-shrink: 0;
+}
+
+.sq-profile-activity-card .sq-activity-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--sq-text-subtle, #64748b);
+}
+
+.sq-profile-activity-card .sq-activity-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sq-profile-activity-card .sq-activity-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.sq-profile-activity-card .sq-activity-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sq-profile-activity-card .sq-activity-metric-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sq-text-subtle, #64748b);
+}
+
+.sq-profile-activity-card .sq-activity-metric-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sq-text-main, #f8fafc);
+}
+
+.sq-profile-activity-card .sq-activity-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--sq-radius-sm, 8px);
+  background: var(--sq-gold-rpg-bg, rgba(217, 119, 6, 0.15));
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  color: var(--sq-gold-rpg-tint, #f59e0b);
+  font-size: 0.78rem;
+  font-weight: 600;
 }

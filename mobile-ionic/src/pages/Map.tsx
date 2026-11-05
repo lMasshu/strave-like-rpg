@@ -39,6 +39,7 @@ import {
 import { searchPointsOfInterest, PoiResult } from "../services/mapboxGeocoding";
 import QuestGeneratorModal from "../components/QuestGeneratorModal";
 import QuestRunHud from "../components/QuestRunHud";
+import { Capacitor } from "@capacitor/core";
 import { Geolocation } from "@capacitor/geolocation";
 import { GeneratedQuest } from "../services/questGenerator";
 import "./Map.css";
@@ -578,6 +579,22 @@ const MapPage: React.FC = () => {
   // Position GPS actuelle (plugin Capacitor : fonctionne sur mobile et dans le navigateur)
   const handleUseMyLocation = async () => {
     try {
+      if (
+        Capacitor.isNativePlatform() &&
+        typeof Geolocation.requestPermissions === "function"
+      ) {
+        const perms = await Geolocation.requestPermissions();
+        if (
+          perms.location !== "granted" &&
+          perms.coarseLocation !== "granted"
+        ) {
+          alert(
+            "Permission de localisation refusée. Veuillez autoriser l'accès GPS dans les paramètres.",
+          );
+          return;
+        }
+      }
+
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 15000,
@@ -594,9 +611,34 @@ const MapPage: React.FC = () => {
         mapInstance.current.flyTo({ center: myCoords, zoom: 15 });
       }
       updateRoute(myCoords, pointBRef.current, modeRef.current, false);
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn("Erreur géolocalisation :", err);
-      alert("Impossible de récupérer votre position GPS.");
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : typeof err === "object" && err !== null && "message" in err
+              ? String((err as { message: unknown }).message)
+              : "";
+
+      if (
+        errMsg.toLowerCase().includes("disabled") ||
+        errMsg.toLowerCase().includes("services are not enabled")
+      ) {
+        alert(
+          "Veuillez activer la localisation (GPS) dans les réglages de votre téléphone.",
+        );
+      } else if (
+        errMsg.toLowerCase().includes("denied") ||
+        errMsg.toLowerCase().includes("permission")
+      ) {
+        alert("Permission de localisation refusée.");
+      } else {
+        alert(
+          "Impossible de récupérer votre position GPS (signal faible ou délai dépassé).",
+        );
+      }
     }
   };
 

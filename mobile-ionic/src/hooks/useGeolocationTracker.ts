@@ -115,14 +115,27 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
                   ? (watchError as { code: unknown }).code
                   : null;
 
-              if (
+              const isPermissionDenied =
                 errorCode === 1 ||
                 String(errorCode) === "1" ||
                 errorMessage.toLowerCase().includes("denied") ||
-                errorMessage.toLowerCase().includes("permission")
-              ) {
+                errorMessage.toLowerCase().includes("permission") ||
+                errorMessage.toLowerCase().includes("manifest");
+
+              const isLocationDisabled =
+                errorMessage
+                  .toLowerCase()
+                  .includes("location services are not enabled") ||
+                errorMessage.toLowerCase().includes("location_disabled");
+
+              if (isPermissionDenied) {
                 setStatus("denied");
                 setError("Permission de localisation refusée.");
+              } else if (isLocationDisabled) {
+                setStatus("waiting");
+                setError(
+                  "Veuillez activer la localisation (GPS) sur votre appareil.",
+                );
               } else {
                 setStatus("waiting");
                 setError("Signal GPS indisponible pour le moment.");
@@ -247,11 +260,21 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
                   : "";
           const isPermissionDenied =
             msg.toLowerCase().includes("denied") ||
-            msg.toLowerCase().includes("permission");
+            msg.toLowerCase().includes("permission") ||
+            msg.toLowerCase().includes("manifest");
+
+          const isLocationDisabled =
+            msg.toLowerCase().includes("location services are not enabled") ||
+            msg.toLowerCase().includes("location_disabled");
 
           if (isPermissionDenied) {
             setStatus("denied");
             setError("Permission de localisation refusée.");
+          } else if (isLocationDisabled) {
+            setStatus("waiting");
+            setError(
+              "Veuillez activer la localisation (GPS) sur votre appareil.",
+            );
           } else {
             setStatus("waiting");
             setError("Impossible d'accéder à la position GPS.");

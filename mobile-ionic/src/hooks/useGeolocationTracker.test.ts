@@ -454,6 +454,36 @@ describe("useGeolocationTracker hook", () => {
     });
   });
 
+  it("should display a dedicated message when location services are not enabled on device", async () => {
+    vi.mocked(Geolocation.watchPosition).mockRejectedValueOnce(
+      new Error("Location services are not enabled."),
+    );
+
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(result.current.status).toBe("waiting");
+      expect(result.current.error).toBe(
+        "Veuillez activer la localisation (GPS) sur votre appareil.",
+      );
+    });
+  });
+
+  it("should detect permission denial when error mentions missing manifest permissions", async () => {
+    vi.mocked(Geolocation.watchPosition).mockRejectedValueOnce(
+      new Error(
+        "Location permissions are not declared in manifest. Make sure at least ACCESS_COARSE_LOCATION is declared in AndroidManifest.xml",
+      ),
+    );
+
+    const { result } = renderHook(() => useGeolocationTracker(true));
+
+    await waitFor(() => {
+      expect(result.current.status).toBe("denied");
+      expect(result.current.error).toBe("Permission de localisation refusée.");
+    });
+  });
+
   it("should calculate derived speed when coords.speed is null on mobile browser", async () => {
     const { result } = renderHook(() => useGeolocationTracker(true));
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Geolocation } from "@capacitor/geolocation";
+import { Geolocation, type Position } from "@capacitor/geolocation";
 import { haversineMeters, type LngLat } from "../services/geo";
 
 export interface TrackedPosition {
@@ -22,6 +22,15 @@ interface GeolocationTracker {
   status: GeolocationStatus;
   error: string | null;
 }
+
+export const GPS_TRACKING_OPTIONS = {
+  enableHighAccuracy: true,
+  timeout: 10000,
+  maximumAge: 0,
+  interval: 1000, // Demande une mise à jour toutes les secondes sur Android
+  minimumUpdateInterval: 1000, // Autorise une mise à jour dès 1 seconde sur Android
+  enableLocationFallback: true, // Bascule automatique vers LocationManager
+};
 
 /**
  * Suit la position GPS de l'appareil tant que `enabled` vaut true.
@@ -50,16 +59,113 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
     let cancelled = false;
     let watchId: string | null = null;
 
+    const handleValidPosition = (nextPosition: Position) => {
+      const coords = nextPosition.coords;
+      if (
+        !coords ||
+        typeof coords.latitude !== "number" ||
+        typeof coords.longitude !== "number" ||
+        !Number.isFinite(coords.latitude) ||
+        !Number.isFinite(coords.longitude) ||
+        Math.abs(coords.latitude) > 90 ||
+        Math.abs(coords.longitude) > 180
+      ) {
+        setStatus("waiting");
+        setError("Coordonnées GPS reçues invalides.");
+        return;
+      }
+
+      const accuracy =
+        typeof coords.accuracy === "number" &&
+        Number.isFinite(coords.accuracy) &&
+        coords.accuracy >= 0
+          ? coords.accuracy
+          : 0;
+
+      const altitude =
+        typeof coords.altitude === "number" && Number.isFinite(coords.altitude)
+          ? coords.altitude
+          : null;
+
+      const timestamp =
+        typeof nextPosition.timestamp === "number" &&
+        Number.isFinite(nextPosition.timestamp) &&
+        nextPosition.timestamp > 0
+          ? nextPosition.timestamp
+          : Date.now();
+
+      // Calcul ou fiabilisation de la vitesse (fallback dérivé si coords.speed est null sur mobile)
+      let speed: number | null = null;
+      if (
+        typeof coords.speed === "number" &&
+        Number.isFinite(coords.speed) &&
+        coords.speed >= 0
+      ) {
+        speed = coords.speed;
+      } else if (lastFixRef.current) {
+        const prev = lastFixRef.current;
+        const deltaSeconds = (timestamp - prev.timestamp) / 1000;
+
+        if (deltaSeconds >= 0.5 && deltaSeconds <= 30) {
+          const deltaMeters = haversineMeters(
+            [coords.longitude, coords.latitude],
+            prev.coords,
+          );
+
+          // Seuil anti-bruit GPS : si déplacement sous l'imprécision, vitesse nulle
+          if (
+            deltaMeters < 1.5 ||
+            (deltaMeters < accuracy * 0.25 && deltaMeters < 3.0)
+          ) {
+            speed = 0;
+          } else {
+            const instantSpeed = deltaMeters / deltaSeconds;
+            // Rejeter les téléportations absurdes (> 45 m/s = 162 km/h)
+            if (instantSpeed <= 45) {
+              if (typeof prev.speed === "number" && prev.speed >= 0) {
+                speed = Number(
+                  (0.6 * instantSpeed + 0.4 * prev.speed).toFixed(2),
+                );
+              } else {
+                speed = Number(instantSpeed.toFixed(2));
+              }
+            }
+          }
+        }
+      }
+
+      lastFixRef.current = {
+        coords: [coords.longitude, coords.latitude],
+        timestamp,
+        speed,
+      };
+
+      setError(null);
+      setStatus("tracking");
+      setPosition({
+        coords: [coords.longitude, coords.latitude],
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        altitude,
+        speed,
+        accuracy,
+        heading: coords.heading ?? null,
+        altitudeAccuracy: coords.altitudeAccuracy ?? null,
+        timestamp,
+      });
+    };
+
     const start = async () => {
       setStatus("waiting");
       setError(null);
 
       try {
         // Sur mobile, la permission se demande explicitement.
-        // Sur le web, le navigateur la demande au premier suivi ou via checkPermissions.
         if (Capacitor.isNativePlatform()) {
           if (typeof Geolocation.requestPermissions === "function") {
-            const permissions = await Geolocation.requestPermissions();
+            const permissions = await Geolocation.requestPermissions({
+              permissions: ["location", "coarseLocation"],
+            });
             const isGranted =
               permissions.location === "granted" ||
               permissions.coarseLocation === "granted";
@@ -92,8 +198,20 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
 
         if (cancelled) return;
 
+        // 1. Positionnement immédiat sans attendre le premier tick de watchPosition
+        if (typeof Geolocation.getCurrentPosition === "function") {
+          void Geolocation.getCurrentPosition(GPS_TRACKING_OPTIONS)
+            .then((pos) => {
+              if (!cancelled && pos && !lastFixRef.current) {
+                handleValidPosition(pos);
+              }
+            })
+            .catch(() => undefined);
+        }
+
+        // 2. Écoute continue cadencée à 1 seconde sur Android
         const id = await Geolocation.watchPosition(
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+          GPS_TRACKING_OPTIONS,
           (nextPosition, watchError) => {
             if (cancelled) return;
 
@@ -143,100 +261,7 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
               return;
             }
 
-            const coords = nextPosition.coords;
-            if (
-              !coords ||
-              typeof coords.latitude !== "number" ||
-              typeof coords.longitude !== "number" ||
-              !Number.isFinite(coords.latitude) ||
-              !Number.isFinite(coords.longitude) ||
-              Math.abs(coords.latitude) > 90 ||
-              Math.abs(coords.longitude) > 180
-            ) {
-              setStatus("waiting");
-              setError("Coordonnées GPS reçues invalides.");
-              return;
-            }
-
-            const accuracy =
-              typeof coords.accuracy === "number" &&
-              Number.isFinite(coords.accuracy) &&
-              coords.accuracy >= 0
-                ? coords.accuracy
-                : 0;
-
-            const altitude =
-              typeof coords.altitude === "number" &&
-              Number.isFinite(coords.altitude)
-                ? coords.altitude
-                : null;
-
-            const timestamp =
-              typeof nextPosition.timestamp === "number" &&
-              Number.isFinite(nextPosition.timestamp) &&
-              nextPosition.timestamp > 0
-                ? nextPosition.timestamp
-                : Date.now();
-
-            // Calcul ou fiabilisation de la vitesse (fallback dérivé si coords.speed est null sur mobile)
-            let speed: number | null = null;
-            if (
-              typeof coords.speed === "number" &&
-              Number.isFinite(coords.speed) &&
-              coords.speed >= 0
-            ) {
-              speed = coords.speed;
-            } else if (lastFixRef.current) {
-              const prev = lastFixRef.current;
-              const deltaSeconds = (timestamp - prev.timestamp) / 1000;
-
-              if (deltaSeconds >= 0.5 && deltaSeconds <= 30) {
-                const deltaMeters = haversineMeters(
-                  [coords.longitude, coords.latitude],
-                  prev.coords,
-                );
-
-                // Seuil anti-bruit GPS : si déplacement sous l'imprécision, vitesse nulle
-                if (
-                  deltaMeters < 1.5 ||
-                  (deltaMeters < accuracy * 0.25 && deltaMeters < 3.0)
-                ) {
-                  speed = 0;
-                } else {
-                  const instantSpeed = deltaMeters / deltaSeconds;
-                  // Rejeter les téléportations absurdes (> 45 m/s = 162 km/h)
-                  if (instantSpeed <= 45) {
-                    if (typeof prev.speed === "number" && prev.speed >= 0) {
-                      speed = Number(
-                        (0.6 * instantSpeed + 0.4 * prev.speed).toFixed(2),
-                      );
-                    } else {
-                      speed = Number(instantSpeed.toFixed(2));
-                    }
-                  }
-                }
-              }
-            }
-
-            lastFixRef.current = {
-              coords: [coords.longitude, coords.latitude],
-              timestamp,
-              speed,
-            };
-
-            setError(null);
-            setStatus("tracking");
-            setPosition({
-              coords: [coords.longitude, coords.latitude],
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              altitude,
-              speed,
-              accuracy,
-              heading: coords.heading ?? null,
-              altitudeAccuracy: coords.altitudeAccuracy ?? null,
-              timestamp,
-            });
+            handleValidPosition(nextPosition);
           },
         );
 

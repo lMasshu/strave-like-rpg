@@ -135,7 +135,14 @@ describe("QuestRunHud integration with Geolocation & Debug Console", () => {
     // La demande d'écoute GPS s'est lancée
     await waitFor(() => {
       expect(Geolocation.watchPosition).toHaveBeenCalledWith(
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+          interval: 1000,
+          minimumUpdateInterval: 1000,
+          enableLocationFallback: true,
+        },
         expect.any(Function),
       );
     });

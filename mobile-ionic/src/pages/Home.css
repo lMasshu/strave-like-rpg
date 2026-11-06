@@ -1,34 +1,294 @@
-.blank-shell {
+/**
+ * Styles de l'Accueil (Home.tsx) - Thème Nature Remix (21st.dev)
+ * Alignement strict sur la Maquette Produit (Page 1)
+ */
+
+.sq-home-page-content {
+  --background: var(--sq-bg-base);
+}
+
+.sq-home-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px calc(var(--sq-tab-bar-height, 60px) + 24px) 16px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   En-tête : Salutation & Badge Niveau (Maquette Page 1)
+   ========================================================================== */
+
+.sq-home-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 0 0;
+}
+
+.sq-home-greeting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sq-home-greeting-sub {
+  font-size: 0.95rem;
+  color: var(--sq-text-muted);
+  font-weight: 500;
+}
+
+.sq-home-greeting-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--sq-text-main);
+  line-height: 1.2;
+}
+
+.sq-home-level-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--sq-surface-card);
+  border: 2px solid var(--sq-border);
+  color: var(--sq-text-main);
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.1rem;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
+  flex-shrink: 0;
+  box-shadow: var(--sq-shadow-sm);
+}
+
+/* ==========================================================================
+   Grand Bouton Hero : Démarrer une sortie (Maquette Page 1)
+   ========================================================================== */
+
+.sq-home-start-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 24px;
-  background: var(--ion-background-color, #f9fafb);
+  background: var(--sq-green-athletic);
+  color: var(--sq-primary-fg, #000000);
+  border-radius: var(--sq-radius-xl, 20px);
+  cursor: pointer;
+  box-shadow: var(--sq-shadow-md);
+  transition:
+    transform 0.15s ease-out,
+    filter 0.15s ease-out;
 }
 
-.home-card {
-  width: 100%;
-  max-width: 440px;
-  padding: 32px 24px;
-  border-radius: 16px;
-  background: var(--ion-card-background, #ffffff);
-  border: 1px solid var(--ion-color-step-150, #e5e7eb);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  text-align: center;
+.sq-home-start-hero:hover {
+  filter: brightness(1.05);
 }
 
-.home-card h2 {
-  font-size: 1.35rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin-bottom: 8px;
-  color: var(--ion-text-color, #111827);
+.sq-home-start-hero:active {
+  transform: scale(0.98);
 }
 
-.home-card p {
+.sq-start-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-start-hero-title {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--sq-primary-fg, #000000);
+  line-height: 1.2;
+}
+
+.sq-start-hero-sub {
+  margin: 0;
   font-size: 0.92rem;
-  color: var(--ion-color-step-600, #4b5563);
-  margin-bottom: 24px;
-  line-height: 1.45;
+  color: rgba(0, 0, 0, 0.72);
+  font-weight: 600;
+}
+
+.sq-start-hero-play-icon {
+  font-size: 3.5rem;
+  color: var(--sq-primary-fg, #000000);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Section Cette Semaine (Maquette Page 1 : 3 métriques)
+   ========================================================================== */
+
+.sq-home-week-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.sq-week-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-week-grid {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sq-week-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.sq-week-val {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  line-height: 1.1;
+}
+
+.sq-week-lbl {
+  font-size: 0.8rem;
+  color: var(--sq-text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Dernière Sortie (Maquette Page 1)
+   ========================================================================== */
+
+.sq-home-last-activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
+  cursor: pointer;
+}
+
+.sq-last-activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sq-last-activity-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-last-activity-pts {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--sq-gold-rpg);
+  background: var(--sq-surface-card-subtle);
+  border: 1px solid var(--sq-border);
+  padding: 2px 8px;
+  border-radius: var(--sq-radius-full);
+}
+
+.sq-home-last-trace {
+  width: 100%;
+}
+
+.sq-last-activity-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--sq-border);
+}
+
+.sq-last-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sq-last-stat-val {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+}
+
+.sq-last-stat-lbl {
+  font-size: 0.75rem;
+  color: var(--sq-text-muted);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Boss en cours (Maquette Page 1)
+   ========================================================================== */
+
+.sq-home-boss-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.sq-home-boss-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sq-home-boss-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-home-boss-percent {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--sq-green-athletic);
+}
+
+.sq-home-boss-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--sq-surface-card-subtle);
+  border-radius: var(--sq-radius-full);
+  overflow: hidden;
+}
+
+.sq-home-boss-fill {
+  height: 100%;
+  background: var(--sq-green-athletic);
+  border-radius: var(--sq-radius-full);
+}
+
+.sq-home-boss-sub {
+  font-size: 0.78rem;
+  color: var(--sq-text-muted);
 }

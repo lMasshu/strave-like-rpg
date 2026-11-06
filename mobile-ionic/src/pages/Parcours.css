@@ -1,0 +1,150 @@
+.sq-parcours-content {
+  --background: var(--sq-bg-base);
+}
+
+.sq-parcours-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px calc(var(--sq-tab-bar-height, 60px) + 24px) 16px;
+  box-sizing: border-box;
+}
+
+.sq-parcours-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-parcours-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  letter-spacing: -0.02em;
+}
+
+.sq-parcours-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sq-text-muted);
+}
+
+/* Barre de recherche */
+.sq-parcours-searchbar {
+  --background: var(--sq-surface-card);
+  --color: var(--sq-text-main);
+  --placeholder-color: var(--sq-text-muted);
+  --icon-color: var(--sq-text-muted);
+  --border-radius: var(--sq-radius-md);
+  --box-shadow: none;
+  padding: 0;
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md);
+}
+
+/* Filtres */
+.sq-parcours-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.sq-parcours-filter-btn {
+  padding: 8px 16px;
+  font-family: var(--sq-font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--sq-surface-card);
+  color: var(--sq-text-muted);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-full);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+
+.sq-parcours-filter-btn.is-active {
+  background: var(--sq-green-athletic);
+  border-color: var(--sq-green-athletic);
+  color: var(--sq-primary-fg, #000000);
+  font-weight: 700;
+}
+
+/* Liste des parcours */
+.sq-parcours-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sq-parcours-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  cursor: pointer;
+}
+
+.sq-parcours-trace-col {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.sq-parcours-mini-trace .sq-trace-canvas-wrap {
+  padding: 6px 8px;
+}
+
+.sq-parcours-mini-trace .sq-trace-svg {
+  max-height: 60px;
+}
+
+.sq-parcours-mini-trace .sq-trace-elevation-chip {
+  display: none;
+}
+
+.sq-parcours-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sq-parcours-item-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+  letter-spacing: -0.01em;
+}
+
+.sq-parcours-item-stats {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sq-text-muted);
+}
+
+.sq-parcours-item-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--sq-text-subtle);
+}
+
+.sq-parcours-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--sq-text-muted);
+  text-align: center;
+}
+
+.sq-parcours-empty-icon {
+  font-size: 2rem;
+  color: var(--sq-text-subtle);
+}

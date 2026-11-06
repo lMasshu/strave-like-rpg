@@ -1,22 +1,68 @@
-/* Barre d'onglets du bas - Design épuré */
+/* ==========================================================================
+   Navigation par onglets (Bottom Tab Bar) - Nature Remix Theme
+   ========================================================================== */
+
+:root {
+  --sq-tab-bar-height: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+
 ion-tab-bar {
-  --border: 1px solid var(--ion-color-step-150, #e5e7eb);
+  --background: var(--sq-bg-header, var(--sq-surface-card));
+  --border: 1px solid var(--sq-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  height: 60px;
   padding-bottom: env(safe-area-inset-bottom, 0);
+  box-shadow: var(--sq-shadow-sm);
 }
 
 ion-tab-button {
-  --color: var(--ion-color-step-500, #6b7280);
-  --color-selected: var(--ion-color-primary, #16a34a);
+  --color: var(--sq-text-muted);
+  --color-selected: var(--sq-green-athletic);
+  font-family: var(--sq-font-sans, sans-serif);
   font-weight: 500;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  position: relative;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+ion-tab-button ion-icon {
+  font-size: 22px;
+  margin-bottom: 2px;
+  transition: transform 0.15s ease-out;
+}
+
+ion-tab-button.tab-selected {
+  --color: var(--sq-green-athletic);
+  font-weight: 700;
+}
+
+ion-tab-button.tab-selected ion-icon {
+  transform: translateY(-1px);
+}
+
+/* Ligne indicatrice active sous l'onglet actif */
+ion-tab-button.tab-selected::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--sq-green-athletic);
 }
 
 /* Bouton central d'enregistrement */
 ion-tab-button[tab="enregistrer"] ion-icon {
-  font-size: 28px;
+  font-size: 26px;
 }
 
-/* Masquée sur les pages secondaires */
+/* Masquée sur les pages secondaires ou modales plein écran */
 ion-tab-bar.tab-bar-hidden {
-  display: none;
+  display: none !important;
 }

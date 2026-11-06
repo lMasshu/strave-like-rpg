@@ -5,7 +5,7 @@
 ======================================================= */
 
 .map-page-content {
-  --background: #11141c;
+  --background: var(--sq-bg-base);
   --padding-top: 0;
   --padding-bottom: 0;
   --padding-start: 0;
@@ -18,10 +18,8 @@
   width: 100%;
   min-height: 100%;
   overflow: hidden;
-  background: #11141c;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    sans-serif;
+  background: var(--sq-bg-base);
+  font-family: var(--sq-font-sans);
 }
 
 .map-mapbox-container {
@@ -62,20 +60,17 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: #181d27;
-  border: 1px solid #283040;
-  color: #d1d5db;
+  background: var(--sq-bg-header, var(--sq-surface-card));
+  border: 1px solid var(--sq-border);
+  color: var(--sq-text-main);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--sq-shadow-sm);
   cursor: pointer;
   padding: 0;
   margin: 0;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+  transition: all 0.15s ease;
   --padding-start: 0;
   --padding-end: 0;
 }
@@ -85,43 +80,39 @@
 }
 
 .top-mobile-icon-btn:hover {
-  background: #202634;
-  border-color: #374151;
-}
-
-.top-mobile-icon-btn:active {
-  background: #141720;
+  background: var(--sq-surface-card-subtle);
+  border-color: var(--sq-border-highlight);
 }
 
 .top-mobile-icon-btn.active {
-  border-color: #16a34a;
-  color: #22c55e;
-  background: #14281c;
+  border-color: var(--sq-green-athletic);
+  color: var(--sq-primary-fg, #000000);
+  background: var(--sq-green-athletic);
 }
 
 /* Champ de recherche */
 .mobile-search-pill {
   flex: 1;
   height: 44px;
-  background: #181d27;
-  border: 1px solid #283040;
+  background: var(--sq-bg-header, var(--sq-surface-card));
+  border: 1px solid var(--sq-border);
   border-radius: 12px;
   display: flex;
   align-items: center;
   padding: 0 14px;
   gap: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--sq-shadow-sm);
   transition: border-color 0.15s ease;
 }
 
 .mobile-search-pill:focus-within {
-  border-color: #16a34a;
-  background: #1b202c;
+  border-color: var(--sq-green-athletic);
+  background: var(--sq-surface-card);
 }
 
 .search-pill-icon {
   font-size: 1.1rem;
-  color: #9ca3af;
+  color: var(--sq-text-muted);
   flex-shrink: 0;
 }
 
@@ -130,14 +121,14 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #f3f4f6;
+  color: var(--sq-text-main);
   font-size: 0.88rem;
   font-weight: 500;
   padding: 0;
 }
 
 .search-pill-input::placeholder {
-  color: #6b7280;
+  color: var(--sq-text-muted);
 }
 
 .clear-pill-btn {
@@ -381,16 +372,20 @@
   transition: bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.map-floating-actions.with-live-hud {
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 16px + 145px + 12px);
+}
+
 .map-floating-actions.hud-min {
-  bottom: calc(76px + env(safe-area-inset-bottom, 0));
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 64px);
 }
 
 .map-floating-actions.hud-exp {
-  bottom: calc(365px + env(safe-area-inset-bottom, 0));
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 330px);
 }
 
 .map-floating-actions.immersed {
-  bottom: calc(20px + env(safe-area-inset-bottom, 0));
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 16px);
 }
 
 .fab-action-btn {
@@ -525,19 +520,19 @@
 ======================================================= */
 .rpg-bottom-hud {
   position: absolute;
-  bottom: 0;
+  bottom: var(--sq-tab-bar-height, 60px);
   left: 0;
   right: 0;
   z-index: 25;
-  background: #141720;
-  border-top: 1px solid #252b38;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
-  color: #f3f4f6;
+  background: var(--sq-bg-header, var(--sq-surface-card));
+  border-top: 1px solid var(--sq-border);
+  box-shadow: var(--sq-shadow-lg);
+  color: var(--sq-text-main);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  padding-bottom: env(safe-area-inset-bottom, 8px);
+  padding-bottom: 8px;
 }
 
 .rpg-bottom-hud.collapsed {
@@ -557,7 +552,7 @@
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background: #374151;
+  background: var(--sq-border);
   margin: 0 auto;
 }
 
@@ -587,23 +582,23 @@
 }
 
 .dot-a {
-  background: #059669;
+  background: var(--sq-green-athletic);
 }
 
 .dot-b {
-  background: #dc2626;
+  background: var(--sq-danger-raid);
 }
 
 .route-arrow {
   font-size: 0.72rem;
-  color: #6b7280;
+  color: var(--sq-text-muted);
   margin: 0 2px;
 }
 
 .hud-metric-text {
   font-size: 0.86rem;
   font-weight: 600;
-  color: #f3f4f6;
+  color: var(--sq-text-main);
   flex: 1;
   text-align: center;
   overflow: hidden;
@@ -988,4 +983,259 @@
   margin: 0;
   font-size: 0.76rem;
   color: #9ca3af;
+}
+
+/* =======================================================
+   SÉLECTEUR DE SEGMENT & ÉCRAN STATISTIQUES (MAQUETTE P2 & P3)
+======================================================= */
+
+.map-unified-header {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: env(safe-area-inset-top, 6px);
+}
+
+.map-route-search-drawer {
+  position: absolute;
+  top: calc(18px + 48px + env(safe-area-inset-top, 6px));
+  left: 16px;
+  right: 16px;
+  z-index: 39;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.map-workout-segment-bar {
+  display: flex;
+  gap: 4px;
+  background: var(--sq-bg-header, var(--sq-surface-card));
+  border: 1px solid var(--sq-border);
+  padding: 4px;
+  border-radius: var(--sq-radius-full, 999px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.map-workout-segment-btn {
+  padding: 6px 18px;
+  font-family: var(--sq-font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--sq-text-muted);
+  border-radius: var(--sq-radius-full, 999px);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+
+.map-workout-segment-btn.is-active {
+  background: var(--sq-green-athletic);
+  color: var(--sq-primary-fg, #000000);
+  font-weight: 700;
+}
+
+/* =======================================================
+   HUD LIVE D'ENREGISTREMENT SUR CARTE (MAQUETTE PAGE 3)
+======================================================= */
+
+.map-workout-live-hud {
+  position: absolute;
+  bottom: calc(var(--sq-tab-bar-height, 60px) + 16px);
+  left: 16px;
+  right: 16px;
+  z-index: 30;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  background: var(--sq-bg-header, var(--sq-surface-card));
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-xl, 20px);
+  padding: 16px 20px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--sq-shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.map-workout-live-metrics {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.live-metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.live-metric-val {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  line-height: 1.1;
+}
+
+.live-metric-lbl {
+  font-size: 0.75rem;
+  color: var(--sq-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.map-workout-live-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.live-action-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--sq-radius-full);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* Écran Statistiques Plein Écran (Maquette Page 2) */
+.sq-workout-stats-screen {
+  position: absolute;
+  top: calc(56px + env(safe-area-inset-top, 6px));
+  left: 0;
+  right: 0;
+  bottom: var(--sq-tab-bar-height, 60px);
+  z-index: 35;
+  background: var(--sq-bg-base);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 20px 24px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.sq-workout-stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--sq-border);
+}
+
+.sq-workout-activity-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.sq-workout-status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sq-green-athletic);
+  background: var(--sq-surface-card-subtle);
+  border: 1px solid var(--sq-border);
+  padding: 4px 10px;
+  border-radius: var(--sq-radius-full);
+}
+
+.sq-workout-realtime-pace {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+  text-align: center;
+}
+
+.sq-workout-pace-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sq-text-muted);
+}
+
+.sq-workout-pace-value {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 4.8rem;
+  font-weight: 900;
+  color: var(--sq-text-main);
+  line-height: 1;
+  margin: 12px 0 6px 0;
+  letter-spacing: -0.04em;
+}
+
+.sq-workout-pace-unit {
+  font-size: 0.85rem;
+  color: var(--sq-text-muted);
+}
+
+.sq-workout-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sq-workout-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  text-align: center;
+}
+
+.sq-workout-stat-val {
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.sq-workout-stat-lbl {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sq-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sq-workout-actions-row {
+  display: flex;
+  gap: 12px;
+}
+
+.sq-workout-action-btn {
+  flex: 1;
+  height: 52px;
+  font-family: var(--sq-font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--sq-radius-full);
+  cursor: pointer;
 }

@@ -1,17 +1,239 @@
+/* ==========================================================================
+   Page Notifications - Stride Quest Design System
+   ========================================================================== */
+
+.notif-page-content {
+  --background: var(--sq-bg-base, #0b0f19);
+}
+
+.notif-read-all-btn {
+  --color: var(--sq-color-primary, #16a34a);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.notif-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   Filtres par Catégorie (Chips)
+   ========================================================================== */
+
+.notif-filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.notif-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.notif-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--sq-radius-full, 999px);
+  background: var(--sq-surface-card, #131926);
+  border: 1px solid var(--sq-border, #1f293d);
+  color: var(--sq-text-secondary, #94a3b8);
+  font-family: var(--sq-font-sans, system-ui, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease-out;
+}
+
+.notif-filter-chip:hover {
+  border-color: var(--sq-border-highlight, rgba(22, 163, 74, 0.4));
+  color: var(--sq-text-main, #f1f5f9);
+}
+
+.notif-filter-chip.is-active {
+  background: var(--sq-color-primary, #16a34a);
+  border-color: var(--sq-color-primary, #16a34a);
+  color: #ffffff;
+}
+
+.notif-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--sq-danger-raid, #ef4444);
+  color: #ffffff;
+  line-height: 1;
+}
+
+.notif-filter-chip.is-active .notif-filter-badge {
+  background: #ffffff;
+  color: var(--sq-color-primary, #16a34a);
+}
+
+/* ==========================================================================
+   Liste des Notifications
+   ========================================================================== */
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notif-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md, 12px);
+  padding: 14px;
+  position: relative;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.notif-card:hover {
+  border-color: var(--sq-border-highlight);
+}
+
+.notif-card.is-unread,
 .notif-unread {
-  --background: rgba(var(--ion-color-primary-rgb, 22, 163, 74), 0.05);
+  background: var(--sq-surface-card);
+  border-left: 3px solid var(--sq-green-athletic, #16a34a);
+}
+
+.notif-card.is-read {
+  opacity: 0.85;
+}
+
+/* Icônes par type */
+.notif-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--sq-radius-md, 8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.notif-icon-wrap.type-raid {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.notif-icon-wrap.type-level {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.notif-icon-wrap.type-follow {
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--sq-color-primary, #16a34a);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+}
+
+.notif-icon-wrap.type-kudos {
+  background: rgba(244, 63, 94, 0.12);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.notif-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sq-text-muted, #94a3b8);
+}
+
+.notif-time {
+  font-size: 0.75rem;
+  color: var(--sq-text-secondary, #94a3b8);
+}
+
+.notif-message {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--sq-text-main, #f1f5f9);
 }
 
 .notif-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--ion-color-primary, #16a34a);
+  background: var(--sq-color-primary, #16a34a);
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.8);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   État Vide
+   ========================================================================== */
+
+.notif-empty-card {
+  padding: 40px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.notif-empty-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--sq-surface-card-subtle, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--sq-border-subtle, rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sq-text-muted, #94a3b8);
+  font-size: 1.5rem;
 }
 
 .notif-empty {
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--ion-color-step-500, #6b7280);
+  margin: 0;
+  color: var(--sq-text-secondary, #94a3b8);
   font-size: 0.9rem;
 }

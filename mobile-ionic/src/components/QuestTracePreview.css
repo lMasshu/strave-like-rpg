@@ -1,0 +1,36 @@
+.sq-trace-preview {
+  position: relative;
+  width: 100%;
+  border-radius: var(--sq-radius-md, 12px);
+  overflow: hidden;
+  background: var(--sq-surface-card-subtle, rgba(0, 0, 0, 0.03));
+}
+
+.sq-trace-canvas-wrap {
+  position: relative;
+  width: 100%;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sq-trace-svg {
+  width: 100%;
+  max-height: 140px;
+  display: block;
+}
+
+.sq-trace-elevation-chip {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-family: var(--sq-font-mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sq-text-muted);
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  padding: 2px 8px;
+  border-radius: var(--sq-radius-full, 999px);
+}

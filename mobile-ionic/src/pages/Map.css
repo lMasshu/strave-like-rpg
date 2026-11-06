@@ -1019,12 +1019,10 @@
 .map-workout-segment-bar {
   display: flex;
   gap: 4px;
-  background: var(--sq-bg-header, var(--sq-surface-card));
+  background: var(--sq-surface-card);
   border: 1px solid var(--sq-border);
   padding: 4px;
   border-radius: var(--sq-radius-full, 999px);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--sq-shadow-sm);
 }
 
@@ -1060,12 +1058,10 @@
   max-width: 520px;
   margin-left: auto;
   margin-right: auto;
-  background: var(--sq-bg-header, var(--sq-surface-card));
+  background: var(--sq-surface-card);
   border: 1px solid var(--sq-border);
   border-radius: var(--sq-radius-xl, 20px);
   padding: 16px 20px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--sq-shadow-md);
   display: flex;
   flex-direction: column;
@@ -1238,4 +1234,98 @@
   font-weight: 700;
   border-radius: var(--sq-radius-full);
   cursor: pointer;
+}
+
+/* Statuts d'entraînement */
+.sq-workout-status-badge.status-recording {
+  color: #000000;
+  background: var(--sq-green-athletic, #aff33e);
+  border-color: var(--sq-green-athletic, #aff33e);
+}
+
+.sq-workout-status-badge.status-paused {
+  color: #000000;
+  background: var(--sq-gold-rpg, #f59e0b);
+  border-color: var(--sq-gold-rpg, #f59e0b);
+}
+
+.sq-workout-status-badge.status-idle {
+  color: var(--sq-text-muted);
+  background: var(--sq-surface-card-subtle);
+  border-color: var(--sq-border);
+}
+
+/* Marqueur Joueur en Course Libre */
+.workout-player-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.workout-marker-pulse {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--sq-green-athletic, #aff33e);
+  opacity: 0.35;
+  will-change: transform, opacity;
+  animation: workoutPulse 2s infinite ease-out;
+}
+
+.workout-marker-dot {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--sq-green-athletic, #aff33e);
+  border: 3px solid #000000;
+  box-shadow: 0 0 10px rgba(175, 243, 62, 0.9);
+}
+
+/* Badge Qualité Signal GPS */
+.sq-gps-quality-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--sq-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sq-gps-quality-badge.quality-optimal {
+  background: rgba(175, 243, 62, 0.15);
+  color: var(--sq-green-athletic, #aff33e);
+  border: 1px solid var(--sq-green-athletic, #aff33e);
+}
+
+.sq-gps-quality-badge.quality-weak {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--sq-gold-rpg, #f59e0b);
+  border: 1px solid var(--sq-gold-rpg, #f59e0b);
+}
+
+.sq-gps-dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+@keyframes workoutPulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
 }

@@ -7,6 +7,9 @@ import {
 } from "./useGeolocationTracker";
 
 export type WorkoutStatus = "idle" | "recording" | "paused" | "finished";
+export type GpsSignalQuality = "optimal" | "weak" | "none";
+
+export const MAX_ACCURACY_THRESHOLD = 25; // mètres (norme d'acceptation sportive)
 
 export interface ActiveWorkoutMetrics {
   status: WorkoutStatus;
@@ -21,6 +24,7 @@ export interface ActiveWorkoutMetrics {
   currentPosition: TrackedPosition | null;
   gpsStatus: GeolocationStatus;
   gpsError: string | null;
+  gpsQuality: GpsSignalQuality;
   simulating: boolean;
 }
 
@@ -34,7 +38,11 @@ export interface ActiveWorkoutController {
   toggleSimulation: () => void;
 }
 
-function formatPace(speedMs: number | null, distanceKm: number, elapsedSec: number): string {
+function formatPace(
+  speedMs: number | null,
+  distanceKm: number,
+  elapsedSec: number,
+): string {
   // Préférer la vitesse instantanée si disponible (> 0.5 m/s)
   if (speedMs && speedMs > 0.5) {
     const secPerKm = 1000 / speedMs;
@@ -65,15 +73,19 @@ export function useActiveWorkout(): ActiveWorkoutController {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [distanceMeters, setDistanceMeters] = useState(0);
   const [elevationGainMeters, setElevationGainMeters] = useState(0);
-  const [trackCoordinates, setTrackCoordinates] = useState<[number, number][]>([]);
+  const [trackCoordinates, setTrackCoordinates] = useState<[number, number][]>(
+    [],
+  );
   const [simulating, setSimulating] = useState(false);
-  const [simulatedPosition, setSimulatedPosition] = useState<TrackedPosition | null>(null);
+  const [simulatedPosition, setSimulatedPosition] =
+    useState<TrackedPosition | null>(null);
 
   const tracker = useGeolocationTracker(status === "recording" && !simulating);
   const currentPosition = simulating ? simulatedPosition : tracker.position;
 
   const lastAltitudeRef = useRef<number | null>(null);
   const lastRecordedCoordRef = useRef<[number, number] | null>(null);
+  const lastTimestampRef = useRef<number | null>(null);
   const simulationOriginRef = useRef<[number, number]>([2.3522, 48.8566]); // Paris centre par défaut
   const simulationStepRef = useRef(0);
 
@@ -88,30 +100,52 @@ export function useActiveWorkout(): ActiveWorkoutController {
     return () => window.clearInterval(timer);
   }, [status]);
 
-  // 2. Traitement des positions réelles (GPS)
+  // 2. Traitement des positions réelles (GPS) avec filtre de précision sportive
   useEffect(() => {
     if (status !== "recording" || simulating || !tracker.position) return;
 
-    const newCoord = tracker.position.coords;
-    const altitude = tracker.position.altitude;
+    const pos = tracker.position;
+
+    // Filtre 1 : Rejeter immédiatement les points trop imprécis (> 25m) pour éviter les sauts
+    if (pos.accuracy > MAX_ACCURACY_THRESHOLD) {
+      return;
+    }
+
+    const newCoord = pos.coords;
+    const altitude = pos.altitude;
+    const timestamp = pos.timestamp;
 
     setTrackCoordinates((prev) => {
       if (prev.length === 0) {
         lastRecordedCoordRef.current = newCoord;
         if (altitude !== null) lastAltitudeRef.current = altitude;
+        lastTimestampRef.current = timestamp;
         return [newCoord];
       }
 
       const prevCoord = lastRecordedCoordRef.current || prev[prev.length - 1];
       const deltaM = haversineMeters(newCoord, prevCoord);
 
-      // Filtrer les micro-bruits GPS (< 1.2m)
-      if (deltaM < 1.2) {
+      // Filtre 2 : Seuil anti-bruit adaptatif proportionnel à l'imprécision
+      const minDistanceThreshold = Math.max(2.0, pos.accuracy * 0.4);
+      if (deltaM < minDistanceThreshold) {
         return prev;
+      }
+
+      // Filtre 3 : Rejet des téléportations absurdes (> 12 m/s = 43 km/h pour un coureur)
+      if (lastTimestampRef.current) {
+        const deltaSec = (timestamp - lastTimestampRef.current) / 1000;
+        if (deltaSec > 0.4) {
+          const speed = deltaM / deltaSec;
+          if (speed > 12) {
+            return prev;
+          }
+        }
       }
 
       setDistanceMeters((d) => d + deltaM);
       lastRecordedCoordRef.current = newCoord;
+      lastTimestampRef.current = timestamp;
 
       if (altitude !== null && lastAltitudeRef.current !== null) {
         const deltaAlt = altitude - lastAltitudeRef.current;
@@ -218,10 +252,17 @@ export function useActiveWorkout(): ActiveWorkoutController {
 
   // Métriques dérivées
   const distanceKm = Number((distanceMeters / 1000).toFixed(2));
-  const currentSpeedMs = currentPosition?.speed ?? (simulating ? SIMULATION_SPEED_MS : 0);
+  const currentSpeedMs =
+    currentPosition?.speed ?? (simulating ? SIMULATION_SPEED_MS : 0);
   const speedKmh = Number(((currentSpeedMs || 0) * 3.6).toFixed(1));
   const paceMinPerKm = formatPace(currentSpeedMs, distanceKm, elapsedSeconds);
   const xpEarned = Math.round(distanceKm * 100 + elevationGainMeters * 2);
+
+  const gpsQuality: GpsSignalQuality = currentPosition
+    ? currentPosition.accuracy <= 20
+      ? "optimal"
+      : "weak"
+    : "none";
 
   return {
     metrics: {
@@ -237,6 +278,7 @@ export function useActiveWorkout(): ActiveWorkoutController {
       currentPosition,
       gpsStatus: tracker.status,
       gpsError: tracker.error,
+      gpsQuality,
       simulating,
     },
     startWorkout,

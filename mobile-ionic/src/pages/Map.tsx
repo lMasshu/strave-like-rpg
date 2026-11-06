@@ -42,6 +42,18 @@ import QuestRunHud from "../components/QuestRunHud";
 import { Capacitor } from "@capacitor/core";
 import { Geolocation } from "@capacitor/geolocation";
 import { GeneratedQuest } from "../services/questGenerator";
+import { useActiveWorkout } from "../hooks/useActiveWorkout";
+
+function formatDuration(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const hrs = Math.floor(safe / 3600);
+  const mins = Math.floor((safe % 3600) / 60);
+  const secs = safe % 60;
+  if (hrs > 0) {
+    return `${hrs}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
 import "./Map.css";
 
 // Coordonnées par défaut : Paris Centre (Hôtel de Ville -> Musée du Louvre)
@@ -197,7 +209,8 @@ const MapPage: React.FC = () => {
   // Ergonomie & Visibilité
   const [isHudCollapsed, setIsHudCollapsed] = useState(false);
   const [workoutSegment, setWorkoutSegment] = useState<"map" | "stats">("map");
-  const [isWorkoutPaused, setIsWorkoutPaused] = useState(false);
+  const workout = useActiveWorkout();
+  const workoutPlayerMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [workoutFinishedModal, setWorkoutFinishedModal] = useState(false);
   const [showRoutePlanner, setShowRoutePlanner] = useState(false);
   const [hideUiForImmersion, setHideUiForImmersion] = useState(false);
@@ -336,6 +349,74 @@ const MapPage: React.FC = () => {
     }
   }, []);
 
+  // Rendu du tracé en direct de la course du joueur (GeoJSON dynamique vert Lime Frost)
+  const renderWorkoutTrackOnMap = useCallback((coords: [number, number][]) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const render = () => {
+      if (!map) return;
+      const geojsonData: GeoJSON.Feature<GeoJSON.LineString> = {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "LineString",
+          coordinates: coords.length > 1 ? coords : [],
+        },
+      };
+
+      const existingSource = map.getSource("workout-live-source") as
+        mapboxgl.GeoJSONSource | undefined;
+
+      if (existingSource) {
+        existingSource.setData(geojsonData);
+      } else {
+        map.addSource("workout-live-source", {
+          type: "geojson",
+          data: geojsonData,
+        });
+
+        // 1. Bordure sombre
+        map.addLayer({
+          id: "workout-live-casing",
+          type: "line",
+          source: "workout-live-source",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round",
+          },
+          paint: {
+            "line-color": "#020617",
+            "line-width": 8,
+            "line-opacity": 0.95,
+          },
+        });
+
+        // 2. Ligne de tracé principale nette (optimisée GPU mobile sans flou shader)
+        map.addLayer({
+          id: "workout-live-line",
+          type: "line",
+          source: "workout-live-source",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round",
+          },
+          paint: {
+            "line-color": "#aff33e",
+            "line-width": 4.5,
+            "line-opacity": 1,
+          },
+        });
+      }
+    };
+
+    if (map.isStyleLoaded()) {
+      render();
+    } else {
+      map.once("style.load", render);
+    }
+  }, []);
+
   // Recalcul de l'itinéraire
   const updateRoute = useCallback(
     async (
@@ -392,6 +473,8 @@ const MapPage: React.FC = () => {
       style: initialStyle,
       center: INITIAL_POINT_A,
       zoom: 14,
+      fadeDuration: 0,
+      attributionControl: false,
     });
 
     mapInstance.current = map;
@@ -499,6 +582,9 @@ const MapPage: React.FC = () => {
       if (currentCoordsRef.current.length > 0) {
         renderRouteOnMap(currentCoordsRef.current);
       }
+      if (workout.metrics.trackCoordinates.length > 0) {
+        renderWorkoutTrackOnMap(workout.metrics.trackCoordinates);
+      }
     });
 
     map.on("load", () => {
@@ -534,6 +620,10 @@ const MapPage: React.FC = () => {
       resizeObserver.disconnect();
       markerA.remove();
       markerB.remove();
+      if (workoutPlayerMarkerRef.current) {
+        workoutPlayerMarkerRef.current.remove();
+        workoutPlayerMarkerRef.current = null;
+      }
       map.remove();
       mapInstance.current = null;
     };
@@ -546,6 +636,46 @@ const MapPage: React.FC = () => {
       updateRoute(pointARef.current, pointBRef.current, mode, false);
     }
   }, [mode, updateRoute]);
+
+  // Mise à jour du tracé de course en direct sur la carte
+  useEffect(() => {
+    if (workout.metrics.trackCoordinates.length > 0) {
+      renderWorkoutTrackOnMap(workout.metrics.trackCoordinates);
+    }
+  }, [workout.metrics.trackCoordinates, renderWorkoutTrackOnMap]);
+
+  // Pastille du joueur animée en direct sur la carte
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const currentPos = workout.metrics.currentPosition;
+    if (!currentPos) {
+      if (workoutPlayerMarkerRef.current) {
+        workoutPlayerMarkerRef.current.remove();
+        workoutPlayerMarkerRef.current = null;
+      }
+      return;
+    }
+
+    if (!workoutPlayerMarkerRef.current) {
+      const el = document.createElement("div");
+      el.className = "workout-player-marker";
+      el.innerHTML =
+        '<div class="workout-marker-pulse"></div><div class="workout-marker-dot"></div>';
+      workoutPlayerMarkerRef.current = new mapboxgl.Marker({
+        element: el,
+        rotationAlignment: "map",
+      })
+        .setLngLat(currentPos.coords)
+        .addTo(map);
+    } else {
+      workoutPlayerMarkerRef.current.setLngLat(currentPos.coords);
+      if (typeof currentPos.heading === "number") {
+        workoutPlayerMarkerRef.current.setRotation(currentPos.heading);
+      }
+    }
+  }, [workout.metrics.currentPosition]);
 
   // Changement de style de carte
   const handleSelectTheme = (theme: MapTheme) => {
@@ -800,6 +930,22 @@ const MapPage: React.FC = () => {
                 </button>
               </div>
 
+              {import.meta.env.DEV && (
+                <button
+                  type="button"
+                  className={`top-mobile-icon-btn ${workout.metrics.simulating ? "active" : ""}`}
+                  onClick={workout.toggleSimulation}
+                  title={
+                    workout.metrics.simulating
+                      ? "Arrêter la simulation"
+                      : "Simuler la course (déplacement auto)"
+                  }
+                  aria-label="Simulation"
+                >
+                  <IonIcon icon={walkOutline} />
+                </button>
+              )}
+
               <button
                 type="button"
                 className={`top-mobile-icon-btn ${showStyleMenu ? "active" : ""}`}
@@ -858,15 +1004,48 @@ const MapPage: React.FC = () => {
             <div className="sq-workout-stats-screen">
               <div className="sq-workout-stats-header">
                 <span className="sq-workout-activity-label">Course à pied</span>
-                <span className="sq-workout-status-badge">En cours</span>
+                <div
+                  style={{ display: "flex", gap: "8px", alignItems: "center" }}
+                >
+                  {workout.metrics.status === "recording" && (
+                    <span
+                      className={`sq-gps-quality-badge quality-${workout.metrics.gpsQuality}`}
+                      title={
+                        workout.metrics.currentPosition
+                          ? `Précision GPS : ${Math.round(workout.metrics.currentPosition.accuracy)} m`
+                          : "Recherche du signal GPS..."
+                      }
+                    >
+                      <span className="sq-gps-dot-indicator" />
+                      {workout.metrics.gpsQuality === "optimal"
+                        ? "GPS Optimal"
+                        : "GPS Faible"}
+                    </span>
+                  )}
+                  <span
+                    className={`sq-workout-status-badge ${
+                      workout.metrics.status === "recording"
+                        ? "status-recording"
+                        : workout.metrics.status === "paused"
+                          ? "status-paused"
+                          : "status-idle"
+                    }`}
+                  >
+                    {workout.metrics.status === "recording"
+                      ? "En cours"
+                      : workout.metrics.status === "paused"
+                        ? "En pause"
+                        : "Prêt"}
+                  </span>
+                </div>
               </div>
 
               <div className="sq-workout-realtime-pace">
                 <span className="sq-workout-pace-label">Rythme réel</span>
                 <div className="sq-workout-pace-value sq-tabular">
-                  {routeInfo && routeInfo.distanceKm > 0
-                    ? `${Math.floor(routeInfo.durationMinutes / routeInfo.distanceKm)}:${String(Math.round(((routeInfo.durationMinutes / routeInfo.distanceKm) % 1) * 60)).padStart(2, "0")}`
-                    : "5:12"}
+                  {workout.metrics.status !== "idle"
+                    ? workout.metrics.paceMinPerKm
+                    : "--:--"}
                 </div>
                 <span className="sq-workout-pace-unit">
                   min/km • à cet instant
@@ -876,49 +1055,78 @@ const MapPage: React.FC = () => {
               <div className="sq-workout-stats-grid">
                 <div className="sq-card sq-workout-stat-card">
                   <span className="sq-workout-stat-val sq-tabular">
-                    {routeInfo
-                      ? routeInfo.distanceKm.toFixed(2).replace(".", ",")
-                      : "3,42"}{" "}
+                    {workout.metrics.status !== "idle"
+                      ? workout.metrics.distanceKm.toFixed(2).replace(".", ",")
+                      : "0,00"}{" "}
                     km
                   </span>
                   <span className="sq-workout-stat-lbl">Distance</span>
                 </div>
                 <div className="sq-card sq-workout-stat-card">
                   <span className="sq-workout-stat-val sq-tabular">
-                    {routeInfo ? `${routeInfo.durationMinutes}:00` : "18:06"}
+                    {workout.metrics.status !== "idle"
+                      ? formatDuration(workout.metrics.elapsedSeconds)
+                      : "00:00"}
                   </span>
                   <span className="sq-workout-stat-lbl">Temps</span>
                 </div>
                 <div className="sq-card sq-workout-stat-card">
                   <span className="sq-workout-stat-val sq-tabular">
-                    {routeInfo?.elevationGain ?? 46} m
+                    {workout.metrics.status !== "idle"
+                      ? workout.metrics.elevationGainMeters
+                      : 0}{" "}
+                    m
                   </span>
                   <span className="sq-workout-stat-lbl">Dénivelé</span>
                 </div>
                 <div className="sq-card sq-workout-stat-card">
                   <span className="sq-workout-stat-val sq-tabular">
                     +
-                    {Math.round((routeInfo ? routeInfo.distanceKm : 3.42) * 14)}
+                    {workout.metrics.status !== "idle"
+                      ? workout.metrics.xpEarned
+                      : 0}
                   </span>
                   <span className="sq-workout-stat-lbl">Points gagnés</span>
                 </div>
               </div>
 
               <div className="sq-workout-actions-row">
-                <button
-                  type="button"
-                  className="sq-button-secondary sq-workout-action-btn"
-                  onClick={() => setIsWorkoutPaused(!isWorkoutPaused)}
-                >
-                  {isWorkoutPaused ? "Reprendre" : "Pause"}
-                </button>
-                <button
-                  type="button"
-                  className="sq-button-primary sq-workout-action-btn"
-                  onClick={() => setWorkoutFinishedModal(true)}
-                >
-                  Terminer
-                </button>
+                {workout.metrics.status === "idle" ? (
+                  <button
+                    type="button"
+                    className="sq-button-primary sq-workout-action-btn"
+                    onClick={workout.startWorkout}
+                    style={{ flex: 1 }}
+                  >
+                    Démarrer la course
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="sq-button-secondary sq-workout-action-btn"
+                      onClick={
+                        workout.metrics.status === "paused"
+                          ? workout.resumeWorkout
+                          : workout.pauseWorkout
+                      }
+                    >
+                      {workout.metrics.status === "paused"
+                        ? "Reprendre"
+                        : "Pause"}
+                    </button>
+                    <button
+                      type="button"
+                      className="sq-button-primary sq-workout-action-btn"
+                      onClick={() => {
+                        workout.finishWorkout();
+                        setWorkoutFinishedModal(true);
+                      }}
+                    >
+                      Terminer
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -1113,18 +1321,20 @@ const MapPage: React.FC = () => {
                 <div className="map-workout-live-metrics">
                   <div className="live-metric-item">
                     <span className="live-metric-val sq-tabular">
-                      {routeInfo && routeInfo.distanceKm > 0
-                        ? `${Math.floor(routeInfo.durationMinutes / routeInfo.distanceKm)}:${String(Math.round(((routeInfo.durationMinutes / routeInfo.distanceKm) % 1) * 60)).padStart(2, "0")}`
-                        : "5:12"}
+                      {workout.metrics.status !== "idle"
+                        ? workout.metrics.paceMinPerKm
+                        : "--:--"}
                     </span>
                     <span className="live-metric-lbl">Rythme réel</span>
                   </div>
 
                   <div className="live-metric-item">
                     <span className="live-metric-val sq-tabular">
-                      {routeInfo
-                        ? routeInfo.distanceKm.toFixed(2).replace(".", ",")
-                        : "3,42"}{" "}
+                      {workout.metrics.status !== "idle"
+                        ? workout.metrics.distanceKm
+                            .toFixed(2)
+                            .replace(".", ",")
+                        : "0,00"}{" "}
                       km
                     </span>
                     <span className="live-metric-lbl">Distance</span>
@@ -1132,27 +1342,51 @@ const MapPage: React.FC = () => {
 
                   <div className="live-metric-item">
                     <span className="live-metric-val sq-tabular">
-                      {routeInfo ? `${routeInfo.durationMinutes}:00` : "18:06"}
+                      {workout.metrics.status !== "idle"
+                        ? formatDuration(workout.metrics.elapsedSeconds)
+                        : "00:00"}
                     </span>
                     <span className="live-metric-lbl">Temps</span>
                   </div>
                 </div>
 
                 <div className="map-workout-live-actions">
-                  <button
-                    type="button"
-                    className="sq-button-secondary live-action-btn"
-                    onClick={() => setIsWorkoutPaused(!isWorkoutPaused)}
-                  >
-                    {isWorkoutPaused ? "Reprendre" : "Pause"}
-                  </button>
-                  <button
-                    type="button"
-                    className="sq-button-primary live-action-btn"
-                    onClick={() => setWorkoutFinishedModal(true)}
-                  >
-                    Terminer
-                  </button>
+                  {workout.metrics.status === "idle" ? (
+                    <button
+                      type="button"
+                      className="sq-button-primary live-action-btn"
+                      onClick={workout.startWorkout}
+                      style={{ flex: 1 }}
+                    >
+                      Démarrer
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="sq-button-secondary live-action-btn"
+                        onClick={
+                          workout.metrics.status === "paused"
+                            ? workout.resumeWorkout
+                            : workout.pauseWorkout
+                        }
+                      >
+                        {workout.metrics.status === "paused"
+                          ? "Reprendre"
+                          : "Pause"}
+                      </button>
+                      <button
+                        type="button"
+                        className="sq-button-primary live-action-btn"
+                        onClick={() => {
+                          workout.finishWorkout();
+                          setWorkoutFinishedModal(true);
+                        }}
+                      >
+                        Terminer
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -1459,11 +1693,12 @@ const MapPage: React.FC = () => {
           onDidDismiss={() => {
             setWorkoutFinishedModal(false);
             setWorkoutSegment("map");
+            workout.resetWorkout();
           }}
           header="Sortie enregistrée !"
-          subHeader="Félicitations pour votre effort"
-          message="Votre sortie a été enregistrée avec succès dans votre journal et contribue à la progression de votre guilde."
-          buttons={["Super !"]}
+          subHeader={`${workout.metrics.distanceKm.toFixed(2)} km parcourus • +${workout.metrics.xpEarned} XP`}
+          message={`Temps total : ${formatDuration(workout.metrics.elapsedSeconds)} • Allure : ${workout.metrics.paceMinPerKm} min/km • Dénivelé : +${workout.metrics.elevationGainMeters} m. Votre effort contribue à la progression de votre guilde !`}
+          buttons={["Enregistrer l'activité"]}
         />
 
         <IonAlert

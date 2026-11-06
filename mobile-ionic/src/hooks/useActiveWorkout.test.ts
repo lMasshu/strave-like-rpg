@@ -139,7 +139,7 @@ describe("useActiveWorkout hook", () => {
     expect(result.current.metrics.trackCoordinates.length).toBe(1);
     expect(result.current.metrics.distanceMeters).toBe(0);
 
-    // Deuxième point ~100m plus loin
+    // Deuxième point ~95m plus loin après 15 secondes (~6.3 m/s)
     mockPosition = {
       coords: [2.3535, 48.8566],
       longitude: 2.3535,
@@ -147,13 +147,52 @@ describe("useActiveWorkout hook", () => {
       altitude: 38,
       speed: 3.2, // ~11.5 km/h
       accuracy: 5,
-      timestamp: 2000,
+      timestamp: 15000,
     };
     rerender();
 
     expect(result.current.metrics.trackCoordinates.length).toBe(2);
     expect(result.current.metrics.distanceMeters).toBeGreaterThan(50);
     expect(result.current.metrics.elevationGainMeters).toBe(3); // 38 - 35
+  });
+
+  it("should reject inaccurate GPS fixes (accuracy > 25m) and not accumulate false distance", () => {
+    const { result, rerender } = renderHook(() => useActiveWorkout());
+
+    act(() => {
+      result.current.startWorkout();
+    });
+
+    // Point 1 : Valide (accuracy: 6m)
+    mockPosition = {
+      coords: [2.3522, 48.8566],
+      longitude: 2.3522,
+      latitude: 48.8566,
+      altitude: 35,
+      speed: 3.0,
+      accuracy: 6,
+      timestamp: 1000,
+    };
+    mockStatus = "tracking";
+    rerender();
+
+    expect(result.current.metrics.trackCoordinates.length).toBe(1);
+
+    // Point 2 : Imprécis (accuracy: 65m - ex: saut triangulé 4G / Wi-Fi)
+    mockPosition = {
+      coords: [2.355, 48.858], // Décalage de ~200m
+      longitude: 2.355,
+      latitude: 48.858,
+      altitude: 35,
+      speed: 1.0,
+      accuracy: 65,
+      timestamp: 2000,
+    };
+    rerender();
+
+    // Doit être ignoré pour le tracé et la distance
+    expect(result.current.metrics.trackCoordinates.length).toBe(1);
+    expect(result.current.metrics.distanceMeters).toBe(0);
   });
 
   it("should toggle simulation mode and advance track automatically", () => {

@@ -21,6 +21,7 @@ vi.mock("@capacitor/geolocation", () => ({
     requestPermissions: vi.fn(),
     watchPosition: vi.fn(),
     clearWatch: vi.fn(),
+    getCurrentPosition: vi.fn().mockResolvedValue(null),
   },
 }));
 
@@ -94,7 +95,14 @@ describe("useGeolocationTracker hook", () => {
 
     await waitFor(() => {
       expect(Geolocation.watchPosition).toHaveBeenCalledWith(
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+          interval: 1000,
+          minimumUpdateInterval: 1000,
+          enableLocationFallback: true,
+        },
         expect.any(Function),
       );
     });

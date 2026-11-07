@@ -3,6 +3,8 @@ import type {
   TrackedPosition,
   GeolocationStatus,
 } from "../hooks/useGeolocationTracker";
+import type { ActiveWorkoutMetrics } from "../hooks/useActiveWorkout";
+import type { GeneratedQuest } from "../services/questGenerator";
 import "./GeolocationDebugConsole.css";
 
 export interface GeolocationDebugConsoleProps {
@@ -11,6 +13,17 @@ export interface GeolocationDebugConsoleProps {
   error?: string | null;
   simulating?: boolean;
   defaultExpanded?: boolean;
+  // Contrôles Admin / Dev unifiés
+  onToggleSimulation?: () => void;
+  workoutMetrics?: ActiveWorkoutMetrics;
+  activeQuest?: GeneratedQuest | null;
+  onGenerateQuest?: (
+    type: "loop" | "poi",
+    distanceKm: number,
+  ) => Promise<void> | void;
+  onClearQuest?: () => void;
+  isGeneratingQuest?: boolean;
+  onClose?: () => void;
 }
 
 interface GpsLogEntry {
@@ -28,10 +41,21 @@ export const GeolocationDebugConsole: React.FC<
   error = null,
   simulating = false,
   defaultExpanded = true,
+  onToggleSimulation,
+  workoutMetrics,
+  activeQuest = null,
+  onGenerateQuest,
+  onClearQuest,
+  isGeneratingQuest = false,
+  onClose,
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [logs, setLogs] = useState<GpsLogEntry[]>([]);
   const [updateCount, setUpdateCount] = useState(0);
+
+  // Formulaire de génération personnalisée
+  const [customDistance, setCustomDistance] = useState(3.0);
+  const [customType, setCustomType] = useState<"loop" | "poi">("loop");
 
   // Enregistrement des réceptions GPS en temps réel dans le journal
   useEffect(() => {
@@ -76,33 +100,35 @@ export const GeolocationDebugConsole: React.FC<
       Number.isFinite(position.accuracy) &&
       position.accuracy >= 0
         ? `±${position.accuracy.toFixed(0)}m`
-        : "±--m";
+        : "N/A";
 
     const entry: GpsLogEntry = {
-      id: `${position.timestamp}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `${Date.now()}-${Math.random()}`,
       timeStr,
-      summary: `Lat: ${latStr}, Lng: ${lngStr} | Alt: ${altStr} | Vit: ${speedStr} | ${accStr}`,
+      summary: `Fix: [${latStr}, ${lngStr}] alt:${altStr} vit:${speedStr} acc:${accStr}`,
       type: "position",
     };
 
     setLogs((prev) => [entry, ...prev.slice(0, 19)]);
   }, [position]);
 
-  // Enregistrement des changements de statut / erreurs
+  // Enregistrement des erreurs
   useEffect(() => {
-    if (error) {
-      const now = new Date();
-      const timeStr = now.toTimeString().split(" ")[0];
-      setLogs((prev) => [
-        {
-          id: `err-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          timeStr,
-          summary: `Erreur: ${error}`,
-          type: "error",
-        },
-        ...prev.slice(0, 19),
-      ]);
-    }
+    if (!error) return;
+
+    const now = new Date();
+    const timeStr = `${now.toTimeString().split(" ")[0]}.${String(
+      now.getMilliseconds(),
+    ).padStart(3, "0")}`;
+
+    const entry: GpsLogEntry = {
+      id: `${Date.now()}-${Math.random()}`,
+      timeStr,
+      summary: `Erreur: ${error}`,
+      type: "error",
+    };
+
+    setLogs((prev) => [entry, ...prev.slice(0, 19)]);
   }, [error]);
 
   const formatCoord = (
@@ -184,20 +210,32 @@ export const GeolocationDebugConsole: React.FC<
           )}
         </div>
 
-        <button
-          type="button"
-          className="debug-toggle-btn"
-          data-testid="debug-toggle-btn"
-          onClick={() => setIsExpanded((prev) => !prev)}
-          aria-expanded={isExpanded}
-          aria-label={
-            isExpanded
-              ? "Réduire la console debug"
-              : "Agrandir la console debug"
-          }
-        >
-          {isExpanded ? "▲ Réduire" : "▼ Détails"}
-        </button>
+        <div className="debug-header-actions">
+          <button
+            type="button"
+            className="debug-toggle-btn"
+            data-testid="debug-toggle-btn"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            aria-expanded={isExpanded}
+            aria-label={
+              isExpanded
+                ? "Réduire la console debug"
+                : "Agrandir la console debug"
+            }
+          >
+            {isExpanded ? "▲ Réduire" : "▼ Détails"}
+          </button>
+          {onClose && (
+            <button
+              type="button"
+              className="debug-close-btn"
+              onClick={onClose}
+              title="Fermer le panel"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Résumé compact quand la console est repliée */}
@@ -228,11 +266,171 @@ export const GeolocationDebugConsole: React.FC<
         </div>
       )}
 
-      {/* Panneau complet visible par défaut */}
+      {/* Panneau complet visible */}
       {isExpanded && (
         <div className="debug-console-body">
           {error && <div className="debug-alert-box">{error}</div>}
 
+          {/* Section Génération de Quêtes sur Commande (Admin) */}
+          {onGenerateQuest && (
+            <div className="admin-quest-gen-card">
+              <div className="admin-section-title">
+                🎲 Générateur de Quêtes (Admin)
+              </div>
+              {isGeneratingQuest ? (
+                <div className="admin-gen-loading">
+                  <span>Génération de l'itinéraire en cours…</span>
+                </div>
+              ) : (
+                <div className="admin-gen-form">
+                  <div className="admin-gen-row">
+                    <div className="admin-field-group">
+                      <label className="admin-field-label">Type :</label>
+                      <div className="admin-type-toggle">
+                        <button
+                          type="button"
+                          className={`admin-type-btn ${customType === "loop" ? "active" : ""}`}
+                          onClick={() => setCustomType("loop")}
+                        >
+                          🔄 Boucle
+                        </button>
+                        <button
+                          type="button"
+                          className={`admin-type-btn ${customType === "poi" ? "active" : ""}`}
+                          onClick={() => setCustomType("poi")}
+                        >
+                          📍 POI
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="admin-field-group">
+                      <label
+                        className="admin-field-label"
+                        htmlFor="admin-dist-input"
+                      >
+                        Distance :
+                      </label>
+                      <div className="admin-input-wrap">
+                        <input
+                          id="admin-dist-input"
+                          type="number"
+                          step="0.5"
+                          min="0.5"
+                          max="25"
+                          value={customDistance}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val) && val > 0) {
+                              setCustomDistance(val);
+                            }
+                          }}
+                          className="admin-dist-input"
+                        />
+                        <span className="admin-unit">km</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-gen-submit-btn"
+                    onClick={() => onGenerateQuest(customType, customDistance)}
+                  >
+                    🚀 Générer{" "}
+                    {customType === "loop" ? "une boucle" : "une quête POI"} de{" "}
+                    {customDistance} km
+                  </button>
+                </div>
+              )}
+
+              {activeQuest && onClearQuest && (
+                <button
+                  type="button"
+                  className="admin-clear-quest-btn"
+                  onClick={onClearQuest}
+                >
+                  ✕ Supprimer la quête et le tracé
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Section Contrôle de Simulation Unifié */}
+          {onToggleSimulation && (
+            <div className="admin-sim-card">
+              <div className="admin-sim-header">
+                <span className="admin-sim-mode">
+                  {activeQuest
+                    ? `🎯 Mode Quête : ${activeQuest.title}`
+                    : "🏃 Mode Course Libre"}
+                </span>
+                <span
+                  className={`admin-sim-badge ${simulating ? "active" : ""}`}
+                >
+                  {simulating ? "SIMULATION ACTIVE" : "GPS MATÉRIEL"}
+                </span>
+              </div>
+              <button
+                type="button"
+                className={`admin-sim-btn ${simulating ? "is-simulating" : ""}`}
+                onClick={onToggleSimulation}
+              >
+                {simulating
+                  ? "⏹️ Arrêter la simulation"
+                  : "▶️ Démarrer la simulation de course"}
+              </button>
+            </div>
+          )}
+
+          {/* Section Télémétrie Course / Workout */}
+          {workoutMetrics && (
+            <div className="admin-workout-metrics">
+              <div className="admin-section-title">
+                Session Sportive en Direct
+              </div>
+              <div className="admin-workout-grid">
+                <div className="admin-stat-item">
+                  <span className="admin-stat-lbl">Statut</span>
+                  <span className="admin-stat-val">
+                    {workoutMetrics.status.toUpperCase()}
+                  </span>
+                </div>
+                <div className="admin-stat-item">
+                  <span className="admin-stat-lbl">Temps</span>
+                  <span className="admin-stat-val">
+                    {workoutMetrics.elapsedSeconds}s
+                  </span>
+                </div>
+                <div className="admin-stat-item">
+                  <span className="admin-stat-lbl">Distance</span>
+                  <span className="admin-stat-val">
+                    {workoutMetrics.distanceKm} km
+                  </span>
+                </div>
+                <div className="admin-stat-item">
+                  <span className="admin-stat-lbl">Allure</span>
+                  <span className="admin-stat-val">
+                    {workoutMetrics.paceMinPerKm}
+                  </span>
+                </div>
+                <div className="admin-stat-item">
+                  <span className="admin-stat-lbl">Tracé GPS</span>
+                  <span className="admin-stat-val">
+                    {workoutMetrics.trackCoordinates.length} pts
+                  </span>
+                </div>
+                <div className="admin-stat-item">
+                  <span className="admin-stat-lbl">Qualité Signal</span>
+                  <span className="admin-stat-val">
+                    {workoutMetrics.gpsQuality.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Données GPS Brutes */}
           <div className="debug-grid">
             <div className="debug-cell">
               <span className="debug-cell-label">Latitude</span>

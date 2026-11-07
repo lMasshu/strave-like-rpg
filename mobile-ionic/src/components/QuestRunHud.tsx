@@ -1,22 +1,21 @@
 import { useEffect, useRef } from "react";
 import { IonAlert, IonIcon } from "@ionic/react";
-import {
-  flagOutline,
-  playOutline,
-  stopOutline,
-  timeOutline,
-} from "ionicons/icons";
+import { flagOutline, timeOutline } from "ionicons/icons";
 import { Haptics, NotificationType } from "@capacitor/haptics";
 import mapboxgl from "mapbox-gl";
 import type { GeneratedQuest } from "../services/questGenerator";
-import { GPS_SIMULATION_AVAILABLE, useQuestRun } from "../hooks/useQuestRun";
+import { useQuestRun } from "../hooks/useQuestRun";
+import type { TrackedPosition } from "../hooks/useGeolocationTracker";
 import GeolocationDebugConsole from "./GeolocationDebugConsole";
 import "./QuestRunHud.css";
 
 interface QuestRunHudProps {
   quest: GeneratedQuest;
-  map: mapboxgl.Map | null;
+  map?: mapboxgl.Map | null;
   onFinish: () => void;
+  currentPosition?: TrackedPosition | null;
+  simulating?: boolean;
+  showDebugConsole?: boolean;
   debugDefaultExpanded?: boolean;
 }
 
@@ -38,15 +37,23 @@ function formatDistance(meters: number): string {
 
 const QuestRunHud: React.FC<QuestRunHudProps> = ({
   quest,
-  map,
+  map = null,
   onFinish,
+  currentPosition,
+  simulating = false,
+  showDebugConsole = false,
   debugDefaultExpanded = true,
 }) => {
-  const { state, position, gpsStatus, gpsError, simulating, toggleSimulation } =
-    useQuestRun(quest);
+  const {
+    state,
+    position,
+    gpsStatus,
+    gpsError,
+    simulating: isSimulating,
+  } = useQuestRun(quest, currentPosition, simulating);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
-  // Nettoyage du marqueur lorsque la carte est changée ou démontée
+  // Marqueur autonome si map est fourni directement (ex: tests ou mode isolé)
   useEffect(() => {
     return () => {
       if (userMarkerRef.current) {
@@ -56,7 +63,6 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({
     };
   }, [map]);
 
-  // Pastille bleue de la position du joueur sur la carte (mise à jour fluide sans recréer le DOM)
   useEffect(() => {
     if (!map || !position) return;
 
@@ -72,7 +78,7 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({
     }
   }, [map, position]);
 
-  // Retour haptique à la fin de la quête (ignoré si indisponible)
+  // Retour haptique à la fin de la quête
   useEffect(() => {
     if (state.status === "running") return;
 
@@ -87,7 +93,7 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({
   const isUrgent = state.remainingSeconds <= 60;
 
   const gpsMessage = (() => {
-    if (simulating) return "Marche simulée";
+    if (isSimulating) return "Marche simulée (Admin)";
     if (gpsStatus === "denied") return gpsError ?? "Localisation refusée";
     if (gpsStatus === "waiting") return "Recherche du signal GPS…";
     if (gpsError) return gpsError;
@@ -100,62 +106,79 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({
     <>
       <div className="quest-run-hud-container">
         <div className="quest-run-hud">
-          <div className="quest-run-stat">
-            <IonIcon icon={timeOutline} />
-            <span
-              className={
-                isUrgent ? "quest-run-value urgent" : "quest-run-value"
-              }
-            >
-              {formatTime(state.remainingSeconds)}
-            </span>
-            <small>Temps restant</small>
-          </div>
+          {/* Ligne En-tête Quête Unifiée & Lisible */}
+          <div className="quest-hud-top-row">
+            <div className="quest-hud-title-col">
+              <div className="quest-hud-badge-line">
+                <span className="quest-hud-type-icon">
+                  {quest.type === "loop"
+                    ? "🔄"
+                    : quest.type === "poi"
+                      ? "📍"
+                      : "⚡"}
+                </span>
+                <span className="quest-hud-badge">Quête active</span>
+                <span className="quest-hud-xp">+{quest.xpReward} XP</span>
+              </div>
+              <strong className="quest-hud-quest-title">{quest.title}</strong>
+            </div>
 
-          <div className="quest-run-stat">
-            <IonIcon icon={flagOutline} />
-            <span className="quest-run-value">
-              {state.remainingMeters === null
-                ? "--"
-                : formatDistance(state.remainingMeters)}
-            </span>
-            <small>
-              Point{" "}
-              {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
-              {state.totalCheckpoints}
-            </small>
-          </div>
-
-          {GPS_SIMULATION_AVAILABLE && (
             <button
               type="button"
-              className="quest-run-sim-btn"
-              onClick={toggleSimulation}
-              title={
-                simulating
-                  ? "Arrêter la simulation de marche"
-                  : "Simuler la marche le long de l'itinéraire (test)"
-              }
-              aria-label={
-                simulating
-                  ? "Arrêter la simulation de marche"
-                  : "Simuler la marche le long de l'itinéraire"
-              }
+              className="quest-hud-close-btn"
+              onClick={onFinish}
+              title="Abandonner la quête"
+              aria-label="Fermer la quête"
             >
-              <IonIcon icon={simulating ? stopOutline : playOutline} />
+              ✕
             </button>
-          )}
+          </div>
+
+          {/* Ligne Métriques Clés */}
+          <div className="quest-hud-metrics-row">
+            <div className="quest-run-stat">
+              <div className="quest-stat-meta">
+                <IonIcon icon={timeOutline} />
+                <small>Temps restant</small>
+              </div>
+              <span
+                className={
+                  isUrgent ? "quest-run-value urgent" : "quest-run-value"
+                }
+              >
+                {formatTime(state.remainingSeconds)}
+              </span>
+            </div>
+
+            <div className="quest-run-stat">
+              <div className="quest-stat-meta">
+                <IonIcon icon={flagOutline} />
+                <small>
+                  Point{" "}
+                  {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
+                  {state.totalCheckpoints}
+                </small>
+              </div>
+              <span className="quest-run-value">
+                {state.remainingMeters === null
+                  ? "--"
+                  : formatDistance(state.remainingMeters)}
+              </span>
+            </div>
+          </div>
 
           {gpsMessage && <p className="quest-run-message">{gpsMessage}</p>}
         </div>
 
-        <GeolocationDebugConsole
-          position={position}
-          status={gpsStatus}
-          error={gpsError}
-          simulating={simulating}
-          defaultExpanded={debugDefaultExpanded}
-        />
+        {showDebugConsole && (
+          <GeolocationDebugConsole
+            position={position}
+            status={gpsStatus}
+            error={gpsError}
+            simulating={isSimulating}
+            defaultExpanded={debugDefaultExpanded}
+          />
+        )}
       </div>
 
       <IonAlert

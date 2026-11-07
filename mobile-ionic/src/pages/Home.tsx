@@ -24,7 +24,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
 
   const handleStartWorkout = () => {
-    navigate("/enregistrer");
+    navigate("/enregistrer", { state: { autoStart: true } });
   };
 
   const formattedWeeklyDuration = formatDuration(

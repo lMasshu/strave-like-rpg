@@ -53,6 +53,10 @@ export const GeolocationDebugConsole: React.FC<
   const [logs, setLogs] = useState<GpsLogEntry[]>([]);
   const [updateCount, setUpdateCount] = useState(0);
 
+  // Formulaire de génération personnalisée
+  const [customDistance, setCustomDistance] = useState(3.0);
+  const [customType, setCustomType] = useState<"loop" | "poi">("loop");
+
   // Enregistrement des réceptions GPS en temps réel dans le journal
   useEffect(() => {
     if (!position) return;
@@ -278,27 +282,64 @@ export const GeolocationDebugConsole: React.FC<
                   <span>Génération de l'itinéraire en cours…</span>
                 </div>
               ) : (
-                <div className="admin-gen-buttons-grid">
+                <div className="admin-gen-form">
+                  <div className="admin-gen-row">
+                    <div className="admin-field-group">
+                      <label className="admin-field-label">Type :</label>
+                      <div className="admin-type-toggle">
+                        <button
+                          type="button"
+                          className={`admin-type-btn ${customType === "loop" ? "active" : ""}`}
+                          onClick={() => setCustomType("loop")}
+                        >
+                          🔄 Boucle
+                        </button>
+                        <button
+                          type="button"
+                          className={`admin-type-btn ${customType === "poi" ? "active" : ""}`}
+                          onClick={() => setCustomType("poi")}
+                        >
+                          📍 POI
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="admin-field-group">
+                      <label
+                        className="admin-field-label"
+                        htmlFor="admin-dist-input"
+                      >
+                        Distance :
+                      </label>
+                      <div className="admin-input-wrap">
+                        <input
+                          id="admin-dist-input"
+                          type="number"
+                          step="0.5"
+                          min="0.5"
+                          max="25"
+                          value={customDistance}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val) && val > 0) {
+                              setCustomDistance(val);
+                            }
+                          }}
+                          className="admin-dist-input"
+                        />
+                        <span className="admin-unit">km</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
-                    className="admin-gen-btn"
-                    onClick={() => onGenerateQuest("loop", 2.5)}
+                    className="admin-gen-submit-btn"
+                    onClick={() => onGenerateQuest(customType, customDistance)}
                   >
-                    🔄 Boucle 2.5 km
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-gen-btn"
-                    onClick={() => onGenerateQuest("loop", 5)}
-                  >
-                    🔄 Boucle 5 km
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-gen-btn"
-                    onClick={() => onGenerateQuest("poi", 3)}
-                  >
-                    📍 POI Local 3 km
+                    🚀 Générer{" "}
+                    {customType === "loop" ? "une boucle" : "une quête POI"} de{" "}
+                    {customDistance} km
                   </button>
                 </div>
               )}

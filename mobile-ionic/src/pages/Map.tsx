@@ -8,7 +8,6 @@ import {
 import {
   closeCircleOutline,
   locateOutline,
-  diceOutline,
   buildOutline,
 } from "ionicons/icons";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -777,46 +776,7 @@ const MapPage: React.FC = () => {
             </div>
           )}
 
-          {/* Bannière de Quête Active */}
-          {activeQuest && (
-            <div className="active-quest-banner">
-              <div className="active-quest-content">
-                <div className="active-quest-icon">
-                  {activeQuest.type === "loop"
-                    ? "🔄"
-                    : activeQuest.type === "poi"
-                      ? "📍"
-                      : "⚡"}
-                </div>
-                <div className="active-quest-info">
-                  <span className="active-quest-badge">Quête en cours</span>
-                  <strong className="active-quest-title">
-                    {activeQuest.title}
-                  </strong>
-                  <span className="active-quest-details">
-                    +{activeQuest.xpReward} XP • {activeQuest.route.distanceKm}{" "}
-                    km • {activeQuest.route.durationMinutes} min
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="active-quest-close"
-                onClick={() => {
-                  setActiveQuest(null);
-                  if (questDestinationMarkerRef.current) {
-                    questDestinationMarkerRef.current.remove();
-                    questDestinationMarkerRef.current = null;
-                  }
-                }}
-                title="Abandonner la quête"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {/* Suivi HUD de Quête Active */}
+          {/* Suivi HUD de Quête Active Unifié */}
           {activeQuest && (
             <QuestRunHud
               key={activeQuest.id}
@@ -872,15 +832,6 @@ const MapPage: React.FC = () => {
                 <IonIcon icon={buildOutline} />
               </button>
             )}
-
-            <button
-              type="button"
-              className="fab-action-btn quest-btn"
-              onClick={() => setShowQuestModal(true)}
-              title="Générer une Quête RPG"
-            >
-              <IonIcon icon={diceOutline} />
-            </button>
 
             <button
               type="button"

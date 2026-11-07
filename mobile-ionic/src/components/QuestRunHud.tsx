@@ -106,30 +106,65 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({
     <>
       <div className="quest-run-hud-container">
         <div className="quest-run-hud">
-          <div className="quest-run-stat">
-            <IonIcon icon={timeOutline} />
-            <span
-              className={
-                isUrgent ? "quest-run-value urgent" : "quest-run-value"
-              }
+          {/* Ligne En-tête Quête Unifiée & Lisible */}
+          <div className="quest-hud-top-row">
+            <div className="quest-hud-title-col">
+              <div className="quest-hud-badge-line">
+                <span className="quest-hud-type-icon">
+                  {quest.type === "loop"
+                    ? "🔄"
+                    : quest.type === "poi"
+                      ? "📍"
+                      : "⚡"}
+                </span>
+                <span className="quest-hud-badge">Quête active</span>
+                <span className="quest-hud-xp">+{quest.xpReward} XP</span>
+              </div>
+              <strong className="quest-hud-quest-title">{quest.title}</strong>
+            </div>
+
+            <button
+              type="button"
+              className="quest-hud-close-btn"
+              onClick={onFinish}
+              title="Abandonner la quête"
+              aria-label="Fermer la quête"
             >
-              {formatTime(state.remainingSeconds)}
-            </span>
-            <small>Temps restant</small>
+              ✕
+            </button>
           </div>
 
-          <div className="quest-run-stat">
-            <IonIcon icon={flagOutline} />
-            <span className="quest-run-value">
-              {state.remainingMeters === null
-                ? "--"
-                : formatDistance(state.remainingMeters)}
-            </span>
-            <small>
-              Point{" "}
-              {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
-              {state.totalCheckpoints}
-            </small>
+          {/* Ligne Métriques Clés */}
+          <div className="quest-hud-metrics-row">
+            <div className="quest-run-stat">
+              <div className="quest-stat-meta">
+                <IonIcon icon={timeOutline} />
+                <small>Temps restant</small>
+              </div>
+              <span
+                className={
+                  isUrgent ? "quest-run-value urgent" : "quest-run-value"
+                }
+              >
+                {formatTime(state.remainingSeconds)}
+              </span>
+            </div>
+
+            <div className="quest-run-stat">
+              <div className="quest-stat-meta">
+                <IonIcon icon={flagOutline} />
+                <small>
+                  Point{" "}
+                  {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/
+                  {state.totalCheckpoints}
+                </small>
+              </div>
+              <span className="quest-run-value">
+                {state.remainingMeters === null
+                  ? "--"
+                  : formatDistance(state.remainingMeters)}
+              </span>
+            </div>
           </div>
 
           {gpsMessage && <p className="quest-run-message">{gpsMessage}</p>}

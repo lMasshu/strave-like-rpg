@@ -329,30 +329,104 @@
   gap: 8px;
 }
 
-.admin-gen-buttons-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+.admin-gen-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.admin-gen-btn {
-  padding: 6px 8px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  color: #f8fafc;
-  font-family: inherit;
-  font-size: 0.72rem;
+.admin-gen-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.admin-field-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-field-label {
+  font-size: 0.65rem;
   font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.admin-type-toggle {
+  display: flex;
+  gap: 4px;
+  background: #0f172a;
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+}
+
+.admin-type-btn {
+  flex: 1;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
-  white-space: nowrap;
 }
 
-.admin-gen-btn:hover {
+.admin-type-btn.active {
   background: var(--sq-green-athletic, #aff33e);
   color: #000000;
-  border-color: var(--sq-green-athletic, #aff33e);
+}
+
+.admin-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 0 8px;
+}
+
+.admin-dist-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 0;
+  outline: none;
+}
+
+.admin-unit {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.admin-gen-submit-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--sq-green-athletic, #aff33e);
+  color: #000000;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.admin-gen-submit-btn:hover {
+  filter: brightness(1.1);
 }
 
 .admin-gen-loading {

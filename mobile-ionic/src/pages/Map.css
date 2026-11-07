@@ -718,12 +718,13 @@
   z-index: 40;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
   max-width: 520px;
   margin-left: auto;
   margin-right: auto;
   margin-top: env(safe-area-inset-top, 6px);
+  pointer-events: none;
 }
 
 .map-route-search-drawer {
@@ -745,6 +746,7 @@
   padding: 4px;
   border-radius: var(--sq-radius-full, 999px);
   box-shadow: var(--sq-shadow-sm);
+  pointer-events: auto;
 }
 
 .map-workout-segment-btn {

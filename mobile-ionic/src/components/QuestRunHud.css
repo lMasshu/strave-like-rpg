@@ -4,12 +4,12 @@
 
 .quest-run-hud-container {
   position: absolute;
-  top: calc(12px + env(safe-area-inset-top, 6px) + 54px + 66px);
+  top: calc(14px + 44px + env(safe-area-inset-top, 6px));
   left: 14px;
   right: 14px;
   max-width: 520px;
   margin: 0 auto;
-  z-index: 24;
+  z-index: 35;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -22,19 +22,96 @@
 
 .quest-run-hud {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--sq-border-highlight, rgba(175, 243, 62, 0.4));
+  border-radius: var(--sq-radius-lg, 16px);
+  background: rgba(15, 23, 42, 0.96);
+  color: var(--sq-text-main, #f8fafc);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+.quest-hud-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.quest-hud-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.quest-hud-badge-line {
+  display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border: 1px solid var(--sq-border-highlight, rgba(22, 163, 74, 0.35));
-  border-radius: var(--sq-radius-lg, 12px);
-  background: rgba(11, 15, 25, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: var(--sq-text-main, #f1f5f9);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  gap: 6px;
+}
+
+.quest-hud-type-icon {
+  font-size: 0.85rem;
+}
+
+.quest-hud-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sq-green-athletic, #aff33e);
+}
+
+.quest-hud-xp {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--sq-gold-rpg, #f59e0b);
+  background: rgba(245, 158, 11, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.quest-hud-quest-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quest-hud-close-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.quest-hud-close-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.quest-hud-metrics-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 16px;
 }
 
 .quest-run-stat {
@@ -43,93 +120,45 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  min-width: 0;
 }
 
-.quest-run-stat ion-icon {
-  color: var(--sq-color-primary, #16a34a);
-  font-size: 1.15rem;
-  filter: drop-shadow(0 0 6px rgba(22, 163, 74, 0.5));
+.quest-stat-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+}
+
+.quest-stat-meta ion-icon {
+  font-size: 0.85rem;
+  color: var(--sq-green-athletic, #aff33e);
+}
+
+.quest-stat-meta small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .quest-run-value {
   font-family: var(--sq-font-mono, monospace);
-  font-size: 1.65rem;
+  font-size: 1.55rem;
   font-weight: 800;
-  line-height: 1.1;
-  color: #ffffff;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  color: #f8fafc;
 }
 
 .quest-run-value.urgent {
-  color: #ef4444;
-  text-shadow: 0 0 14px rgba(239, 68, 68, 0.7);
-  animation: hud-urgent-pulse 1s infinite alternate ease-in-out;
-}
-
-@keyframes hud-urgent-pulse {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0.85;
-    transform: scale(1.04);
-  }
-}
-
-.quest-run-stat small {
-  color: var(--sq-text-secondary, #cbd5e1);
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.quest-run-sim-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border: 1px dashed var(--sq-border-highlight, #475569);
-  border-radius: 50%;
-  background: var(--sq-surface-card-subtle, rgba(255, 255, 255, 0.04));
-  color: var(--sq-text-secondary, #94a3b8);
-  font-size: 1.15rem;
-  cursor: pointer;
-  transition: all 0.15s ease-out;
-}
-
-.quest-run-sim-btn:hover {
-  background: rgba(22, 163, 74, 0.15);
-  color: var(--sq-color-primary, #16a34a);
-  border-color: var(--sq-color-primary, #16a34a);
+  color: #f87171;
 }
 
 .quest-run-message {
-  flex-basis: 100%;
-  margin: 4px 0 0;
-  padding: 4px 8px;
-  border-radius: var(--sq-radius-sm, 6px);
-  background: rgba(22, 163, 74, 0.08);
-  border: 1px solid rgba(22, 163, 74, 0.2);
-  color: var(--sq-text-secondary, #cbd5e1);
-  font-size: 0.76rem;
-  font-weight: 500;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--sq-green-athletic, #aff33e);
   text-align: center;
-}
-
-/* Pastille GPS haute visibilité de la position du joueur */
-.quest-user-dot {
-  width: 20px;
-  height: 20px;
-  border: 3px solid #ffffff;
-  border-radius: 50%;
-  background: #3b82f6;
-  box-shadow:
-    0 0 0 6px rgba(59, 130, 246, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.5);
+  background: rgba(175, 243, 62, 0.08);
+  padding: 4px;
+  border-radius: 4px;
+  font-weight: 600;
 }

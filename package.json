@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "npm --prefix mobile-ionic run dev",
     "build": "npm --prefix mobile-ionic run build",
-    "test": "npm --prefix mobile-ionic run test.unit -- --run",
+    "test": "npm --prefix mobile-ionic run test.unit -- --run && npm --prefix apps/api run test",
+    "api:dev": "npm --prefix apps/api run dev",
+    "api:build": "npm --prefix apps/api run build",
+    "api:test": "npm --prefix apps/api run test",
     "lint": "npm --prefix mobile-ionic run lint"
   },
   "repository": {

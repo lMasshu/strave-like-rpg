@@ -3,6 +3,7 @@ import {
   IonContent,
   IonIcon,
   IonPage,
+  IonToast,
   useIonViewDidEnter,
 } from "@ionic/react";
 import {
@@ -24,6 +25,7 @@ import {
 } from "../services/questGenerator";
 import { useActiveWorkout } from "../hooks/useActiveWorkout";
 import { useThemeMode } from "../hooks/useThemeMode";
+import { apiClient } from "../services/apiClient";
 import "./Map.css";
 
 function formatDuration(totalSeconds: number): string {
@@ -132,6 +134,39 @@ const MapPage: React.FC = () => {
   const [workoutSegment, setWorkoutSegment] = useState<"map" | "stats">("map");
   const [workoutFinishedModal, setWorkoutFinishedModal] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleSaveWorkout = useCallback(async () => {
+    const startedAt = new Date(
+      Date.now() - Math.max(1, workout.metrics.elapsedSeconds) * 1000,
+    ).toISOString();
+    const endedAt = new Date().toISOString();
+
+    try {
+      const res = await apiClient.saveActivity({
+        activityType: "run",
+        startedAt,
+        endedAt,
+        durationSeconds: Math.max(1, workout.metrics.elapsedSeconds),
+        distanceMeters: Math.round(workout.metrics.distanceKm * 1000),
+        elevationGainMeters: workout.metrics.elevationGainMeters,
+        coordinates: workout.metrics.trackCoordinates,
+      });
+
+      const levelUpText = res.levelUp
+        ? ` 🌟 NIVEAU SUPÉRIEUR : Niveau ${res.newLevel} !`
+        : "";
+      setToastMessage(
+        `Course enregistrée sur l'API ! +${res.xpEarned} XP.${levelUpText}`,
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur réseau";
+      setToastMessage(`Enregistrement local (${msg})`);
+    } finally {
+      workout.resetWorkout();
+      setWorkoutSegment("map");
+    }
+  }, [workout]);
 
   // Centrage & Suivi automatique du joueur (Follow-me)
   const hasInitialCenteredRef = useRef(false);
@@ -948,13 +983,35 @@ const MapPage: React.FC = () => {
           isOpen={workoutFinishedModal}
           onDidDismiss={() => {
             setWorkoutFinishedModal(false);
-            setWorkoutSegment("map");
-            workout.resetWorkout();
           }}
-          header="Sortie enregistrée !"
+          header="Sortie terminée !"
           subHeader={`${workout.metrics.distanceKm.toFixed(2)} km parcourus • +${workout.metrics.xpEarned} XP`}
-          message={`Temps total : ${formatDuration(workout.metrics.elapsedSeconds)} • Allure : ${workout.metrics.paceMinPerKm} min/km • Dénivelé : +${workout.metrics.elevationGainMeters} m. Votre effort contribue à la progression de votre guilde !`}
-          buttons={["Enregistrer l'activité"]}
+          message={`Temps total : ${formatDuration(workout.metrics.elapsedSeconds)} • Allure : ${workout.metrics.paceMinPerKm} min/km • Dénivelé : +${workout.metrics.elevationGainMeters} m.`}
+          buttons={[
+            {
+              text: "Annuler",
+              role: "cancel",
+              handler: () => {
+                setWorkoutSegment("map");
+                workout.resetWorkout();
+              },
+            },
+            {
+              text: "Enregistrer l'activité",
+              handler: () => {
+                handleSaveWorkout();
+              },
+            },
+          ]}
+        />
+
+        <IonToast
+          isOpen={Boolean(toastMessage)}
+          message={toastMessage || ""}
+          duration={4000}
+          onDidDismiss={() => setToastMessage(null)}
+          position="bottom"
+          color="dark"
         />
 
         <IonAlert

@@ -3,46 +3,29 @@ import {
   IonContent,
   IonIcon,
   IonPage,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
-  IonSpinner,
   useIonViewDidEnter,
 } from "@ionic/react";
 import {
   closeCircleOutline,
   locateOutline,
-  searchOutline,
-  swapVerticalOutline,
-  navigateOutline,
-  walkOutline,
-  bicycleOutline,
-  carOutline,
-  flagOutline,
-  radioOutline,
-  chevronDownOutline,
-  chevronUpOutline,
-  layersOutline,
-  eyeOutline,
-  eyeOffOutline,
-  trendingUpOutline,
   diceOutline,
+  buildOutline,
 } from "ionicons/icons";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import {
-  fetchRoute,
-  RouteResult,
-  TransportProfile,
-} from "../services/mapboxDirections";
-import { searchPointsOfInterest, PoiResult } from "../services/mapboxGeocoding";
+import { PoiResult } from "../services/mapboxGeocoding";
 import QuestGeneratorModal from "../components/QuestGeneratorModal";
 import QuestRunHud from "../components/QuestRunHud";
-import { Capacitor } from "@capacitor/core";
-import { Geolocation } from "@capacitor/geolocation";
-import { GeneratedQuest } from "../services/questGenerator";
+import GeolocationDebugConsole from "../components/GeolocationDebugConsole";
+import {
+  GeneratedQuest,
+  generateRandomQuest,
+} from "../services/questGenerator";
 import { useActiveWorkout } from "../hooks/useActiveWorkout";
+import { useThemeMode } from "../hooks/useThemeMode";
+import "./Map.css";
 
 function formatDuration(totalSeconds: number): string {
   const safe = Math.max(0, Math.floor(totalSeconds));
@@ -54,11 +37,9 @@ function formatDuration(totalSeconds: number): string {
   }
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
-import "./Map.css";
 
-// Coordonnées par défaut : Paris Centre (Hôtel de Ville -> Musée du Louvre)
-const INITIAL_POINT_A: [number, number] = [2.3522, 48.8566]; // [lng, lat]
-const INITIAL_POINT_B: [number, number] = [2.3376, 48.8606]; // [lng, lat]
+// Coordonnées de repli initial si GPS indisponible (Paris Centre)
+const DEFAULT_MAP_CENTER: [number, number] = [2.3522, 48.8566];
 
 type MapTheme = "outdoors" | "dark" | "streets" | "satellite";
 
@@ -124,103 +105,41 @@ const FALLBACK_STYLES: Record<MapTheme, mapboxgl.Style> = {
   ),
 };
 
-function getElevationChartPaths(
-  profile: number[],
-  width = 300,
-  height = 54,
-  padding = 6,
-) {
-  if (!profile || profile.length < 2) return null;
-
-  const min = Math.min(...profile);
-  const max = Math.max(...profile);
-  const range = max - min || 1;
-
-  const points = profile.map((val, idx) => {
-    const x = (idx / (profile.length - 1)) * (width - 2 * padding) + padding;
-    const y = height - padding - ((val - min) / range) * (height - 2 * padding);
-    return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)), val };
-  });
-
-  const linePath = points.reduce(
-    (acc, p, i) => `${acc} ${i === 0 ? "M" : "L"} ${p.x} ${p.y}`,
-    "",
-  );
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
-
-  return { linePath, areaPath, points, min, max };
-}
-
 const MapPage: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
-  const markerARef = useRef<mapboxgl.Marker | null>(null);
-  const markerBRef = useRef<mapboxgl.Marker | null>(null);
+  const workoutPlayerMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const poiMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const questDestinationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const currentCoordsRef = useRef<[number, number][]>([]);
-  const isDraggingMarkerRef = useRef(false);
 
-  const [pointA, setPointA] = useState<[number, number]>(INITIAL_POINT_A);
-  const [pointB, setPointB] = useState<[number, number]>(INITIAL_POINT_B);
-  const pointARef = useRef<[number, number]>(INITIAL_POINT_A);
-  const pointBRef = useRef<[number, number]>(INITIAL_POINT_B);
-
-  const [mode, setMode] = useState<TransportProfile>("pedestrian");
-  const modeRef = useRef<TransportProfile>("pedestrian");
-
-  const [routeInfo, setRouteInfo] = useState<RouteResult | null>(null);
-  const [loadingRoute, setLoadingRoute] = useState(false);
-  const [selectionTarget, setSelectionTarget] = useState<"A" | "B" | null>(
-    null,
+  // Synchronisation dynamique avec le thème Lime Frost (Clair / Sombre)
+  const { resolvedTheme } = useThemeMode();
+  const isDark = resolvedTheme === "dark";
+  const [activeTheme, setActiveTheme] = useState<MapTheme>(() =>
+    isDark ? "dark" : "outdoors",
   );
-  const selectionTargetRef = useRef<"A" | "B" | null>(null);
+  const activeThemeRef = useRef<MapTheme>(isDark ? "dark" : "outdoors");
 
-  // Gestion des quêtes aléatoires et procédurales
+  // Navigation & Auto-Start depuis l'accueil
+  const location = useLocation();
+
+  // Quêtes procédurales & défis
   const [showQuestModal, setShowQuestModal] = useState(false);
   const [activeQuest, setActiveQuest] = useState<GeneratedQuest | null>(null);
 
-  useEffect(() => {
-    pointARef.current = pointA;
-    if (markerARef.current) {
-      const current = markerARef.current.getLngLat();
-      if (current.lng !== pointA[0] || current.lat !== pointA[1]) {
-        markerARef.current.setLngLat(pointA);
-      }
-    }
-  }, [pointA]);
-
-  useEffect(() => {
-    pointBRef.current = pointB;
-    if (markerBRef.current) {
-      const current = markerBRef.current.getLngLat();
-      if (current.lng !== pointB[0] || current.lat !== pointB[1]) {
-        markerBRef.current.setLngLat(pointB);
-      }
-    }
-  }, [pointB]);
-
-  useEffect(() => {
-    modeRef.current = mode;
-  }, [mode]);
-
-  useEffect(() => {
-    selectionTargetRef.current = selectionTarget;
-  }, [selectionTarget]);
-
-  // Ergonomie & Visibilité
-  const [isHudCollapsed, setIsHudCollapsed] = useState(false);
+  // État de course & Télémétrie unifiée (avec quête ou libre)
+  const workout = useActiveWorkout(activeQuest);
   const [workoutSegment, setWorkoutSegment] = useState<"map" | "stats">("map");
-  const workout = useActiveWorkout();
-  const workoutPlayerMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [workoutFinishedModal, setWorkoutFinishedModal] = useState(false);
-  const [showRoutePlanner, setShowRoutePlanner] = useState(false);
-  const [hideUiForImmersion, setHideUiForImmersion] = useState(false);
-  const [activeTheme, setActiveTheme] = useState<MapTheme>("outdoors");
-  const activeThemeRef = useRef<MapTheme>("outdoors");
-  const [showStyleMenu, setShowStyleMenu] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
-  useEffect(() => {
-    activeThemeRef.current = activeTheme;
-  }, [activeTheme]);
+  // Centrage & Suivi automatique du joueur (Follow-me)
+  const hasInitialCenteredRef = useRef(false);
+  const [isTrackingUser, setIsTrackingUser] = useState(true);
+
+  // POI sélectionné
+  const [selectedPoi, setSelectedPoi] = useState<PoiResult | null>(null);
 
   const [showConfigNotice, setShowConfigNotice] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -233,6 +152,15 @@ const MapPage: React.FC = () => {
 
   const isConfigured = Boolean(token);
 
+  // Auto-démarrage si l'utilisateur a cliqué sur "Démarrer une sortie" depuis l'accueil
+  useEffect(() => {
+    const state = location.state as { autoStart?: boolean } | null;
+    if (state?.autoStart && workout.metrics.status === "idle") {
+      workout.startWorkout();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
   useIonViewDidEnter(() => {
     if (mapInstance.current) {
       mapInstance.current.resize();
@@ -241,36 +169,38 @@ const MapPage: React.FC = () => {
     }
   });
 
-  // Ajustement automatique de la vue pour cadrer le tracé
-  const fitRouteBounds = useCallback((coords: [number, number][]) => {
-    const map = mapInstance.current;
-    if (!map || coords.length === 0) return;
+  // Résolution du style Mapbox selon le thème
+  const getStyleForTheme = useCallback(
+    (theme: MapTheme): string | mapboxgl.Style => {
+      if (token) {
+        return MAP_STYLES[theme] || MAP_STYLES.outdoors;
+      }
+      return FALLBACK_STYLES[theme] || FALLBACK_STYLES.outdoors;
+    },
+    [token],
+  );
 
-    const bounds = new mapboxgl.LngLatBounds(
-      coords[0],
-      coords[coords.length - 1],
-    );
-    for (const c of coords) {
-      bounds.extend(c);
+  // Synchronisation dynamique avec le mode clair / sombre Lime Frost
+  useEffect(() => {
+    const nextTheme: MapTheme = isDark ? "dark" : "outdoors";
+    setActiveTheme(nextTheme);
+    activeThemeRef.current = nextTheme;
+    if (mapInstance.current) {
+      mapInstance.current.setStyle(getStyleForTheme(nextTheme));
     }
+  }, [isDark, getStyleForTheme]);
 
-    map.fitBounds(bounds, {
-      padding: { top: 80, bottom: 200, left: 60, right: 60 },
-      maxZoom: 16,
-      duration: 900,
-    });
-  }, []);
+  useEffect(() => {
+    activeThemeRef.current = activeTheme;
+  }, [activeTheme]);
 
-  // Rendu du tracé avec triple couche à contraste élevé (casing sombre + glow + cœur vibrant)
+  // Tracé GeoJSON dynamique pour l'itinéraire de quête
   const renderRouteOnMap = useCallback((coords: [number, number][]) => {
     const map = mapInstance.current;
     if (!map) return;
 
-    currentCoordsRef.current = coords;
-
     const render = () => {
-      if (!map.isStyleLoaded()) return;
-
+      if (!map) return;
       const geojsonData: GeoJSON.Feature<GeoJSON.LineString> = {
         type: "Feature",
         properties: {},
@@ -291,51 +221,26 @@ const MapPage: React.FC = () => {
           data: geojsonData,
         });
 
-        // 1. Bordure sombre (Casing) pour détacher le tracé de tout fond de carte
         map.addLayer({
           id: "route-casing",
           type: "line",
           source: "route-source",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
+          layout: { "line-join": "round", "line-cap": "round" },
           paint: {
-            "line-color": "#090d16",
-            "line-width": 9,
+            "line-color": "#020617",
+            "line-width": 8,
             "line-opacity": 0.95,
           },
         });
 
-        // 2. Halo de sentier (Glow vert nature)
-        map.addLayer({
-          id: "route-glow",
-          type: "line",
-          source: "route-source",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-color": "#22c55e",
-            "line-width": 12,
-            "line-opacity": 0.3,
-            "line-blur": 3,
-          },
-        });
-
-        // 3. Ligne de tracé principale (Vert nature dynamique)
         map.addLayer({
           id: "route-line",
           type: "line",
           source: "route-source",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
+          layout: { "line-join": "round", "line-cap": "round" },
           paint: {
-            "line-color": "#22c55e",
-            "line-width": 5.5,
+            "line-color": "#aff33e",
+            "line-width": 5,
             "line-opacity": 1,
           },
         });
@@ -349,7 +254,7 @@ const MapPage: React.FC = () => {
     }
   }, []);
 
-  // Rendu du tracé en direct de la course du joueur (GeoJSON dynamique vert Lime Frost)
+  // Rendu du tracé en direct de la course du joueur (GeoJSON Lime Frost vert électrique)
   const renderWorkoutTrackOnMap = useCallback((coords: [number, number][]) => {
     const map = mapInstance.current;
     if (!map) return;
@@ -376,15 +281,12 @@ const MapPage: React.FC = () => {
           data: geojsonData,
         });
 
-        // 1. Bordure sombre
+        // Casing sombre
         map.addLayer({
           id: "workout-live-casing",
           type: "line",
           source: "workout-live-source",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
+          layout: { "line-join": "round", "line-cap": "round" },
           paint: {
             "line-color": "#020617",
             "line-width": 8,
@@ -392,15 +294,12 @@ const MapPage: React.FC = () => {
           },
         });
 
-        // 2. Ligne de tracé principale nette (optimisée GPU mobile sans flou shader)
+        // Tracé principal Lime Frost
         map.addLayer({
           id: "workout-live-line",
           type: "line",
           source: "workout-live-source",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
+          layout: { "line-join": "round", "line-cap": "round" },
           paint: {
             "line-color": "#aff33e",
             "line-width": 4.5,
@@ -417,48 +316,7 @@ const MapPage: React.FC = () => {
     }
   }, []);
 
-  // Recalcul de l'itinéraire
-  const updateRoute = useCallback(
-    async (
-      start: [number, number],
-      end: [number, number],
-      transport: TransportProfile,
-      autoZoom = true,
-    ) => {
-      setLoadingRoute(true);
-      try {
-        const result = await fetchRoute(start, end, {
-          accessToken: token,
-          costing: transport,
-        });
-
-        setRouteInfo(result);
-        renderRouteOnMap(result.coordinates);
-
-        if (autoZoom && result.coordinates.length > 0) {
-          fitRouteBounds(result.coordinates);
-        }
-      } catch (err) {
-        console.error("Erreur de calcul du tracé :", err);
-      } finally {
-        setLoadingRoute(false);
-      }
-    },
-    [token, renderRouteOnMap, fitRouteBounds],
-  );
-
-  // Résolution du style en fonction du thème sélectionné
-  const getStyleForTheme = useCallback(
-    (theme: MapTheme): string | mapboxgl.Style => {
-      if (token) {
-        return MAP_STYLES[theme] || MAP_STYLES.outdoors;
-      }
-      return FALLBACK_STYLES[theme] || FALLBACK_STYLES.outdoors;
-    },
-    [token],
-  );
-
-  // Initialisation de la carte Mapbox
+  // Initialisation de Mapbox GL
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -467,116 +325,26 @@ const MapPage: React.FC = () => {
     }
 
     const initialStyle = getStyleForTheme(activeTheme);
+    const initialCenter =
+      workout.metrics.currentPosition?.coords || DEFAULT_MAP_CENTER;
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: initialStyle,
-      center: INITIAL_POINT_A,
-      zoom: 14,
+      center: initialCenter,
+      zoom: 15,
       fadeDuration: 0,
       attributionControl: false,
     });
 
     mapInstance.current = map;
 
-    // Générateur unique et rigoureusement identique pour A et B
-    const createMapPin = (
-      type: "A" | "B",
-      initialPos: [number, number],
-      title: string,
-    ): mapboxgl.Marker => {
-      const isA = type === "A";
-      const el = document.createElement("div");
-      el.className = `pin-marker-wrapper marker-${type.toLowerCase()}-wrapper`;
-
-      const startColor = isA ? "#34d399" : "#f87171";
-      const endColor = isA ? "#059669" : "#dc2626";
-      const gradId = `pinGrad${type}`;
-
-      el.innerHTML = `
-        <div class="pin-marker-pulse"></div>
-        <div class="pin-marker-content">
-          <svg width="38" height="48" viewBox="0 0 38 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="${startColor}" />
-                <stop offset="100%" stop-color="${endColor}" />
-              </linearGradient>
-            </defs>
-            <path d="M19 2 C10 2 3 9 3 18 C3 28 14 40 19 48 C24 40 35 28 35 18 C35 9 28 2 19 2 Z"
-                  fill="url(#${gradId})" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round" />
-            <circle cx="19" cy="18" r="10.5" fill="#0f172a" fill-opacity="0.88" stroke="#ffffff" stroke-width="1" />
-            <text x="19" y="19" font-family="'Segoe UI', -apple-system, sans-serif" font-size="12" font-weight="900" fill="${startColor}" text-anchor="middle" dominant-baseline="central">${type}</text>
-          </svg>
-        </div>
-      `;
-      el.addEventListener("click", (e) => e.stopPropagation());
-
-      const marker = new mapboxgl.Marker({
-        element: el,
-        anchor: "bottom",
-        draggable: true,
-      })
-        .setLngLat(initialPos)
-        .setPopup(
-          new mapboxgl.Popup({ offset: [0, -48] }).setHTML(
-            `<div class="map-popup-card"><h3>${title}</h3><p>Glissez pour déplacer</p></div>`,
-          ),
-        )
-        .addTo(map);
-
-      marker.on("dragstart", () => {
-        isDraggingMarkerRef.current = true;
-      });
-
-      marker.on("dragend", () => {
-        const lngLat = marker.getLngLat();
-        const nextCoord: [number, number] = [lngLat.lng, lngLat.lat];
-        if (type === "A") {
-          pointARef.current = nextCoord;
-          setPointA(nextCoord);
-          updateRoute(nextCoord, pointBRef.current, modeRef.current, false);
-        } else {
-          pointBRef.current = nextCoord;
-          setPointB(nextCoord);
-          updateRoute(pointARef.current, nextCoord, modeRef.current, false);
-        }
-        setTimeout(() => {
-          isDraggingMarkerRef.current = false;
-        }, 120);
-      });
-
-      return marker;
-    };
-
-    const markerA = createMapPin("A", INITIAL_POINT_A, "Point A (Départ)");
-    const markerB = createMapPin("B", INITIAL_POINT_B, "Point B (Objectif)");
-
-    markerARef.current = markerA;
-    markerBRef.current = markerB;
-
-    // Clic sur la carte : positionnement précis selon le point ciblé (A ou B)
-    map.on("click", (e) => {
-      if (isDraggingMarkerRef.current) return;
-      const clicked: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-      const target = selectionTargetRef.current;
-
-      if (target === "A") {
-        pointARef.current = clicked;
-        markerARef.current?.setLngLat(clicked);
-        setPointA(clicked);
-        setSelectionTarget(null);
-        updateRoute(clicked, pointBRef.current, modeRef.current, false);
-      } else if (target === "B") {
-        pointBRef.current = clicked;
-        markerBRef.current?.setLngLat(clicked);
-        setPointB(clicked);
-        setSelectionTarget(null);
-        updateRoute(pointARef.current, clicked, modeRef.current, false);
-      }
+    // Si l'utilisateur manipule manuellement la carte, désactiver le suivi automatique
+    map.on("dragstart", () => {
+      setIsTrackingUser(false);
     });
 
-    // Rechargement des couches du tracé si le style de carte change
+    // Rechargement des sources de tracés lors d'un changement de style
     map.on("style.load", () => {
       setLoadError(null);
       if (currentCoordsRef.current.length > 0) {
@@ -590,7 +358,6 @@ const MapPage: React.FC = () => {
     map.on("load", () => {
       setLoadError(null);
       map.resize();
-      updateRoute(pointARef.current, pointBRef.current, modeRef.current, true);
     });
 
     map.on("error", (e) => {
@@ -618,11 +385,17 @@ const MapPage: React.FC = () => {
 
     return () => {
       resizeObserver.disconnect();
-      markerA.remove();
-      markerB.remove();
       if (workoutPlayerMarkerRef.current) {
         workoutPlayerMarkerRef.current.remove();
         workoutPlayerMarkerRef.current = null;
+      }
+      if (poiMarkerRef.current) {
+        poiMarkerRef.current.remove();
+        poiMarkerRef.current = null;
+      }
+      if (questDestinationMarkerRef.current) {
+        questDestinationMarkerRef.current.remove();
+        questDestinationMarkerRef.current = null;
       }
       map.remove();
       mapInstance.current = null;
@@ -630,12 +403,27 @@ const MapPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, getStyleForTheme]);
 
-  // Recalcul lorsque le mode de transport change
+  // Centrage automatique initial et suivi en direct
   useEffect(() => {
-    if (mapInstance.current) {
-      updateRoute(pointARef.current, pointBRef.current, mode, false);
+    const map = mapInstance.current;
+    if (!map || !workout.metrics.currentPosition) return;
+
+    const coords = workout.metrics.currentPosition.coords;
+
+    if (!hasInitialCenteredRef.current) {
+      hasInitialCenteredRef.current = true;
+      map.flyTo({
+        center: coords,
+        zoom: 15.5,
+        duration: 1200,
+      });
+    } else if (isTrackingUser && workout.metrics.status === "recording") {
+      map.easeTo({
+        center: coords,
+        duration: 600,
+      });
     }
-  }, [mode, updateRoute]);
+  }, [workout.metrics.currentPosition, isTrackingUser, workout.metrics.status]);
 
   // Mise à jour du tracé de course en direct sur la carte
   useEffect(() => {
@@ -677,191 +465,34 @@ const MapPage: React.FC = () => {
     }
   }, [workout.metrics.currentPosition]);
 
-  // Changement de style de carte
-  const handleSelectTheme = (theme: MapTheme) => {
-    setActiveTheme(theme);
-    setShowStyleMenu(false);
-    if (mapInstance.current) {
-      const nextStyle = getStyleForTheme(theme);
-      mapInstance.current.setStyle(nextStyle);
-    }
-  };
-
-  // Recentrage immédiat
-  const handleFitRoute = () => {
-    if (routeInfo?.coordinates && routeInfo.coordinates.length > 0) {
-      fitRouteBounds(routeInfo.coordinates);
-    } else {
-      fitRouteBounds([pointA, pointB]);
-    }
-  };
-
-  // Inverser Point A et Point B
-  const handleSwapPoints = () => {
-    const newA = pointB;
-    const newB = pointA;
-
-    setPointA(newA);
-    setPointB(newB);
-
-    if (markerARef.current) markerARef.current.setLngLat(newA);
-    if (markerBRef.current) markerBRef.current.setLngLat(newB);
-
-    updateRoute(newA, newB, mode, false);
-  };
-
-  // Position GPS actuelle (plugin Capacitor : fonctionne sur mobile et dans le navigateur)
-  const handleUseMyLocation = async () => {
-    try {
-      if (
-        Capacitor.isNativePlatform() &&
-        typeof Geolocation.requestPermissions === "function"
-      ) {
-        const perms = await Geolocation.requestPermissions();
-        if (
-          perms.location !== "granted" &&
-          perms.coarseLocation !== "granted"
-        ) {
-          alert(
-            "Permission de localisation refusée. Veuillez autoriser l'accès GPS dans les paramètres.",
-          );
-          return;
-        }
-      }
-
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 15000,
-      });
-
-      const myCoords: [number, number] = [
-        pos.coords.longitude,
-        pos.coords.latitude,
-      ];
-
-      setPointA(myCoords);
-      if (markerARef.current) markerARef.current.setLngLat(myCoords);
-      if (mapInstance.current) {
-        mapInstance.current.flyTo({ center: myCoords, zoom: 15 });
-      }
-      updateRoute(myCoords, pointBRef.current, modeRef.current, false);
-    } catch (err: unknown) {
-      console.warn("Erreur géolocalisation :", err);
-      const errMsg =
-        err instanceof Error
-          ? err.message
-          : typeof err === "string"
-            ? err
-            : typeof err === "object" && err !== null && "message" in err
-              ? String((err as { message: unknown }).message)
-              : "";
-
-      if (
-        errMsg.toLowerCase().includes("disabled") ||
-        errMsg.toLowerCase().includes("services are not enabled")
-      ) {
-        alert(
-          "Veuillez activer la localisation (GPS) dans les réglages de votre téléphone.",
-        );
-      } else if (
-        errMsg.toLowerCase().includes("denied") ||
-        errMsg.toLowerCase().includes("permission")
-      ) {
-        alert("Permission de localisation refusée.");
-      } else {
-        alert(
-          "Impossible de récupérer votre position GPS (signal faible ou délai dépassé).",
-        );
-      }
-    }
-  };
-
-  // Gestion de la recherche de points d'intérêt (POI)
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<PoiResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedPoi, setSelectedPoi] = useState<PoiResult | null>(null);
-
-  const handleSearchInput = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const list = await searchPointsOfInterest(
-        query,
-        token,
-        pointARef.current,
-      );
-      setSearchResults(list);
-    } catch (err) {
-      console.warn("Erreur recherche POI :", err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSelectPoi = (poi: PoiResult) => {
-    setSelectedPoi(poi);
-    setSearchResults([]);
-    setSearchQuery(poi.name);
-    if (mapInstance.current) {
+  // Bouton "Me localiser / Suivre"
+  const handleLocateMe = () => {
+    setIsTrackingUser(true);
+    if (workout.metrics.currentPosition && mapInstance.current) {
       mapInstance.current.flyTo({
-        center: poi.coordinates,
-        zoom: 15,
+        center: workout.metrics.currentPosition.coords,
+        zoom: 15.5,
         duration: 800,
       });
     }
   };
 
-  const handleApplyPoi = (target: "A" | "B") => {
-    if (!selectedPoi) return;
-    const coords = selectedPoi.coordinates;
-    if (target === "A") {
-      pointARef.current = coords;
-      markerARef.current?.setLngLat(coords);
-      setPointA(coords);
-      updateRoute(coords, pointBRef.current, modeRef.current, false);
-    } else {
-      pointBRef.current = coords;
-      markerBRef.current?.setLngLat(coords);
-      setPointB(coords);
-      updateRoute(pointARef.current, coords, modeRef.current, false);
-    }
+  const handleClearPoi = () => {
     setSelectedPoi(null);
-    setSearchQuery("");
+    if (poiMarkerRef.current) {
+      poiMarkerRef.current.remove();
+      poiMarkerRef.current = null;
+    }
   };
 
-  // Gestion de l'acceptation d'une quête générée procéduralement
+  // Acceptation d'une quête générée
   const handleAcceptQuest = (quest: GeneratedQuest) => {
     setActiveQuest(quest);
-    setPointA(quest.origin);
-    setPointB(quest.destination);
-    pointARef.current = quest.origin;
-    pointBRef.current = quest.destination;
-
-    if (markerARef.current) markerARef.current.setLngLat(quest.origin);
-    if (markerBRef.current) markerBRef.current.setLngLat(quest.destination);
-
-    setRouteInfo(quest.route);
     currentCoordsRef.current = quest.route.coordinates;
 
     if (mapInstance.current) {
       const map = mapInstance.current;
-      const source = map.getSource("route-source") as
-        mapboxgl.GeoJSONSource | undefined;
-      if (source) {
-        source.setData({
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "LineString",
-            coordinates: quest.route.coordinates,
-          },
-        });
-      }
+      renderRouteOnMap(quest.route.coordinates);
 
       if (quest.route.coordinates.length > 0) {
         const bounds = new mapboxgl.LngLatBounds(
@@ -872,26 +503,101 @@ const MapPage: React.FC = () => {
           bounds.extend(coord);
         }
         map.fitBounds(bounds, {
-          padding: {
-            top: 120,
-            bottom: isHudCollapsed ? 90 : 380,
-            left: 50,
-            right: 50,
-          },
+          padding: { top: 120, bottom: 200, left: 50, right: 50 },
           maxZoom: 16,
           duration: 1200,
         });
       }
+
+      // Marqueur objectif POI de quête
+      if (quest.type === "poi") {
+        if (questDestinationMarkerRef.current) {
+          questDestinationMarkerRef.current.remove();
+        }
+        const el = document.createElement("div");
+        el.className = "map-poi-marker quest-objective-marker";
+        el.innerHTML = `
+          <div class="poi-marker-icon">🏆</div>
+          <div class="poi-marker-label">${quest.title}</div>
+        `;
+        questDestinationMarkerRef.current = new mapboxgl.Marker({ element: el })
+          .setLngLat(quest.destination)
+          .addTo(map);
+      }
     }
   };
 
-  const xpReward = activeQuest
-    ? activeQuest.xpReward
-    : routeInfo
-      ? Math.round(
-          routeInfo.distanceKm * 100 + (routeInfo.elevationGain || 0) * 2,
-        )
-      : 0;
+  // Génération rapide de quête sur commande depuis le panel Admin
+  const [isGeneratingAdminQuest, setIsGeneratingAdminQuest] = useState(false);
+
+  const handleAdminGenerateQuest = async (
+    type: "loop" | "poi",
+    distanceKm: number,
+  ) => {
+    setIsGeneratingAdminQuest(true);
+    try {
+      // 1. Suppression du chemin et de la quête précédente
+      if (questDestinationMarkerRef.current) {
+        questDestinationMarkerRef.current.remove();
+        questDestinationMarkerRef.current = null;
+      }
+      if (mapInstance.current) {
+        const source = mapInstance.current.getSource("route-source") as
+          mapboxgl.GeoJSONSource | undefined;
+        if (source) {
+          source.setData({
+            type: "Feature",
+            properties: {},
+            geometry: { type: "LineString", coordinates: [] },
+          });
+        }
+      }
+      setActiveQuest(null);
+      currentCoordsRef.current = [];
+      workout.resetWorkout();
+
+      // 2. Origine de départ : position du joueur (réelle ou simulée)
+      const origin =
+        workout.metrics.currentPosition?.coords || DEFAULT_MAP_CENTER;
+
+      // 3. Génération procédurale
+      const newQuest = await generateRandomQuest({
+        userLocation: origin,
+        preferredType: type,
+        targetDistanceKm: distanceKm,
+        mapboxToken: token,
+        mapInstance: mapInstance.current,
+      });
+
+      // 4. Lancement direct
+      handleAcceptQuest(newQuest);
+    } catch (err) {
+      console.error("Erreur génération quête admin :", err);
+    } finally {
+      setIsGeneratingAdminQuest(false);
+    }
+  };
+
+  const handleAdminClearQuest = () => {
+    if (questDestinationMarkerRef.current) {
+      questDestinationMarkerRef.current.remove();
+      questDestinationMarkerRef.current = null;
+    }
+    if (mapInstance.current) {
+      const source = mapInstance.current.getSource("route-source") as
+        mapboxgl.GeoJSONSource | undefined;
+      if (source) {
+        source.setData({
+          type: "Feature",
+          properties: {},
+          geometry: { type: "LineString", coordinates: [] },
+        });
+      }
+    }
+    setActiveQuest(null);
+    currentCoordsRef.current = [];
+    workout.resetWorkout();
+  };
 
   return (
     <IonPage>
@@ -900,106 +606,46 @@ const MapPage: React.FC = () => {
           {/* Conteneur Plein Écran de la Carte Mapbox */}
           <div ref={mapContainer} className="map-mapbox-container" />
 
-          {/* Barre Supérieure Unifiée : Sélecteur de Segment & Outils (Maquette Pages 2 et 3) */}
-          {!hideUiForImmersion && (
-            <div className="map-unified-header">
+          {/* Barre Supérieure Épurée : Sélecteur Statistiques / Carte */}
+          <div className="map-unified-header">
+            <div className="map-workout-segment-bar" role="tablist">
               <button
                 type="button"
-                className={`top-mobile-icon-btn ${showRoutePlanner ? "active" : ""}`}
-                onClick={() => setShowRoutePlanner(!showRoutePlanner)}
-                title="Planificateur et recherche de lieux"
-                aria-label="Recherche et itinéraire"
+                className={`map-workout-segment-btn ${workoutSegment === "stats" ? "is-active" : ""}`}
+                onClick={() => setWorkoutSegment("stats")}
               >
-                <IonIcon icon={searchOutline} />
+                Statistiques
               </button>
-
-              <div className="map-workout-segment-bar" role="tablist">
-                <button
-                  type="button"
-                  className={`map-workout-segment-btn ${workoutSegment === "stats" ? "is-active" : ""}`}
-                  onClick={() => setWorkoutSegment("stats")}
-                >
-                  Statistiques
-                </button>
-                <button
-                  type="button"
-                  className={`map-workout-segment-btn ${workoutSegment === "map" ? "is-active" : ""}`}
-                  onClick={() => setWorkoutSegment("map")}
-                >
-                  Carte GPS
-                </button>
-              </div>
-
-              {import.meta.env.DEV && (
-                <button
-                  type="button"
-                  className={`top-mobile-icon-btn ${workout.metrics.simulating ? "active" : ""}`}
-                  onClick={workout.toggleSimulation}
-                  title={
-                    workout.metrics.simulating
-                      ? "Arrêter la simulation"
-                      : "Simuler la course (déplacement auto)"
-                  }
-                  aria-label="Simulation"
-                >
-                  <IonIcon icon={walkOutline} />
-                </button>
-              )}
-
               <button
                 type="button"
-                className={`top-mobile-icon-btn ${showStyleMenu ? "active" : ""}`}
-                onClick={() => setShowStyleMenu(!showStyleMenu)}
-                title="Style de carte"
-                aria-label="Style de carte"
+                className={`map-workout-segment-btn ${workoutSegment === "map" ? "is-active" : ""}`}
+                onClick={() => setWorkoutSegment("map")}
               >
-                <IonIcon icon={layersOutline} />
+                Carte GPS
+              </button>
+            </div>
+          </div>
+
+          {/* Fiche Point d'Intérêt sélectionné */}
+          {selectedPoi && workoutSegment === "map" && (
+            <div className="map-selected-poi-banner">
+              <div className="selected-poi-text">
+                <span className="selected-poi-badge">📍 Point d'intérêt</span>
+                <strong>{selectedPoi.name}</strong>
+                {selectedPoi.placeName && <span>{selectedPoi.placeName}</span>}
+              </div>
+              <button
+                type="button"
+                className="clear-pill-btn"
+                onClick={handleClearPoi}
+                title="Fermer"
+              >
+                <IonIcon icon={closeCircleOutline} />
               </button>
             </div>
           )}
 
-          {/* Tiroir de Recherche dépliable sous l'en-tête */}
-          {showRoutePlanner &&
-            !hideUiForImmersion &&
-            workoutSegment === "map" && (
-              <div className="map-route-search-drawer">
-                <div className="mobile-search-pill">
-                  <IonIcon icon={searchOutline} className="search-pill-icon" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => handleSearchInput(e.target.value)}
-                    placeholder="Rechercher un lieu, monument..."
-                    className="search-pill-input"
-                    autoFocus
-                  />
-                  {isSearching ? (
-                    <IonSpinner
-                      name="crescent"
-                      style={{
-                        width: 16,
-                        height: 16,
-                        color: "var(--sq-green-athletic)",
-                      }}
-                    />
-                  ) : searchQuery ? (
-                    <button
-                      type="button"
-                      className="clear-pill-btn"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSearchResults([]);
-                        setSelectedPoi(null);
-                      }}
-                    >
-                      <IonIcon icon={closeCircleOutline} />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            )}
-
-          {/* Écran Plein Format Statistiques (Maquette Page 2) */}
+          {/* Écran Plein Format Statistiques */}
           {workoutSegment === "stats" && (
             <div className="sq-workout-stats-screen">
               <div className="sq-workout-stats-header">
@@ -1132,542 +778,201 @@ const MapPage: React.FC = () => {
           )}
 
           {/* Bannière de Quête Active */}
-          {activeQuest && !hideUiForImmersion && (
+          {activeQuest && (
             <div className="active-quest-banner">
               <div className="active-quest-content">
-                <div className="active-quest-title-row">
-                  <span className="active-quest-tag">
-                    {activeQuest.type === "loop"
-                      ? "🔄 Boucle"
-                      : activeQuest.type === "poi"
-                        ? "🎯 POI"
-                        : "📍 Trajet"}
-                  </span>
-                  <span className="active-quest-title">
+                <div className="active-quest-icon">
+                  {activeQuest.type === "loop"
+                    ? "🔄"
+                    : activeQuest.type === "poi"
+                      ? "📍"
+                      : "⚡"}
+                </div>
+                <div className="active-quest-info">
+                  <span className="active-quest-badge">Quête en cours</span>
+                  <strong className="active-quest-title">
                     {activeQuest.title}
+                  </strong>
+                  <span className="active-quest-details">
+                    +{activeQuest.xpReward} XP • {activeQuest.route.distanceKm}{" "}
+                    km • {activeQuest.route.durationMinutes} min
                   </span>
                 </div>
-                <span className="active-quest-sub">
-                  +{activeQuest.xpReward} XP • {activeQuest.route.distanceKm} km
-                  • {activeQuest.route.durationMinutes} min
-                </span>
               </div>
               <button
                 type="button"
                 className="active-quest-close"
-                onClick={() => setActiveQuest(null)}
-                title="Quitter la quête"
+                onClick={() => {
+                  setActiveQuest(null);
+                  if (questDestinationMarkerRef.current) {
+                    questDestinationMarkerRef.current.remove();
+                    questDestinationMarkerRef.current = null;
+                  }
+                }}
+                title="Abandonner la quête"
               >
-                <IonIcon icon={closeCircleOutline} />
+                ✕
               </button>
             </div>
           )}
 
-          {/* Suivi de la quête : chrono, distance restante, résultat */}
+          {/* Suivi HUD de Quête Active */}
           {activeQuest && (
             <QuestRunHud
               key={activeQuest.id}
               quest={activeQuest}
               map={mapInstance.current}
-              onFinish={() => setActiveQuest(null)}
-              debugDefaultExpanded={false}
+              currentPosition={workout.metrics.currentPosition}
+              simulating={workout.metrics.simulating}
+              showDebugConsole={false}
+              onFinish={() => {
+                setActiveQuest(null);
+                if (questDestinationMarkerRef.current) {
+                  questDestinationMarkerRef.current.remove();
+                  questDestinationMarkerRef.current = null;
+                }
+              }}
             />
           )}
 
-          {/* Menu déroulant de recherche */}
-          {searchResults.length > 0 && !hideUiForImmersion && (
-            <div className="search-results-dropdown">
-              {searchResults.map((poi) => (
-                <div
-                  key={poi.id}
-                  className="search-result-item"
-                  onClick={() => handleSelectPoi(poi)}
-                >
-                  <div className="result-item-header">
-                    <span className="result-title">{poi.name}</span>
-                    {poi.category && (
-                      <span className="result-badge">{poi.category}</span>
-                    )}
-                  </div>
-                  <span className="result-address">{poi.placeName}</span>
-                </div>
-              ))}
+          {/* Panneau Admin & Debug Télémétrie Unique */}
+          {showAdminPanel && (
+            <div className="map-admin-panel-overlay">
+              <GeolocationDebugConsole
+                position={workout.metrics.currentPosition}
+                status={workout.metrics.gpsStatus}
+                error={workout.metrics.gpsError}
+                simulating={workout.metrics.simulating}
+                onToggleSimulation={workout.toggleSimulation}
+                workoutMetrics={workout.metrics}
+                activeQuest={activeQuest}
+                onGenerateQuest={handleAdminGenerateQuest}
+                onClearQuest={handleAdminClearQuest}
+                isGeneratingQuest={isGeneratingAdminQuest}
+                onClose={() => setShowAdminPanel(false)}
+                defaultExpanded={true}
+              />
             </div>
           )}
 
-          {/* Carte d'action après sélection d'un POI */}
-          {selectedPoi && !hideUiForImmersion && (
-            <div className="poi-action-card">
-              <div className="poi-card-header">
-                <div className="poi-card-info">
-                  <h4>{selectedPoi.name}</h4>
-                  <p>{selectedPoi.placeName}</p>
-                </div>
-                <button
-                  type="button"
-                  className="close-card-btn"
-                  onClick={() => setSelectedPoi(null)}
-                >
-                  <IonIcon icon={closeCircleOutline} />
-                </button>
-              </div>
-              <div className="poi-card-actions">
-                <button
-                  type="button"
-                  className="poi-action-btn btn-set-a"
-                  onClick={() => handleApplyPoi("A")}
-                >
-                  🟢 Départ (A)
-                </button>
-                <button
-                  type="button"
-                  className="poi-action-btn btn-set-b"
-                  onClick={() => handleApplyPoi("B")}
-                >
-                  🔴 Objectif (B)
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Sélecteur de Thème de Carte Flottant */}
-          {showStyleMenu && !hideUiForImmersion && (
-            <div className="map-theme-dropdown">
-              <div className="theme-title">Style de carte</div>
-              <button
-                className={`theme-option ${activeTheme === "outdoors" ? "active" : ""}`}
-                onClick={() => handleSelectTheme("outdoors")}
-              >
-                🌲 Outdoors (Sport & Quête)
-              </button>
-              <button
-                className={`theme-option ${activeTheme === "dark" ? "active" : ""}`}
-                onClick={() => handleSelectTheme("dark")}
-              >
-                🌙 Dark Quest (Sombre)
-              </button>
-              <button
-                className={`theme-option ${activeTheme === "streets" ? "active" : ""}`}
-                onClick={() => handleSelectTheme("streets")}
-              >
-                🗺️ Streets (Ville)
-              </button>
-              <button
-                className={`theme-option ${activeTheme === "satellite" ? "active" : ""}`}
-                onClick={() => handleSelectTheme("satellite")}
-              >
-                🛰️ Satellite (Aérien)
-              </button>
-            </div>
-          )}
-
-          {/* Boutons d'Action Flottants (Disposés au-dessus du HUD) */}
+          {/* Actions Flottantes Latérales Essentielles */}
           <div
             className={`map-floating-actions ${
-              !showRoutePlanner && workoutSegment === "map"
-                ? "with-live-hud"
-                : isHudCollapsed
-                  ? "hud-min"
-                  : "hud-exp"
-            } ${hideUiForImmersion ? "immersed" : ""}`}
+              workoutSegment === "map" ? "with-live-hud" : ""
+            }`}
           >
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                className={`fab-action-btn admin-btn ${showAdminPanel ? "is-active" : ""}`}
+                onClick={() => setShowAdminPanel(!showAdminPanel)}
+                title="Panneau Admin Télémétrie & Simulation"
+                aria-label="Admin panel"
+              >
+                <IonIcon icon={buildOutline} />
+              </button>
+            )}
+
             <button
               type="button"
               className="fab-action-btn quest-btn"
               onClick={() => setShowQuestModal(true)}
-              title="Générateur de quête aléatoire"
+              title="Générer une Quête RPG"
             >
               <IonIcon icon={diceOutline} />
             </button>
 
             <button
               type="button"
-              className="fab-action-btn location-btn"
-              onClick={handleUseMyLocation}
-              title="Ma position GPS"
+              className={`fab-action-btn locate-btn ${isTrackingUser ? "is-active" : ""}`}
+              onClick={handleLocateMe}
+              title={
+                isTrackingUser
+                  ? "Suivi GPS actif"
+                  : "Recentrer et suivre ma position"
+              }
             >
               <IonIcon icon={locateOutline} />
             </button>
-
-            <button
-              type="button"
-              className="fab-action-btn fit-btn"
-              onClick={handleFitRoute}
-              title="Recentrer le tracé"
-            >
-              <IonIcon icon={navigateOutline} />
-            </button>
-
-            <button
-              type="button"
-              className="fab-action-btn immersion-btn"
-              onClick={() => setHideUiForImmersion(!hideUiForImmersion)}
-              title={
-                hideUiForImmersion ? "Afficher les menus" : "Mode plein écran"
-              }
-            >
-              <IonIcon icon={hideUiForImmersion ? eyeOutline : eyeOffOutline} />
-            </button>
           </div>
 
-          {/* HUD d'enregistrement Live sur Carte (Maquette Page 3) */}
-          {!hideUiForImmersion &&
-            workoutSegment === "map" &&
-            !showRoutePlanner && (
-              <div
-                className="map-workout-live-hud"
-                aria-label="Données d'enregistrement"
-              >
-                <div className="map-workout-live-metrics">
-                  <div className="live-metric-item">
-                    <span className="live-metric-val sq-tabular">
-                      {workout.metrics.status !== "idle"
-                        ? workout.metrics.paceMinPerKm
-                        : "--:--"}
-                    </span>
-                    <span className="live-metric-lbl">Rythme réel</span>
-                  </div>
-
-                  <div className="live-metric-item">
-                    <span className="live-metric-val sq-tabular">
-                      {workout.metrics.status !== "idle"
-                        ? workout.metrics.distanceKm
-                            .toFixed(2)
-                            .replace(".", ",")
-                        : "0,00"}{" "}
-                      km
-                    </span>
-                    <span className="live-metric-lbl">Distance</span>
-                  </div>
-
-                  <div className="live-metric-item">
-                    <span className="live-metric-val sq-tabular">
-                      {workout.metrics.status !== "idle"
-                        ? formatDuration(workout.metrics.elapsedSeconds)
-                        : "00:00"}
-                    </span>
-                    <span className="live-metric-lbl">Temps</span>
-                  </div>
+          {/* HUD d'enregistrement Live sur Carte */}
+          {workoutSegment === "map" && (
+            <div
+              className="map-workout-live-hud"
+              aria-label="Données d'enregistrement"
+            >
+              <div className="map-workout-live-metrics">
+                <div className="live-metric-item">
+                  <span className="live-metric-val sq-tabular">
+                    {workout.metrics.status !== "idle"
+                      ? workout.metrics.paceMinPerKm
+                      : "--:--"}
+                  </span>
+                  <span className="live-metric-lbl">Rythme réel</span>
                 </div>
 
-                <div className="map-workout-live-actions">
-                  {workout.metrics.status === "idle" ? (
+                <div className="live-metric-item">
+                  <span className="live-metric-val sq-tabular">
+                    {workout.metrics.status !== "idle"
+                      ? workout.metrics.distanceKm.toFixed(2).replace(".", ",")
+                      : "0,00"}{" "}
+                    km
+                  </span>
+                  <span className="live-metric-lbl">Distance</span>
+                </div>
+
+                <div className="live-metric-item">
+                  <span className="live-metric-val sq-tabular">
+                    {workout.metrics.status !== "idle"
+                      ? formatDuration(workout.metrics.elapsedSeconds)
+                      : "00:00"}
+                  </span>
+                  <span className="live-metric-lbl">Temps</span>
+                </div>
+              </div>
+
+              <div className="map-workout-live-actions">
+                {workout.metrics.status === "idle" ? (
+                  <button
+                    type="button"
+                    className="sq-button-primary live-action-btn"
+                    onClick={workout.startWorkout}
+                    style={{ flex: 1 }}
+                  >
+                    Démarrer
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="sq-button-secondary live-action-btn"
+                      onClick={
+                        workout.metrics.status === "paused"
+                          ? workout.resumeWorkout
+                          : workout.pauseWorkout
+                      }
+                    >
+                      {workout.metrics.status === "paused"
+                        ? "Reprendre"
+                        : "Pause"}
+                    </button>
                     <button
                       type="button"
                       className="sq-button-primary live-action-btn"
-                      onClick={workout.startWorkout}
-                      style={{ flex: 1 }}
+                      onClick={() => {
+                        workout.finishWorkout();
+                        setWorkoutFinishedModal(true);
+                      }}
                     >
-                      Démarrer
+                      Terminer
                     </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className="sq-button-secondary live-action-btn"
-                        onClick={
-                          workout.metrics.status === "paused"
-                            ? workout.resumeWorkout
-                            : workout.pauseWorkout
-                        }
-                      >
-                        {workout.metrics.status === "paused"
-                          ? "Reprendre"
-                          : "Pause"}
-                      </button>
-                      <button
-                        type="button"
-                        className="sq-button-primary live-action-btn"
-                        onClick={() => {
-                          workout.finishWorkout();
-                          setWorkoutFinishedModal(true);
-                        }}
-                      >
-                        Terminer
-                      </button>
-                    </>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
-            )}
-
-          {/* Bottom Sheet Itinéraire A -> B (Seulement si mode planificateur activé) */}
-          {!hideUiForImmersion && showRoutePlanner && (
-            <div
-              className={`rpg-bottom-hud ${isHudCollapsed ? "collapsed" : "expanded"}`}
-            >
-              {/* En-tête / Poignée de réduction */}
-              <div
-                className="hud-header-bar"
-                onClick={() => setIsHudCollapsed(!isHudCollapsed)}
-              >
-                <div className="hud-drag-pill" />
-                <div className="hud-header-content">
-                  <div className="hud-chips-route">
-                    <span className="dot dot-a">A</span>
-                    <span className="route-arrow">➔</span>
-                    <span className="dot dot-b">B</span>
-                  </div>
-
-                  <span className="hud-metric-text">
-                    {loadingRoute ? (
-                      <IonSpinner name="dots" />
-                    ) : routeInfo?.distanceKm ? (
-                      <span className="hud-metric-chips">
-                        <span>{routeInfo.distanceKm} km</span>
-                        <span className="metric-dot">•</span>
-                        <span>{routeInfo.durationMinutes} min</span>
-                        <span className="metric-dot">•</span>
-                        <span
-                          className="metric-elev"
-                          title="Dénivelé positif (D+)"
-                        >
-                          ↗ {routeInfo.elevationGain ?? 0}m
-                        </span>
-                      </span>
-                    ) : (
-                      "Tracé A ➔ B"
-                    )}
-                  </span>
-
-                  <span className="hud-badge-xp">+{xpReward} XP</span>
-
-                  <IonIcon
-                    icon={
-                      isHudCollapsed ? chevronUpOutline : chevronDownOutline
-                    }
-                    className="hud-toggle-icon"
-                  />
-                </div>
-              </div>
-
-              {/* Contenu Développé */}
-              {!isHudCollapsed && (
-                <div className="hud-expanded-body">
-                  <div className="rpg-points-summary">
-                    <button
-                      type="button"
-                      className={`point-tag tag-a ${selectionTarget === "A" ? "targeting" : ""}`}
-                      onClick={() =>
-                        setSelectionTarget(selectionTarget === "A" ? null : "A")
-                      }
-                    >
-                      <IonIcon icon={radioOutline} /> Départ (A){" "}
-                      {selectionTarget === "A" && "🎯"}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="swap-btn"
-                      onClick={handleSwapPoints}
-                      title="Inverser départ et arrivée"
-                    >
-                      <IonIcon icon={swapVerticalOutline} />
-                    </button>
-
-                    <button
-                      type="button"
-                      className={`point-tag tag-b ${selectionTarget === "B" ? "targeting" : ""}`}
-                      onClick={() =>
-                        setSelectionTarget(selectionTarget === "B" ? null : "B")
-                      }
-                    >
-                      <IonIcon icon={flagOutline} /> Objectif (B){" "}
-                      {selectionTarget === "B" && "🎯"}
-                    </button>
-                  </div>
-
-                  {/* Mode de Transport */}
-                  <div className="rpg-mode-selector">
-                    <IonSegment
-                      value={mode}
-                      onIonChange={(e) =>
-                        setMode(e.detail.value as TransportProfile)
-                      }
-                    >
-                      <IonSegmentButton value="pedestrian">
-                        <IonIcon icon={walkOutline} />
-                        <IonLabel>À pied</IonLabel>
-                      </IonSegmentButton>
-                      <IonSegmentButton value="bicycle">
-                        <IonIcon icon={bicycleOutline} />
-                        <IonLabel>À vélo</IonLabel>
-                      </IonSegmentButton>
-                      <IonSegmentButton value="auto">
-                        <IonIcon icon={carOutline} />
-                        <IonLabel>Voiture</IonLabel>
-                      </IonSegmentButton>
-                    </IonSegment>
-                  </div>
-
-                  {/* Chiffres Clés */}
-                  <div className="rpg-stats-grid">
-                    <div className="rpg-stat-item">
-                      <span className="stat-label">Distance</span>
-                      <span className="stat-value">
-                        {loadingRoute ? (
-                          <IonSpinner name="dots" />
-                        ) : (
-                          `${routeInfo?.distanceKm ?? "--"} km`
-                        )}
-                      </span>
-                    </div>
-                    <div className="rpg-stat-item elev-stat-item">
-                      <span className="stat-label">Dénivelé</span>
-                      <span
-                        className="stat-value elev-value"
-                        title="Dénivelé positif (D+)"
-                      >
-                        {loadingRoute ? (
-                          <IonSpinner name="dots" />
-                        ) : routeInfo ? (
-                          `+${routeInfo.elevationGain ?? 0} m`
-                        ) : (
-                          "-- m"
-                        )}
-                      </span>
-                    </div>
-                    <div className="rpg-stat-item">
-                      <span className="stat-label">Durée</span>
-                      <span className="stat-value">
-                        {loadingRoute ? (
-                          <IonSpinner name="dots" />
-                        ) : (
-                          `${routeInfo?.durationMinutes ?? "--"} min`
-                        )}
-                      </span>
-                    </div>
-                    <div className="rpg-stat-item xp-item">
-                      <span className="stat-label">Récompense</span>
-                      <span className="stat-value xp-value">
-                        +{xpReward} XP
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Profil altimétrique dynamique façon Strava */}
-                  {routeInfo?.elevationProfile &&
-                    routeInfo.elevationProfile.length > 1 && (
-                      <div className="rpg-elevation-profile-card">
-                        <div className="elev-card-header">
-                          <div className="elev-title-group">
-                            <IonIcon
-                              icon={trendingUpOutline}
-                              className="elev-title-icon"
-                            />
-                            <span className="elev-title-text">
-                              Profil de Dénivelé
-                            </span>
-                          </div>
-                          <div className="elev-badges-group">
-                            <span
-                              className="elev-badge d-plus"
-                              title="Dénivelé positif"
-                            >
-                              D+ +{routeInfo.elevationGain ?? 0}m
-                            </span>
-                            <span
-                              className="elev-badge d-minus"
-                              title="Dénivelé négatif"
-                            >
-                              D- -{routeInfo.elevationLoss ?? 0}m
-                            </span>
-                          </div>
-                        </div>
-
-                        {(() => {
-                          const chart = getElevationChartPaths(
-                            routeInfo.elevationProfile,
-                          );
-                          if (!chart) return null;
-                          return (
-                            <div className="elev-svg-wrapper">
-                              <div className="elev-alt-label max-label">
-                                Max: {routeInfo.maxElevation ?? chart.max} m
-                              </div>
-                              <svg
-                                className="elev-svg-chart"
-                                viewBox="0 0 300 54"
-                                preserveAspectRatio="none"
-                              >
-                                <defs>
-                                  <linearGradient
-                                    id="elevAreaGrad"
-                                    x1="0%"
-                                    y1="0%"
-                                    x2="0%"
-                                    y2="100%"
-                                  >
-                                    <stop
-                                      offset="0%"
-                                      stopColor="#16a34a"
-                                      stopOpacity="0.25"
-                                    />
-                                    <stop
-                                      offset="100%"
-                                      stopColor="#16a34a"
-                                      stopOpacity="0.0"
-                                    />
-                                  </linearGradient>
-                                </defs>
-                                <path
-                                  d={chart.areaPath}
-                                  fill="url(#elevAreaGrad)"
-                                />
-                                <path
-                                  d={chart.linePath}
-                                  fill="none"
-                                  stroke="#22c55e"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <circle
-                                  cx={chart.points[0].x}
-                                  cy={chart.points[0].y}
-                                  r="3"
-                                  fill="#10b981"
-                                  stroke="#11141c"
-                                  strokeWidth="1.5"
-                                />
-                                <circle
-                                  cx={chart.points[chart.points.length - 1].x}
-                                  cy={chart.points[chart.points.length - 1].y}
-                                  r="3"
-                                  fill="#ef4444"
-                                  stroke="#11141c"
-                                  strokeWidth="1.5"
-                                />
-                              </svg>
-                              <div className="elev-footer-axis">
-                                <span className="axis-node node-a">
-                                  A ({chart.points[0].val}m)
-                                </span>
-                                <span className="axis-min">
-                                  Min: {routeInfo.minElevation ?? chart.min} m
-                                </span>
-                                <span className="axis-node node-b">
-                                  B ({chart.points[chart.points.length - 1].val}
-                                  m)
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                  <div className="hud-tip">
-                    {selectionTarget
-                      ? `👉 Touchez la carte pour placer le Point ${selectionTarget}`
-                      : "💡 Touchez la carte ou cherchez un lieu pour modifier l'itinéraire"}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
-          {/* Notification d'erreur discrète */}
           {/* Notification d'information temporaire */}
           {loadError && (
             <div
@@ -1720,8 +1025,12 @@ const MapPage: React.FC = () => {
         <QuestGeneratorModal
           isOpen={showQuestModal}
           onDismiss={() => setShowQuestModal(false)}
-          userLocation={pointA}
-          currentMode={mode}
+          userLocation={
+            workout.metrics.currentPosition
+              ? workout.metrics.currentPosition.coords
+              : DEFAULT_MAP_CENTER
+          }
+          currentMode="pedestrian"
           mapboxToken={token}
           mapInstance={mapInstance.current}
           onAcceptQuest={handleAcceptQuest}

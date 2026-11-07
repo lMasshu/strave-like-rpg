@@ -32,11 +32,15 @@ interface QuestRun {
  * valide les points de passage jusqu'à la victoire ou l'échec.
  * À utiliser avec une `key` basée sur l'id de la quête pour repartir de zéro.
  */
-export function useQuestRun(quest: GeneratedQuest): QuestRun {
+export function useQuestRun(
+  quest: GeneratedQuest,
+  externalPosition?: TrackedPosition | null,
+  externalSimulating?: boolean,
+): QuestRun {
   const [state, setState] = useState<QuestRunState>(() =>
     createQuestRun(quest),
   );
-  const [simulating, setSimulating] = useState(false);
+  const [internalSimulating, setInternalSimulating] = useState(false);
   const [simulatedPosition, setSimulatedPosition] =
     useState<TrackedPosition | null>(null);
 
@@ -44,8 +48,18 @@ export function useQuestRun(quest: GeneratedQuest): QuestRun {
   const simulatedDistanceRef = useRef(0);
 
   const isRunning = state.status === "running";
-  const tracker = useGeolocationTracker(isRunning && !simulating);
-  const position = simulating ? simulatedPosition : tracker.position;
+  const simulating =
+    externalSimulating !== undefined ? externalSimulating : internalSimulating;
+
+  const tracker = useGeolocationTracker(
+    externalPosition === undefined && isRunning && !simulating,
+  );
+  const position =
+    externalPosition !== undefined
+      ? externalPosition
+      : simulating
+        ? simulatedPosition
+        : tracker.position;
 
   const elapsedSeconds = () => (Date.now() - startedAtRef.current) / 1000;
 
@@ -76,9 +90,9 @@ export function useQuestRun(quest: GeneratedQuest): QuestRun {
     );
   }, [position, quest]);
 
-  // Simulation : une marche le long de l'itinéraire, pour tester sans bouger
+  // Simulation interne (utilisée uniquement en mode autonome sans externalPosition)
   useEffect(() => {
-    if (!simulating || !isRunning) return;
+    if (externalPosition !== undefined || !simulating || !isRunning) return;
 
     const walker = window.setInterval(() => {
       simulatedDistanceRef.current += SIMULATION_SPEED_METERS_PER_SECOND;
@@ -104,10 +118,10 @@ export function useQuestRun(quest: GeneratedQuest): QuestRun {
     }, 1000);
 
     return () => window.clearInterval(walker);
-  }, [simulating, isRunning, quest]);
+  }, [simulating, isRunning, quest, externalPosition]);
 
   const toggleSimulation = () => {
-    setSimulating((current) => !current);
+    setInternalSimulating((current) => !current);
   };
 
   return {

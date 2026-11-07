@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import MapPage from "./Map";
 
 const mockMarkerInstance = {
@@ -82,14 +83,22 @@ describe("MapPage - Free Workout & Telemetry", () => {
   });
 
   it("should render segment controls for Statistiques and Carte GPS", () => {
-    render(<MapPage />);
+    render(
+      <MemoryRouter>
+        <MapPage />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByText("Statistiques")).toBeInTheDocument();
     expect(screen.getByText("Carte GPS")).toBeInTheDocument();
   });
 
   it("should switch to Statistiques screen and show workout metrics", () => {
-    render(<MapPage />);
+    render(
+      <MemoryRouter>
+        <MapPage />
+      </MemoryRouter>,
+    );
 
     const statsBtn = screen.getByText("Statistiques");
     fireEvent.click(statsBtn);
@@ -101,7 +110,11 @@ describe("MapPage - Free Workout & Telemetry", () => {
   });
 
   it("should toggle to recording when clicking Démarrer", () => {
-    render(<MapPage />);
+    render(
+      <MemoryRouter>
+        <MapPage />
+      </MemoryRouter>,
+    );
 
     const statsBtn = screen.getByText("Statistiques");
     fireEvent.click(statsBtn);
@@ -117,10 +130,52 @@ describe("MapPage - Free Workout & Telemetry", () => {
   });
 
   it("should show HUD live on Carte GPS mode", () => {
-    render(<MapPage />);
+    render(
+      <MemoryRouter>
+        <MapPage />
+      </MemoryRouter>,
+    );
 
     const hudElement = screen.getByLabelText("Données d'enregistrement");
     expect(hudElement).toBeInTheDocument();
     expect(screen.getByText("Démarrer")).toBeInTheDocument();
+  });
+
+  it("should not render obsolete test pins A and B", () => {
+    render(
+      <MemoryRouter>
+        <MapPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText("Point A (Départ)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Point B (Objectif)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Départ (A)")).not.toBeInTheDocument();
+  });
+
+  it("should render follow-me locate button", () => {
+    render(
+      <MemoryRouter>
+        <MapPage />
+      </MemoryRouter>,
+    );
+
+    const locateBtn = screen.getByTitle(/Suivi GPS actif|Recentrer/);
+    expect(locateBtn).toBeInTheDocument();
+  });
+
+  it("should automatically start workout when arriving with autoStart state from Home", () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          { pathname: "/enregistrer", state: { autoStart: true } },
+        ]}
+      >
+        <MapPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Pause")).toBeInTheDocument();
+    expect(screen.getByText("Terminer")).toBeInTheDocument();
   });
 });

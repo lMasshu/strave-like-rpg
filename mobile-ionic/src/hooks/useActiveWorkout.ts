@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { haversineMeters } from "../services/geo";
+import {
+  haversineMeters,
+  pointAlongRoute,
+  calculateBearing,
+} from "../services/geo";
+import type { GeneratedQuest } from "../services/questGenerator";
 import {
   useGeolocationTracker,
   type TrackedPosition,
@@ -68,7 +73,9 @@ function formatPace(
 
 const SIMULATION_SPEED_MS = 3.0; // ~10.8 km/h
 
-export function useActiveWorkout(): ActiveWorkoutController {
+export function useActiveWorkout(
+  activeQuest?: GeneratedQuest | null,
+): ActiveWorkoutController {
   const [status, setStatus] = useState<WorkoutStatus>("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [distanceMeters, setDistanceMeters] = useState(0);
@@ -80,7 +87,7 @@ export function useActiveWorkout(): ActiveWorkoutController {
   const [simulatedPosition, setSimulatedPosition] =
     useState<TrackedPosition | null>(null);
 
-  const tracker = useGeolocationTracker(status === "recording" && !simulating);
+  const tracker = useGeolocationTracker(!simulating);
   const currentPosition = simulating ? simulatedPosition : tracker.position;
 
   const lastAltitudeRef = useRef<number | null>(null);
@@ -88,6 +95,13 @@ export function useActiveWorkout(): ActiveWorkoutController {
   const lastTimestampRef = useRef<number | null>(null);
   const simulationOriginRef = useRef<[number, number]>([2.3522, 48.8566]); // Paris centre par défaut
   const simulationStepRef = useRef(0);
+  const simulatedDistanceMetersRef = useRef(0);
+
+  // Réinitialiser la distance de simulation dès qu'une nouvelle quête est chargée
+  useEffect(() => {
+    simulatedDistanceMetersRef.current = 0;
+    simulationStepRef.current = 0;
+  }, [activeQuest?.id]);
 
   // 1. Horloge : Incrémentation du temps écoulé tant que le statut est 'recording'
   useEffect(() => {
@@ -161,23 +175,46 @@ export function useActiveWorkout(): ActiveWorkoutController {
     });
   }, [tracker.position, status, simulating]);
 
-  // 3. Mode Simulation (pour dev desktop sans GPS physique)
+  // 3. Mode Simulation unifié (Quête ou Course libre)
   useEffect(() => {
     if (status !== "recording" || !simulating) return;
 
     const simTimer = window.setInterval(() => {
       simulationStepRef.current += 1;
       const step = simulationStepRef.current;
+      let simCoord: [number, number];
 
-      // Générer une boucle progressive (déplacement vers l'est et le nord)
-      const origin = simulationOriginRef.current;
-      const lngOffset = Math.sin(step * 0.05) * 0.003 + step * 0.00015;
-      const latOffset = Math.cos(step * 0.05) * 0.002 + step * 0.0001;
+      // Si une quête est active, on avance le long de l'itinéraire de la quête
+      let heading = 90;
+      if (activeQuest && activeQuest.route?.coordinates?.length > 1) {
+        simulatedDistanceMetersRef.current += SIMULATION_SPEED_MS;
+        const along = pointAlongRoute(
+          activeQuest.route.coordinates,
+          simulatedDistanceMetersRef.current,
+        );
+        simCoord =
+          along ||
+          activeQuest.route.coordinates[
+            activeQuest.route.coordinates.length - 1
+          ];
 
-      const simCoord: [number, number] = [
-        Number((origin[0] + lngOffset).toFixed(6)),
-        Number((origin[1] + latOffset).toFixed(6)),
-      ];
+        if (lastRecordedCoordRef.current) {
+          heading = calculateBearing(lastRecordedCoordRef.current, simCoord);
+        }
+      } else {
+        // Sinon, boucle progressive de course libre
+        const origin = simulationOriginRef.current;
+        const lngOffset = Math.sin(step * 0.05) * 0.003 + step * 0.00015;
+        const latOffset = Math.cos(step * 0.05) * 0.002 + step * 0.0001;
+        simCoord = [
+          Number((origin[0] + lngOffset).toFixed(6)),
+          Number((origin[1] + latOffset).toFixed(6)),
+        ];
+
+        if (lastRecordedCoordRef.current) {
+          heading = calculateBearing(lastRecordedCoordRef.current, simCoord);
+        }
+      }
 
       const simPos: TrackedPosition = {
         coords: simCoord,
@@ -186,7 +223,7 @@ export function useActiveWorkout(): ActiveWorkoutController {
         altitude: 40 + Math.sin(step * 0.1) * 5,
         speed: SIMULATION_SPEED_MS,
         accuracy: 4,
-        heading: 90,
+        heading,
         altitudeAccuracy: 1,
         timestamp: Date.now(),
       };
@@ -212,7 +249,7 @@ export function useActiveWorkout(): ActiveWorkoutController {
     }, 1000);
 
     return () => window.clearInterval(simTimer);
-  }, [status, simulating]);
+  }, [status, simulating, activeQuest]);
 
   // Contrôles
   const startWorkout = useCallback(() => {
@@ -242,13 +279,20 @@ export function useActiveWorkout(): ActiveWorkoutController {
     setTrackCoordinates([]);
     setSimulatedPosition(null);
     simulationStepRef.current = 0;
+    simulatedDistanceMetersRef.current = 0;
     lastRecordedCoordRef.current = null;
     lastAltitudeRef.current = null;
   }, []);
 
   const toggleSimulation = useCallback(() => {
-    setSimulating((prev) => !prev);
-  }, []);
+    setSimulating((prev) => {
+      const next = !prev;
+      if (next && status === "idle") {
+        setStatus("recording");
+      }
+      return next;
+    });
+  }, [status]);
 
   // Métriques dérivées
   const distanceKm = Number((distanceMeters / 1000).toFixed(2));

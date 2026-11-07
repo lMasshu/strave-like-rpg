@@ -125,7 +125,14 @@ describe("QuestRunHud integration with Geolocation & Debug Console", () => {
   it("should start GPS tracking automatically upon quest launch and render the debug console", async () => {
     const onFinish = vi.fn();
 
-    render(<QuestRunHud quest={dummyQuest} map={null} onFinish={onFinish} />);
+    render(
+      <QuestRunHud
+        quest={dummyQuest}
+        map={null}
+        onFinish={onFinish}
+        showDebugConsole={true}
+      />,
+    );
 
     // Le composant de console debug est présent et visible dès le lancement de la quête
     const debugConsole = screen.getByTestId("geolocation-debug-console");
@@ -151,7 +158,14 @@ describe("QuestRunHud integration with Geolocation & Debug Console", () => {
   it("should transmit live GPS stream with extended info to the debug console", async () => {
     const onFinish = vi.fn();
 
-    render(<QuestRunHud quest={dummyQuest} map={null} onFinish={onFinish} />);
+    render(
+      <QuestRunHud
+        quest={dummyQuest}
+        map={null}
+        onFinish={onFinish}
+        showDebugConsole={true}
+      />,
+    );
 
     await waitFor(() => {
       expect(Geolocation.watchPosition).toHaveBeenCalled();
@@ -260,7 +274,12 @@ describe("QuestRunHud integration with Geolocation & Debug Console", () => {
     const onFinish = vi.fn();
 
     const { container } = render(
-      <QuestRunHud quest={dummyQuest} map={null} onFinish={onFinish} />,
+      <QuestRunHud
+        quest={dummyQuest}
+        map={null}
+        onFinish={onFinish}
+        showDebugConsole={true}
+      />,
     );
 
     const hudContainer = container.querySelector(".quest-run-hud-container");

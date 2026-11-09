@@ -11,11 +11,22 @@ import {
   type GeolocationStatus,
 } from "./useGeolocationTracker";
 
+/**
+ * État de la machine à états de l'entraînement.
+ */
 export type WorkoutStatus = "idle" | "recording" | "paused" | "finished";
+
+/**
+ * Qualité du signal GPS perçu par l'appareil.
+ */
 export type GpsSignalQuality = "optimal" | "weak" | "none";
 
-export const MAX_ACCURACY_THRESHOLD = 25; // mètres (norme d'acceptation sportive)
+/** Seuil maximal d'imprécision GPS en mètres accepté pour l'accumulation sportive */
+export const MAX_ACCURACY_THRESHOLD = 25;
 
+/**
+ * Métriques télémétriques temps réel d'un entraînement actif.
+ */
 export interface ActiveWorkoutMetrics {
   status: WorkoutStatus;
   elapsedSeconds: number;
@@ -33,6 +44,9 @@ export interface ActiveWorkoutMetrics {
   simulating: boolean;
 }
 
+/**
+ * Contrôleur d'entraînement permettant de piloter l'enregistrement sportif.
+ */
 export interface ActiveWorkoutController {
   metrics: ActiveWorkoutMetrics;
   startWorkout: () => void;
@@ -73,6 +87,17 @@ function formatPace(
 
 const SIMULATION_SPEED_MS = 3.0; // ~10.8 km/h
 
+/**
+ * Hook central orchestrant l'enregistrement d'une course ou d'une marche active.
+ *
+ * - Pilote le chronomètre actif (pause / reprise / fin).
+ * - Filtre le flux GPS natif via useGeolocationTracker (rejet accuracy > 25m, seuil anti-saut statique).
+ * - Calcule en continu la distance Haversine, la vitesse, l'allure (min/km), le dénivelé et les points d'XP.
+ * - Fournit un mode de simulation dynamique pour tester le tracé même sans signal GPS réel.
+ *
+ * @param activeQuest Quête optionnelle à suivre lors de la sortie
+ * @returns Contrôleur d'entraînement exposé à l'interface utilisateur
+ */
 export function useActiveWorkout(
   activeQuest?: GeneratedQuest | null,
 ): ActiveWorkoutController {

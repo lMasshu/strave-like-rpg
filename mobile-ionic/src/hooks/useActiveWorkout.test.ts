@@ -19,6 +19,7 @@ vi.mock("./useGeolocationTracker", () => ({
 describe("useActiveWorkout hook", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.setSystemTime(100_000);
     mockPosition = null;
     mockStatus = "idle";
     mockError = null;
@@ -213,5 +214,114 @@ describe("useActiveWorkout hook", () => {
     expect(result.current.metrics.trackCoordinates.length).toBeGreaterThan(0);
     expect(result.current.metrics.distanceMeters).toBeGreaterThan(0);
     expect(result.current.metrics.speedKmh).toBeGreaterThan(0);
+    expect(result.current.metrics.paceState).toBe("moving");
+    expect(result.current.metrics.paceMinPerKm).toBe("5:33");
+  });
+
+  function receiveFix(speed: number | null, longitude = 2.3522): void {
+    mockStatus = "tracking";
+    mockPosition = {
+      coords: [longitude, 48.8566],
+      longitude,
+      latitude: 48.8566,
+      altitude: 35,
+      accuracy: 5,
+      speed,
+      timestamp: Date.now(),
+    };
+  }
+
+  it("shows a stop rather than the workout average after more than 50 metres", () => {
+    const { result, rerender } = renderHook(() => useActiveWorkout());
+    act(() => result.current.startWorkout());
+    act(() => vi.advanceTimersByTime(1000));
+    receiveFix(3);
+    rerender();
+    act(() => vi.advanceTimersByTime(15_000));
+    receiveFix(3, 2.3535);
+    rerender();
+    expect(result.current.metrics.distanceMeters).toBeGreaterThan(50);
+    expect(result.current.metrics.paceMinPerKm).toBe("5:33");
+
+    act(() => vi.advanceTimersByTime(1000));
+    receiveFix(0, 2.3535);
+    rerender();
+    expect(result.current.metrics.paceState).toBe("stopped");
+    expect(result.current.metrics.paceMinPerKm).toBe("--:--");
+    expect(result.current.metrics.distanceMeters).toBeGreaterThan(50);
+  });
+
+  it("expires a fix without another GPS callback and recovers on a fresh fix", () => {
+    const { result, rerender } = renderHook(() => useActiveWorkout());
+    act(() => result.current.startWorkout());
+    act(() => vi.advanceTimersByTime(1000));
+    receiveFix(3);
+    rerender();
+    expect(result.current.metrics.paceMinPerKm).toBe("5:33");
+    act(() => vi.advanceTimersByTime(2750));
+    expect(result.current.metrics.paceState).toBe("moving");
+    act(() => vi.advanceTimersByTime(250));
+    expect(result.current.metrics.paceState).toBe("unavailable");
+    expect(result.current.metrics.paceMinPerKm).toBe("--:--");
+    receiveFix(3);
+    rerender();
+    expect(result.current.metrics.paceState).toBe("moving");
+  });
+
+  it("does not reuse fixes from before starting or resuming", () => {
+    receiveFix(3);
+    const { result, rerender } = renderHook(() => useActiveWorkout());
+    act(() => result.current.startWorkout());
+    expect(result.current.metrics.paceState).toBe("unavailable");
+    act(() => vi.advanceTimersByTime(250));
+    receiveFix(3);
+    rerender();
+    expect(result.current.metrics.paceState).toBe("moving");
+    act(() => result.current.pauseWorkout());
+    expect(result.current.metrics.paceState).toBe("paused");
+    expect(result.current.metrics.paceMinPerKm).toBe("--:--");
+    act(() => vi.advanceTimersByTime(250));
+    receiveFix(3);
+    rerender();
+    act(() => result.current.resumeWorkout());
+    expect(result.current.metrics.paceState).toBe("unavailable");
+    act(() => vi.advanceTimersByTime(250));
+    receiveFix(3);
+    rerender();
+    expect(result.current.metrics.paceState).toBe("moving");
+    act(() => result.current.finishWorkout());
+    expect(result.current.metrics.paceState).toBe("inactive");
+    expect(result.current.metrics.paceMinPerKm).toBe("--:--");
+  });
+
+  it("does not show movement or a stop when the GPS reports an error", () => {
+    const { result, rerender } = renderHook(() => useActiveWorkout());
+    act(() => result.current.startWorkout());
+    act(() => vi.advanceTimersByTime(1000));
+    receiveFix(3);
+    rerender();
+    mockStatus = "waiting";
+    mockError = "Signal GPS indisponible pour le moment.";
+    rerender();
+    expect(result.current.metrics.paceState).toBe("unavailable");
+    expect(result.current.metrics.paceMinPerKm).toBe("--:--");
+  });
+
+  it("does not declare slow walking an automatic pause", () => {
+    const { result, rerender } = renderHook(() => useActiveWorkout());
+    act(() => result.current.startWorkout());
+    act(() => vi.advanceTimersByTime(1000));
+    receiveFix(0.4);
+    rerender();
+    expect(result.current.metrics.paceState).toBe("moving");
+    expect(result.current.metrics.paceMinPerKm).toBe("41:40");
+    expect(result.current.metrics.status).toBe("recording");
+  });
+
+  it("cleans up freshness and workout timers on unmount", () => {
+    const { result, unmount } = renderHook(() => useActiveWorkout());
+    act(() => result.current.startWorkout());
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -5,6 +5,7 @@ import {
   calculateBearing,
 } from "../services/geo";
 import type { GeneratedQuest } from "../services/questGenerator";
+import { getLivePace, type LivePaceState } from "../services/livePace";
 import {
   useGeolocationTracker,
   type TrackedPosition,
@@ -34,6 +35,7 @@ export interface ActiveWorkoutMetrics {
   distanceKm: number;
   speedKmh: number;
   paceMinPerKm: string;
+  paceState: LivePaceState;
   elevationGainMeters: number;
   xpEarned: number;
   trackCoordinates: [number, number][];
@@ -57,34 +59,6 @@ export interface ActiveWorkoutController {
   toggleSimulation: () => void;
 }
 
-function formatPace(
-  speedMs: number | null,
-  distanceKm: number,
-  elapsedSec: number,
-): string {
-  // Préférer la vitesse instantanée si disponible (> 0.5 m/s)
-  if (speedMs && speedMs > 0.5) {
-    const secPerKm = 1000 / speedMs;
-    const mins = Math.floor(secPerKm / 60);
-    const secs = Math.round(secPerKm % 60);
-    if (mins < 30) {
-      return `${mins}:${String(secs).padStart(2, "0")}`;
-    }
-  }
-
-  // Sinon vitesse moyenne globale si distance suffisante
-  if (distanceKm > 0.05 && elapsedSec > 5) {
-    const avgSecPerKm = elapsedSec / distanceKm;
-    const mins = Math.floor(avgSecPerKm / 60);
-    const secs = Math.round(avgSecPerKm % 60);
-    if (mins < 30) {
-      return `${mins}:${String(secs).padStart(2, "0")}`;
-    }
-  }
-
-  return "--:--";
-}
-
 const SIMULATION_SPEED_MS = 3.0; // ~10.8 km/h
 
 /**
@@ -102,6 +76,9 @@ export function useActiveWorkout(
   activeQuest?: GeneratedQuest | null,
 ): ActiveWorkoutController {
   const [status, setStatus] = useState<WorkoutStatus>("idle");
+  // Refresh expiry even when the GPS stops delivering callbacks.
+  const [, setPaceClock] = useState(0);
+  const recordingStartedAtRef = useRef(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [distanceMeters, setDistanceMeters] = useState(0);
   const [elevationGainMeters, setElevationGainMeters] = useState(0);
@@ -136,6 +113,14 @@ export function useActiveWorkout(
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
 
+    return () => window.clearInterval(timer);
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== "recording") return;
+    const timer = window.setInterval(() => {
+      setPaceClock((tick) => tick + 1);
+    }, 250);
     return () => window.clearInterval(timer);
   }, [status]);
 
@@ -278,6 +263,7 @@ export function useActiveWorkout(
 
   // Contrôles
   const startWorkout = useCallback(() => {
+    recordingStartedAtRef.current = Date.now();
     setStatus("recording");
     if (tracker.position) {
       simulationOriginRef.current = tracker.position.coords;
@@ -289,6 +275,7 @@ export function useActiveWorkout(
   }, []);
 
   const resumeWorkout = useCallback(() => {
+    recordingStartedAtRef.current = Date.now();
     setStatus("recording");
   }, []);
 
@@ -313,6 +300,7 @@ export function useActiveWorkout(
     setSimulating((prev) => {
       const next = !prev;
       if (next && status === "idle") {
+        recordingStartedAtRef.current = Date.now();
         setStatus("recording");
       }
       return next;
@@ -324,7 +312,13 @@ export function useActiveWorkout(
   const currentSpeedMs =
     currentPosition?.speed ?? (simulating ? SIMULATION_SPEED_MS : 0);
   const speedKmh = Number(((currentSpeedMs || 0) * 3.6).toFixed(1));
-  const paceMinPerKm = formatPace(currentSpeedMs, distanceKm, elapsedSeconds);
+  const pacePosition =
+    currentPosition &&
+    currentPosition.timestamp > recordingStartedAtRef.current &&
+    (simulating || tracker.status === "tracking")
+      ? currentPosition
+      : null;
+  const livePace = getLivePace(pacePosition, Date.now(), status);
   const xpEarned = Math.round(distanceKm * 100 + elevationGainMeters * 2);
 
   const gpsQuality: GpsSignalQuality = currentPosition
@@ -340,7 +334,8 @@ export function useActiveWorkout(
       distanceMeters: Math.round(distanceMeters),
       distanceKm,
       speedKmh,
-      paceMinPerKm,
+      paceMinPerKm: livePace.paceMinPerKm,
+      paceState: livePace.state,
       elevationGainMeters,
       xpEarned,
       trackCoordinates,

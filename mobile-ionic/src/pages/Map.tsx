@@ -19,6 +19,7 @@ import { PoiResult } from "../services/mapboxGeocoding";
 import QuestGeneratorModal from "../components/QuestGeneratorModal";
 import QuestRunHud from "../components/QuestRunHud";
 import GeolocationDebugConsole from "../components/GeolocationDebugConsole";
+import LivePaceMetric from "../components/LivePaceMetric";
 import {
   GeneratedQuest,
   generateRandomQuest,
@@ -27,6 +28,7 @@ import { useActiveWorkout } from "../hooks/useActiveWorkout";
 import { useThemeMode } from "../hooks/useThemeMode";
 import { apiClient } from "../services/apiClient";
 import { createQuestMarkerElement } from "../services/questMarker";
+import { getLivePaceCaption } from "../services/livePacePresentation";
 import "./Map.css";
 
 function formatDuration(totalSeconds: number): string {
@@ -724,7 +726,7 @@ const MapPage: React.FC = () => {
                     : "--:--"}
                 </div>
                 <span className="sq-workout-pace-unit">
-                  min/km • à cet instant
+                  {getLivePaceCaption(workout.metrics.paceState)}
                 </span>
               </div>
 
@@ -885,14 +887,10 @@ const MapPage: React.FC = () => {
               aria-label="Données d'enregistrement"
             >
               <div className="map-workout-live-metrics">
-                <div className="live-metric-item">
-                  <span className="live-metric-val sq-tabular">
-                    {workout.metrics.status !== "idle"
-                      ? workout.metrics.paceMinPerKm
-                      : "--:--"}
-                  </span>
-                  <span className="live-metric-lbl">Rythme réel</span>
-                </div>
+                <LivePaceMetric
+                  state={workout.metrics.paceState}
+                  paceMinPerKm={workout.metrics.paceMinPerKm}
+                />
 
                 <div className="live-metric-item">
                   <span className="live-metric-val sq-tabular">

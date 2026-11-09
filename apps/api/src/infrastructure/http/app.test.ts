@@ -1,9 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import { buildApp } from './app.js';
 
 describe('Fastify REST API', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  }, 15000);
+
+  afterAll(async () => {
+    await app.close();
+  });
+
   it('GET /health returns status ok', async () => {
-    const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
       url: '/health',
@@ -14,7 +24,6 @@ describe('Fastify REST API', () => {
   });
 
   it('GET /api/players/me returns the authenticated/default player', async () => {
-    const app = await buildApp();
     const response = await app.inject({
       method: 'GET',
       url: '/api/players/me',
@@ -32,7 +41,6 @@ describe('Fastify REST API', () => {
   });
 
   it('POST /api/activities accepts valid activity, records XP and returns summary', async () => {
-    const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
       url: '/api/activities',
@@ -75,7 +83,6 @@ describe('Fastify REST API', () => {
   });
 
   it('POST /api/activities rejects invalid velocity payloads', async () => {
-    const app = await buildApp();
     const response = await app.inject({
       method: 'POST',
       url: '/api/activities',

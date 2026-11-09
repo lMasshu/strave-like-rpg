@@ -3,17 +3,10 @@ import {
   IonButton,
   IonButtons,
   IonHeader,
-  IonIcon,
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import {
-  moonOutline,
-  notificationsOutline,
-  personAddOutline,
-  personOutline,
-  sunnyOutline,
-} from "ionicons/icons";
+import LineMdIcon from "./LineMdIcon";
 import { getUnreadCount } from "../data/demo";
 import { useThemeMode } from "../hooks/useThemeMode";
 import "./TopBar.css";
@@ -39,7 +32,7 @@ const TopBar: React.FC<TopBarProps> = ({
             aria-label="Trouver des amis"
             className="top-bar-action-btn"
           >
-            <IonIcon slot="icon-only" icon={personAddOutline} />
+            <LineMdIcon slot="icon-only" name="account-add" />
           </IonButton>
         </IonButtons>
 
@@ -55,9 +48,9 @@ const TopBar: React.FC<TopBarProps> = ({
             }
             className="top-bar-action-btn top-bar-theme-btn"
           >
-            <IonIcon
+            <LineMdIcon
               slot="icon-only"
-              icon={resolvedTheme === "dark" ? sunnyOutline : moonOutline}
+              name={resolvedTheme === "dark" ? "sunny" : "moon"}
             />
           </IonButton>
 
@@ -67,7 +60,7 @@ const TopBar: React.FC<TopBarProps> = ({
             aria-label="Notifications"
             className="top-bar-action-btn top-bar-notif-btn"
           >
-            <IonIcon slot="icon-only" icon={notificationsOutline} />
+            <LineMdIcon slot="icon-only" name="bell" />
 
             {unreadCount > 0 && (
               <IonBadge color="danger" className="top-bar-badge">
@@ -82,7 +75,7 @@ const TopBar: React.FC<TopBarProps> = ({
             aria-label="Mon Profil"
             className="top-bar-action-btn"
           >
-            <IonIcon slot="icon-only" icon={personOutline} />
+            <LineMdIcon slot="icon-only" name="account" />
           </IonButton>
         </IonButtons>
       </IonToolbar>

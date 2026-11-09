@@ -151,7 +151,7 @@
     color 0.15s ease;
 }
 
-.quest-chip ion-icon {
+.quest-chip .line-md-icon {
   font-size: 16px;
   color: #6b7280;
 }
@@ -167,7 +167,7 @@
   color: #ffffff;
 }
 
-.quest-chip.active ion-icon {
+.quest-chip.active .line-md-icon {
   color: #22c55e;
 }
 

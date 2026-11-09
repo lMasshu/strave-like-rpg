@@ -4,13 +4,12 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
-  IonIcon,
   IonPage,
   IonSearchbar,
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import { trophyOutline } from "ionicons/icons";
+import LineMdIcon from "../components/LineMdIcon";
 import { useMemo, useState } from "react";
 import QuestTracePreview from "../components/QuestTracePreview";
 import { DEMO_ATHLETES, DEMO_FRIEND_ACTIVITIES, Athlete } from "../data/demo";
@@ -186,7 +185,7 @@ const FriendSearch: React.FC = () => {
           >
             <div className="guild-leaderboard-header">
               <div className="guild-leaderboard-icon-wrap">
-                <IonIcon icon={trophyOutline} />
+                <LineMdIcon name="star" />
               </div>
               <div className="guild-leaderboard-titles">
                 <h2 className="guild-leaderboard-title">

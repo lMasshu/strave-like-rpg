@@ -17,6 +17,10 @@ describe("Notifications Page", () => {
     expect(screen.getByRole("tab", { name: /Raids/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Succès/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Amis/i })).toBeInTheDocument();
+    expect(document.querySelector('[data-icon="alert"]')).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-icon="account-add"]'),
+    ).toBeInTheDocument();
   });
 
   it("filters notifications when category tab is selected", () => {

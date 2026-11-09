@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { IonContent, IonIcon, IonPage, IonSearchbar } from "@ionic/react";
+import { IonContent, IonPage, IonSearchbar } from "@ionic/react";
 import { useNavigate } from "react-router-dom";
-import { compassOutline } from "ionicons/icons";
+import LineMdIcon from "../components/LineMdIcon";
 import TopBar from "../components/TopBar";
 import QuestTracePreview from "../components/QuestTracePreview";
 import { DEMO_PUBLIC_ROUTES } from "../data/demo";
@@ -119,10 +119,7 @@ const Parcours: React.FC = () => {
 
             {filteredRoutes.length === 0 && (
               <div className="sq-parcours-empty">
-                <IonIcon
-                  icon={compassOutline}
-                  className="sq-parcours-empty-icon"
-                />
+                <LineMdIcon name="compass" className="sq-parcours-empty-icon" />
                 <p>Aucun parcours ne correspond à votre recherche.</p>
               </div>
             )}

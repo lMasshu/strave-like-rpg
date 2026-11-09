@@ -1,7 +1,7 @@
 import React from "react";
-import { IonContent, IonIcon, IonPage } from "@ionic/react";
+import { IonContent, IonPage } from "@ionic/react";
 import { useNavigate } from "react-router-dom";
-import { playCircle } from "ionicons/icons";
+import LineMdIcon from "../components/LineMdIcon";
 import TopBar from "../components/TopBar";
 import QuestTracePreview from "../components/QuestTracePreview";
 import {
@@ -69,7 +69,7 @@ const Home: React.FC = () => {
               <h2 className="sq-start-hero-title">Démarrer une sortie</h2>
               <p className="sq-start-hero-sub">Enregistrement en un geste</p>
             </div>
-            <IonIcon icon={playCircle} className="sq-start-hero-play-icon" />
+            <LineMdIcon name="play" className="sq-start-hero-play-icon" />
           </div>
 
           {/* Section Cette Semaine (Maquette Page 1 : 3 métriques) */}

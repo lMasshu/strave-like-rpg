@@ -75,7 +75,7 @@
   --padding-end: 0;
 }
 
-.top-mobile-icon-btn ion-icon {
+.top-mobile-icon-btn .line-md-icon {
   font-size: 1.25rem;
 }
 
@@ -407,7 +407,7 @@
     border-color 0.15s ease;
 }
 
-.fab-action-btn ion-icon {
+.fab-action-btn .line-md-icon {
   font-size: 1.25rem;
 }
 
@@ -420,19 +420,19 @@
   background: #141720;
 }
 
-.fab-action-btn.location-btn ion-icon {
+.fab-action-btn.location-btn .line-md-icon {
   color: #10b981;
 }
 
-.fab-action-btn.fit-btn ion-icon {
+.fab-action-btn.fit-btn .line-md-icon {
   color: #60a5fa;
 }
 
-.fab-action-btn.immersion-btn ion-icon {
+.fab-action-btn.immersion-btn .line-md-icon {
   color: #9ca3af;
 }
 
-.fab-action-btn.quest-btn ion-icon {
+.fab-action-btn.quest-btn .line-md-icon {
   color: #22c55e;
 }
 

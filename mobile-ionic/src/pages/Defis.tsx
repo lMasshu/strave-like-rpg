@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { IonContent, IonIcon, IonPage } from "@ionic/react";
+import { IonContent, IonPage } from "@ionic/react";
 import { useNavigate } from "react-router-dom";
-import { chevronForwardOutline, skullOutline } from "ionicons/icons";
+import LineMdIcon from "../components/LineMdIcon";
 import TopBar from "../components/TopBar";
 import { DEMO_NEARBY_QUESTS } from "../data/demo";
 import "./Defis.css";
@@ -44,7 +44,7 @@ const Defis: React.FC = () => {
                     : "mondial"}{" "}
                 • Fin dans 2 jours
               </span>
-              <IonIcon icon={skullOutline} className="sq-defis-boss-icon" />
+              <LineMdIcon name="alert" className="sq-defis-boss-icon" />
             </div>
 
             <h2 className="sq-defis-boss-name">Titan de la ville</h2>
@@ -127,8 +127,8 @@ const Defis: React.FC = () => {
                     <span className="sq-defis-xp-pill">
                       +{quest.xpReward} XP
                     </span>
-                    <IonIcon
-                      icon={chevronForwardOutline}
+                    <LineMdIcon
+                      name="chevron-small-right"
                       className="sq-defis-arrow"
                     />
                   </div>

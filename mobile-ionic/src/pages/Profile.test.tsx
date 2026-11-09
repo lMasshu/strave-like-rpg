@@ -69,5 +69,7 @@ describe("Profile Page (Adventurer Card)", () => {
     expect(
       screen.getByText(/Badge débloqué : Arpenteur Sylvestre/i),
     ).toBeInTheDocument();
+    expect(document.querySelector('[data-icon="compass"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-icon="speed"]')).toBeInTheDocument();
   });
 });

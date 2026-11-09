@@ -29,6 +29,8 @@ import { useThemeMode } from "../hooks/useThemeMode";
 import { apiClient } from "../services/apiClient";
 import { createQuestMarkerElement } from "../services/questMarker";
 import { getLivePaceCaption } from "../services/livePacePresentation";
+import { createActivityPayload } from "../services/activityPayload";
+import { createWorkoutTrackFeature } from "../services/workoutTrack";
 import "./Map.css";
 
 function formatDuration(totalSeconds: number): string {
@@ -134,27 +136,24 @@ const MapPage: React.FC = () => {
 
   // État de course & Télémétrie unifiée (avec quête ou libre)
   const workout = useActiveWorkout(activeQuest);
+  const latestWorkoutRef = useRef(workout);
+  latestWorkoutRef.current = workout;
+  const workoutSegmentsRef = useRef(workout.metrics.trackSegments);
+  workoutSegmentsRef.current = workout.metrics.trackSegments;
   const [workoutSegment, setWorkoutSegment] = useState<"map" | "stats">("map");
   const [workoutFinishedModal, setWorkoutFinishedModal] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   const handleSaveWorkout = useCallback(async () => {
-    const startedAt = new Date(
-      Date.now() - Math.max(1, workout.metrics.elapsedSeconds) * 1000,
-    ).toISOString();
-    const endedAt = new Date().toISOString();
-
+    if (savingRef.current || !workout.metrics.recordingSnapshot) return;
+    const savedSessionId = workout.metrics.recordingSessionId;
+    savingRef.current = true;
     try {
-      const res = await apiClient.saveActivity({
-        activityType: "run",
-        startedAt,
-        endedAt,
-        durationSeconds: Math.max(1, workout.metrics.elapsedSeconds),
-        distanceMeters: Math.round(workout.metrics.distanceKm * 1000),
-        elevationGainMeters: workout.metrics.elevationGainMeters,
-        coordinates: workout.metrics.trackCoordinates,
-      });
+      const res = await apiClient.saveActivity(
+        createActivityPayload(workout.metrics.recordingSnapshot, "run"),
+      );
 
       const levelUpText = res.levelUp
         ? ` 🌟 NIVEAU SUPÉRIEUR : Niveau ${res.newLevel} !`
@@ -162,12 +161,19 @@ const MapPage: React.FC = () => {
       setToastMessage(
         `Course enregistrée sur l'API ! +${res.xpEarned} XP.${levelUpText}`,
       );
+      if (
+        latestWorkoutRef.current.metrics.recordingSessionId === savedSessionId
+      ) {
+        latestWorkoutRef.current.resetWorkout();
+        setWorkoutSegment("map");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur réseau";
-      setToastMessage(`Enregistrement local (${msg})`);
+      setToastMessage(
+        `Échec de sauvegarde (${msg}). Course conservée en mémoire : réessayez sans fermer l'application.`,
+      );
     } finally {
-      workout.resetWorkout();
-      setWorkoutSegment("map");
+      savingRef.current = false;
     }
   }, [workout]);
 
@@ -292,66 +298,62 @@ const MapPage: React.FC = () => {
   }, []);
 
   // Rendu du tracé en direct de la course du joueur (GeoJSON Lime Frost vert électrique)
-  const renderWorkoutTrackOnMap = useCallback((coords: [number, number][]) => {
-    const map = mapInstance.current;
-    if (!map) return;
-
-    const render = () => {
+  const renderWorkoutTrackOnMap = useCallback(
+    (segments: [number, number][][]) => {
+      const map = mapInstance.current;
       if (!map) return;
-      const geojsonData: GeoJSON.Feature<GeoJSON.LineString> = {
-        type: "Feature",
-        properties: {},
-        geometry: {
-          type: "LineString",
-          coordinates: coords.length > 1 ? coords : [],
-        },
+
+      const render = () => {
+        if (!map) return;
+        const geojsonData = createWorkoutTrackFeature(segments);
+
+        const existingSource = map.getSource("workout-live-source") as
+          mapboxgl.GeoJSONSource | undefined;
+
+        if (existingSource) {
+          existingSource.setData(geojsonData);
+        } else {
+          map.addSource("workout-live-source", {
+            type: "geojson",
+            data: geojsonData,
+          });
+
+          // Casing sombre
+          map.addLayer({
+            id: "workout-live-casing",
+            type: "line",
+            source: "workout-live-source",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": "#020617",
+              "line-width": 8,
+              "line-opacity": 0.95,
+            },
+          });
+
+          // Tracé principal Lime Frost
+          map.addLayer({
+            id: "workout-live-line",
+            type: "line",
+            source: "workout-live-source",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": "#aff33e",
+              "line-width": 4.5,
+              "line-opacity": 1,
+            },
+          });
+        }
       };
 
-      const existingSource = map.getSource("workout-live-source") as
-        mapboxgl.GeoJSONSource | undefined;
-
-      if (existingSource) {
-        existingSource.setData(geojsonData);
+      if (map.isStyleLoaded()) {
+        render();
       } else {
-        map.addSource("workout-live-source", {
-          type: "geojson",
-          data: geojsonData,
-        });
-
-        // Casing sombre
-        map.addLayer({
-          id: "workout-live-casing",
-          type: "line",
-          source: "workout-live-source",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": "#020617",
-            "line-width": 8,
-            "line-opacity": 0.95,
-          },
-        });
-
-        // Tracé principal Lime Frost
-        map.addLayer({
-          id: "workout-live-line",
-          type: "line",
-          source: "workout-live-source",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": "#aff33e",
-            "line-width": 4.5,
-            "line-opacity": 1,
-          },
-        });
+        map.once("style.load", render);
       }
-    };
-
-    if (map.isStyleLoaded()) {
-      render();
-    } else {
-      map.once("style.load", render);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Initialisation de Mapbox GL
   useEffect(() => {
@@ -387,9 +389,7 @@ const MapPage: React.FC = () => {
       if (currentCoordsRef.current.length > 0) {
         renderRouteOnMap(currentCoordsRef.current);
       }
-      if (workout.metrics.trackCoordinates.length > 0) {
-        renderWorkoutTrackOnMap(workout.metrics.trackCoordinates);
-      }
+      renderWorkoutTrackOnMap(workoutSegmentsRef.current);
     });
 
     map.on("load", () => {
@@ -464,10 +464,8 @@ const MapPage: React.FC = () => {
 
   // Mise à jour du tracé de course en direct sur la carte
   useEffect(() => {
-    if (workout.metrics.trackCoordinates.length > 0) {
-      renderWorkoutTrackOnMap(workout.metrics.trackCoordinates);
-    }
-  }, [workout.metrics.trackCoordinates, renderWorkoutTrackOnMap]);
+    renderWorkoutTrackOnMap(workout.metrics.trackSegments);
+  }, [workout.metrics.trackSegments, renderWorkoutTrackOnMap]);
 
   // Pastille du joueur animée en direct sur la carte
   useEffect(() => {
@@ -635,6 +633,9 @@ const MapPage: React.FC = () => {
     <IonPage>
       <IonContent fullscreen className="map-page-content">
         <div className="map-shell">
+          {workout.metrics.recordingError && (
+            <div role="alert">{workout.metrics.recordingError}</div>
+          )}
           {/* Conteneur Plein Écran de la Carte Mapbox */}
           <div ref={mapContainer} className="map-mapbox-container" />
 
@@ -690,7 +691,7 @@ const MapPage: React.FC = () => {
                       className={`sq-gps-quality-badge quality-${workout.metrics.gpsQuality}`}
                       title={
                         workout.metrics.currentPosition
-                          ? `Précision GPS : ${Math.round(workout.metrics.currentPosition.accuracy)} m`
+                          ? `Précision GPS : ${workout.metrics.currentPosition.accuracy === null ? "inconnue" : `${Math.round(workout.metrics.currentPosition.accuracy)} m`}`
                           : "Recherche du signal GPS..."
                       }
                     >

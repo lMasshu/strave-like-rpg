@@ -38,6 +38,7 @@ describe("getLivePace", () => {
     { ...fix, accuracy: 26 },
     { ...fix, accuracy: -1 },
     { ...fix, accuracy: NaN },
+    { ...fix, accuracy: null },
     { ...fix, timestamp: now + 1 },
     { ...fix, timestamp: 0 },
     { ...fix, timestamp: NaN },

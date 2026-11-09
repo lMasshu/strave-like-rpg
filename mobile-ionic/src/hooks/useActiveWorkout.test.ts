@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+import { StrictMode } from "react";
 import { useActiveWorkout } from "./useActiveWorkout";
 import type { TrackedPosition } from "./useGeolocationTracker";
 
@@ -125,6 +126,7 @@ describe("useActiveWorkout hook", () => {
     });
 
     // Premier point : Paris Centre [2.3522, 48.8566]
+    act(() => vi.advanceTimersByTime(1000));
     mockPosition = {
       coords: [2.3522, 48.8566],
       longitude: 2.3522,
@@ -132,7 +134,7 @@ describe("useActiveWorkout hook", () => {
       altitude: 35,
       speed: 3.0,
       accuracy: 5,
-      timestamp: 1000,
+      timestamp: 101000,
     };
     mockStatus = "tracking";
     rerender();
@@ -141,6 +143,7 @@ describe("useActiveWorkout hook", () => {
     expect(result.current.metrics.distanceMeters).toBe(0);
 
     // Deuxième point ~95m plus loin après 15 secondes (~6.3 m/s)
+    act(() => vi.advanceTimersByTime(15000));
     mockPosition = {
       coords: [2.3535, 48.8566],
       longitude: 2.3535,
@@ -148,13 +151,14 @@ describe("useActiveWorkout hook", () => {
       altitude: 38,
       speed: 3.2, // ~11.5 km/h
       accuracy: 5,
-      timestamp: 15000,
+      timestamp: 116000,
     };
     rerender();
 
     expect(result.current.metrics.trackCoordinates.length).toBe(2);
-    expect(result.current.metrics.distanceMeters).toBeGreaterThan(50);
-    expect(result.current.metrics.elevationGainMeters).toBe(3); // 38 - 35
+    expect(result.current.metrics.distanceMeters).toBe(0); // GPS gap: no artificial bridge
+    expect(result.current.metrics.elevationGainMeters).toBe(0);
+    expect(result.current.metrics.paceMinPerKm).toBe("5:13");
   });
 
   it("should reject inaccurate GPS fixes (accuracy > 25m) and not accumulate false distance", () => {
@@ -165,6 +169,7 @@ describe("useActiveWorkout hook", () => {
     });
 
     // Point 1 : Valide (accuracy: 6m)
+    act(() => vi.advanceTimersByTime(1000));
     mockPosition = {
       coords: [2.3522, 48.8566],
       longitude: 2.3522,
@@ -172,7 +177,7 @@ describe("useActiveWorkout hook", () => {
       altitude: 35,
       speed: 3.0,
       accuracy: 6,
-      timestamp: 1000,
+      timestamp: 101000,
     };
     mockStatus = "tracking";
     rerender();
@@ -180,6 +185,7 @@ describe("useActiveWorkout hook", () => {
     expect(result.current.metrics.trackCoordinates.length).toBe(1);
 
     // Point 2 : Imprécis (accuracy: 65m - ex: saut triangulé 4G / Wi-Fi)
+    act(() => vi.advanceTimersByTime(1000));
     mockPosition = {
       coords: [2.355, 48.858], // Décalage de ~200m
       longitude: 2.355,
@@ -187,7 +193,7 @@ describe("useActiveWorkout hook", () => {
       altitude: 35,
       speed: 1.0,
       accuracy: 65,
-      timestamp: 2000,
+      timestamp: 102000,
     };
     rerender();
 
@@ -237,9 +243,11 @@ describe("useActiveWorkout hook", () => {
     act(() => vi.advanceTimersByTime(1000));
     receiveFix(3);
     rerender();
-    act(() => vi.advanceTimersByTime(15_000));
-    receiveFix(3, 2.3535);
-    rerender();
+    for (let step = 1; step <= 15; step++) {
+      act(() => vi.advanceTimersByTime(1000));
+      receiveFix(3, 2.3522 + (0.0013 * step) / 15);
+      rerender();
+    }
     expect(result.current.metrics.distanceMeters).toBeGreaterThan(50);
     expect(result.current.metrics.paceMinPerKm).toBe("5:33");
 
@@ -323,5 +331,50 @@ describe("useActiveWorkout hook", () => {
     act(() => result.current.startWorkout());
     unmount();
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("journals stationary and uncertain fixes once under StrictMode", () => {
+    const { result, rerender } = renderHook(() => useActiveWorkout(), {
+      wrapper: StrictMode,
+    });
+    act(() => result.current.startWorkout());
+    act(() => vi.advanceTimersByTime(1000));
+    receiveFix(0);
+    rerender();
+    rerender();
+    act(() => vi.advanceTimersByTime(1000));
+    receiveFix(null);
+    mockPosition = { ...mockPosition!, accuracy: null };
+    rerender();
+    const snapshot = result.current.metrics.recordingSnapshot!;
+    expect(snapshot.recording.samples).toHaveLength(2);
+    expect(snapshot.recording.samples[1].horizontalAccuracyMeters).toBeNull();
+    expect(snapshot.distanceMeters).toBe(0);
+    act(() => result.current.finishWorkout());
+    act(() => vi.advanceTimersByTime(30000));
+    expect(result.current.metrics.recordingSnapshot?.endedAtMs).toBe(102000);
+    expect(
+      result.current.metrics.recordingSnapshot?.recording.activeDurationMs,
+    ).toBe(2000);
+    act(() => result.current.resetWorkout());
+    expect(result.current.metrics.recordingSnapshot).toBeNull();
+    expect(result.current.metrics.trackSegments).toEqual([]);
+  });
+
+  it("derives active time from actual intervals even if the timer is delayed", () => {
+    const { result } = renderHook(() => useActiveWorkout());
+    act(() => result.current.startWorkout());
+    vi.setSystemTime(110000);
+    act(() => vi.advanceTimersByTime(250));
+    expect(result.current.metrics.elapsedSeconds).toBe(10);
+    act(() => result.current.pauseWorkout());
+    act(() => vi.advanceTimersByTime(5000));
+    act(() => result.current.finishWorkout());
+    expect(
+      result.current.metrics.recordingSnapshot?.recording.activeDurationMs,
+    ).toBe(10250);
+    expect(
+      result.current.metrics.recordingSnapshot?.recording.elapsedDurationMs,
+    ).toBe(15250);
   });
 });

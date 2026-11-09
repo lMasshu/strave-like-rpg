@@ -28,6 +28,7 @@ export function getLivePace(
     !Number.isFinite(position.speed) ||
     position.speed < 0 ||
     !Number.isFinite(position.accuracy) ||
+    position.accuracy === null ||
     position.accuracy < 0 ||
     position.accuracy > 25 ||
     !Number.isFinite(position.timestamp) ||

@@ -26,6 +26,7 @@ import {
 import { useActiveWorkout } from "../hooks/useActiveWorkout";
 import { useThemeMode } from "../hooks/useThemeMode";
 import { apiClient } from "../services/apiClient";
+import { createQuestMarkerElement } from "../services/questMarker";
 import "./Map.css";
 
 function formatDuration(totalSeconds: number): string {
@@ -548,12 +549,7 @@ const MapPage: React.FC = () => {
         if (questDestinationMarkerRef.current) {
           questDestinationMarkerRef.current.remove();
         }
-        const el = document.createElement("div");
-        el.className = "map-poi-marker quest-objective-marker";
-        el.innerHTML = `
-          <div class="poi-marker-icon">🏆</div>
-          <div class="poi-marker-label">${quest.title}</div>
-        `;
+        const el = createQuestMarkerElement(quest.title);
         questDestinationMarkerRef.current = new mapboxgl.Marker({ element: el })
           .setLngLat(quest.destination)
           .addTo(map);

@@ -1,0 +1,72 @@
+import type { CSSProperties, HTMLAttributes } from "react";
+import "./LineMdIcon.css";
+
+export type LineMdIconName =
+  | "account"
+  | "account-add"
+  | "alert"
+  | "arrow-up"
+  | "bell"
+  | "chevron-small-right"
+  | "circle"
+  | "close"
+  | "close-circle"
+  | "compass"
+  | "confirm"
+  | "construction"
+  | "heart"
+  | "home"
+  | "map-marker"
+  | "map-marker-radius"
+  | "moon"
+  | "my-location"
+  | "play"
+  | "rotate-180"
+  | "security"
+  | "speed"
+  | "star"
+  | "sunny"
+  | "sunny-loop"
+  | "watch";
+
+export interface LineMdIconProps extends HTMLAttributes<HTMLSpanElement> {
+  name: LineMdIconName;
+  label?: string;
+  size?: string | number;
+}
+
+interface IconStyle extends CSSProperties {
+  "--line-md-icon-size"?: string;
+  "--line-md-icon-url"?: string;
+}
+
+const LineMdIcon = ({
+  name,
+  label,
+  size,
+  className = "",
+  style,
+  ...props
+}: LineMdIconProps) => {
+  const iconSize = typeof size === "number" ? `${size}px` : size;
+  const iconStyle: IconStyle = {
+    ...style,
+    color: "currentColor",
+    "--line-md-icon-size": iconSize,
+    "--line-md-icon-url": `url("/icons/line-md/${name}.svg")`,
+  };
+
+  return (
+    <span
+      {...props}
+      className={`line-md-icon ${className}`.trim()}
+      data-icon={name}
+      style={iconStyle}
+      role={label ? "img" : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+    />
+  );
+};
+
+export default LineMdIcon;

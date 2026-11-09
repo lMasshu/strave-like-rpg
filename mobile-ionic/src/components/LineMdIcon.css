@@ -1,0 +1,19 @@
+.line-md-icon {
+  display: inline-block;
+  width: var(--line-md-icon-size, 1em);
+  height: var(--line-md-icon-size, 1em);
+  flex: 0 0 auto;
+  background-color: currentColor;
+  mask-image: var(--line-md-icon-url);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  vertical-align: -0.125em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line-md-icon {
+    animation: none !important;
+    transition: none !important;
+  }
+}

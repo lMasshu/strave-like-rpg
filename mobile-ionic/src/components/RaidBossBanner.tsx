@@ -1,5 +1,6 @@
 import React from "react";
-import LineMdIcon from "./LineMdIcon";
+import { IonIcon } from "@ionic/react";
+import { flameOutline, locationOutline, timeOutline } from "ionicons/icons";
 import "./RaidBossBanner.css";
 
 export interface RaidBossBannerProps {
@@ -34,11 +35,11 @@ const RaidBossBanner: React.FC<RaidBossBannerProps> = ({
       <div className="sq-raid-boss-header">
         <div className="sq-raid-boss-meta">
           <span className="sq-badge sq-badge-danger">
-            <LineMdIcon name="alert" />
+            <IonIcon icon={flameOutline} />
             {tier}
           </span>
           <span className="sq-badge sq-badge-muted">
-            <LineMdIcon name="watch" />
+            <IonIcon icon={timeOutline} />
             {endsIn}
           </span>
         </div>
@@ -47,7 +48,7 @@ const RaidBossBanner: React.FC<RaidBossBannerProps> = ({
       <div className="sq-raid-boss-identity">
         <h3 className="sq-raid-boss-title">{name}</h3>
         <p className="sq-raid-boss-location">
-          <LineMdIcon name="map-marker" />
+          <IonIcon icon={locationOutline} />
           <span>{location}</span>
         </p>
       </div>

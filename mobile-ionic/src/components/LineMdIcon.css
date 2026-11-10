@@ -4,10 +4,6 @@
   height: var(--line-md-icon-size, 1em);
   flex: 0 0 auto;
   background-color: currentColor;
-  -webkit-mask-image: var(--line-md-icon-url);
-  -webkit-mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
   mask-image: var(--line-md-icon-url);
   mask-position: center;
   mask-repeat: no-repeat;

@@ -17,11 +17,7 @@ describe("TopBar Component", () => {
     );
 
     expect(screen.getByText("Test Title")).toBeInTheDocument();
-    const friendsButton = screen.getByLabelText(/Trouver des amis/i);
-    expect(friendsButton).toBeInTheDocument();
-    expect(
-      friendsButton.querySelector('[data-icon="account-add"]'),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Trouver des amis/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Notifications/i)).toBeInTheDocument();
   });
 
@@ -34,7 +30,6 @@ describe("TopBar Component", () => {
 
     const themeButton = screen.getByLabelText(/Activer le mode/i);
     expect(themeButton).toBeInTheDocument();
-    expect(themeButton.querySelector("[data-icon]")).toBeInTheDocument();
 
     fireEvent.click(themeButton);
     expect(localStorage.getItem("stride_theme_preference")).toBeTruthy();

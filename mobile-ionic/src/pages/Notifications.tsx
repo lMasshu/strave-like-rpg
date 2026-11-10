@@ -4,11 +4,19 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
+  IonIcon,
   IonPage,
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import LineMdIcon, { type LineMdIconName } from "../components/LineMdIcon";
+import {
+  checkmarkDoneOutline,
+  flameOutline,
+  heartOutline,
+  notificationsOutline,
+  personAddOutline,
+  trophyOutline,
+} from "ionicons/icons";
 import { useMemo, useState } from "react";
 import {
   AppNotification,
@@ -31,11 +39,11 @@ const CATEGORY_TABS: CategoryTab[] = [
   { id: "amis", label: "Amis" },
 ];
 
-const ICONS: Record<NotificationType, LineMdIconName> = {
-  follow: "account-add",
-  kudos: "heart",
-  raid: "alert",
-  level: "star",
+const ICONS: Record<NotificationType, string> = {
+  follow: personAddOutline,
+  kudos: heartOutline,
+  raid: flameOutline,
+  level: trophyOutline,
 };
 
 const CATEGORY_LABELS: Record<NotificationType, string> = {
@@ -122,7 +130,7 @@ const Notifications: React.FC = () => {
               disabled={!hasUnread}
               className="notif-read-all-btn"
             >
-              <LineMdIcon slot="start" name="confirm" />
+              <IonIcon slot="start" icon={checkmarkDoneOutline} />
               Tout lire
             </IonButton>
           </IonButtons>
@@ -163,7 +171,7 @@ const Notifications: React.FC = () => {
           {filteredNotifications.length === 0 ? (
             <div className="sq-card notif-empty-card">
               <div className="notif-empty-icon-wrap">
-                <LineMdIcon name="bell" />
+                <IonIcon icon={notificationsOutline} />
               </div>
               <p className="notif-empty">
                 Aucune notification dans la catégorie «{" "}
@@ -189,7 +197,7 @@ const Notifications: React.FC = () => {
                   }}
                 >
                   <div className={`notif-icon-wrap type-${notification.type}`}>
-                    <LineMdIcon name={ICONS[notification.type]} />
+                    <IonIcon icon={ICONS[notification.type]} />
                   </div>
 
                   <div className="notif-body">

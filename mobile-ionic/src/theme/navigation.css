@@ -29,7 +29,7 @@ ion-tab-button {
     transform 0.15s ease;
 }
 
-ion-tab-button .line-md-icon {
+ion-tab-button ion-icon {
   font-size: 22px;
   margin-bottom: 2px;
   transition: transform 0.15s ease-out;
@@ -40,7 +40,7 @@ ion-tab-button.tab-selected {
   font-weight: 700;
 }
 
-ion-tab-button.tab-selected .line-md-icon {
+ion-tab-button.tab-selected ion-icon {
   transform: translateY(-1px);
 }
 
@@ -58,7 +58,7 @@ ion-tab-button.tab-selected::after {
 }
 
 /* Bouton central d'enregistrement */
-ion-tab-button[tab="enregistrer"] .line-md-icon {
+ion-tab-button[tab="enregistrer"] ion-icon {
   font-size: 26px;
 }
 

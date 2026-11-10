@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
-import { IonAlert } from "@ionic/react";
+import { IonAlert, IonIcon } from "@ionic/react";
+import { flagOutline, timeOutline } from "ionicons/icons";
 import { Haptics, NotificationType } from "@capacitor/haptics";
 import mapboxgl from "mapbox-gl";
 import type { GeneratedQuest } from "../services/questGenerator";
 import { useQuestRun } from "../hooks/useQuestRun";
 import type { TrackedPosition } from "../hooks/useGeolocationTracker";
 import GeolocationDebugConsole from "./GeolocationDebugConsole";
-import LineMdIcon from "./LineMdIcon";
 import "./QuestRunHud.css";
 
 interface QuestRunHudProps {
@@ -138,7 +138,7 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({
           <div className="quest-hud-metrics-row">
             <div className="quest-run-stat">
               <div className="quest-stat-meta">
-                <LineMdIcon name="watch" />
+                <IonIcon icon={timeOutline} />
                 <small>Temps restant</small>
               </div>
               <span
@@ -152,7 +152,7 @@ const QuestRunHud: React.FC<QuestRunHudProps> = ({
 
             <div className="quest-run-stat">
               <div className="quest-stat-meta">
-                <LineMdIcon name="map-marker" />
+                <IonIcon icon={flagOutline} />
                 <small>
                   Point{" "}
                   {Math.min(state.checkpointIndex + 1, state.totalCheckpoints)}/

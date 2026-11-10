@@ -1,6 +1,7 @@
 import { Navigate, Route, useLocation } from "react-router-dom";
 import {
   IonApp,
+  IonIcon,
   IonLabel,
   IonRouterOutlet,
   IonTabBar,
@@ -9,7 +10,18 @@ import {
   setupIonicReact,
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import LineMdIcon from "./components/LineMdIcon";
+import {
+  flag,
+  flagOutline,
+  home,
+  homeOutline,
+  map,
+  mapOutline,
+  people,
+  peopleOutline,
+  radioButtonOn,
+  radioButtonOnOutline,
+} from "ionicons/icons";
 import Home from "./pages/Home";
 import MapPage from "./pages/Map";
 import Defis from "./pages/Defis";
@@ -43,6 +55,8 @@ const AppTabs: React.FC = () => {
   const { pathname } = useLocation();
   const hideTabBar = ROUTES_WITHOUT_TAB_BAR.includes(pathname);
 
+  const isActive = (path: string) => pathname === path;
+
   return (
     <IonTabs>
       <IonRouterOutlet>
@@ -63,27 +77,31 @@ const AppTabs: React.FC = () => {
 
       <IonTabBar slot="bottom" className={hideTabBar ? "tab-bar-hidden" : ""}>
         <IonTabButton tab="accueil" href="/accueil">
-          <LineMdIcon name="home" />
+          <IonIcon icon={isActive("/accueil") ? home : homeOutline} />
           <IonLabel>Accueil</IonLabel>
         </IonTabButton>
 
         <IonTabButton tab="parcours" href="/parcours">
-          <LineMdIcon name="map-marker-radius" />
+          <IonIcon icon={isActive("/parcours") ? map : mapOutline} />
           <IonLabel>Parcours</IonLabel>
         </IonTabButton>
 
         <IonTabButton tab="enregistrer" href="/enregistrer">
-          <LineMdIcon name="circle" />
+          <IonIcon
+            icon={
+              isActive("/enregistrer") ? radioButtonOn : radioButtonOnOutline
+            }
+          />
           <IonLabel>Enregistrer</IonLabel>
         </IonTabButton>
 
         <IonTabButton tab="defis" href="/defis">
-          <LineMdIcon name="star" />
+          <IonIcon icon={isActive("/defis") ? flag : flagOutline} />
           <IonLabel>Défis</IonLabel>
         </IonTabButton>
 
         <IonTabButton tab="amis" href="/amis">
-          <LineMdIcon name="account-add" />
+          <IonIcon icon={isActive("/amis") ? people : peopleOutline} />
           <IonLabel>Amis</IonLabel>
         </IonTabButton>
       </IonTabBar>

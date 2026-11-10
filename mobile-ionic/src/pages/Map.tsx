@@ -1,10 +1,16 @@
 import {
   IonAlert,
   IonContent,
+  IonIcon,
   IonPage,
   IonToast,
   useIonViewDidEnter,
 } from "@ionic/react";
+import {
+  closeCircleOutline,
+  locateOutline,
+  buildOutline,
+} from "ionicons/icons";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import mapboxgl from "mapbox-gl";
@@ -14,7 +20,6 @@ import QuestGeneratorModal from "../components/QuestGeneratorModal";
 import QuestRunHud from "../components/QuestRunHud";
 import GeolocationDebugConsole from "../components/GeolocationDebugConsole";
 import LivePaceMetric from "../components/LivePaceMetric";
-import LineMdIcon from "../components/LineMdIcon";
 import {
   GeneratedQuest,
   generateRandomQuest,
@@ -668,7 +673,7 @@ const MapPage: React.FC = () => {
                 onClick={handleClearPoi}
                 title="Fermer"
               >
-                <LineMdIcon name="close-circle" />
+                <IonIcon icon={closeCircleOutline} />
               </button>
             </div>
           )}
@@ -858,7 +863,7 @@ const MapPage: React.FC = () => {
                 title="Panneau Admin Télémétrie & Simulation"
                 aria-label="Admin panel"
               >
-                <LineMdIcon name="construction" />
+                <IonIcon icon={buildOutline} />
               </button>
             )}
 
@@ -872,7 +877,7 @@ const MapPage: React.FC = () => {
                   : "Recentrer et suivre ma position"
               }
             >
-              <LineMdIcon name="my-location" />
+              <IonIcon icon={locateOutline} />
             </button>
           </div>
 

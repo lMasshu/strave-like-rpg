@@ -17,7 +17,6 @@ describe("RaidBossBanner Component", () => {
     expect(screen.getByText("Forêt Régionale")).toBeInTheDocument();
     expect(screen.getByText("35%")).toBeInTheDocument();
     expect(screen.getByText(/3j 14h/)).toBeInTheDocument();
-    expect(document.querySelector('[data-icon="alert"]')).toBeInTheDocument();
   });
 
   it("handles zero HP without errors", () => {

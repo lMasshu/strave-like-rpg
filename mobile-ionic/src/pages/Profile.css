@@ -125,7 +125,7 @@
   text-transform: none;
 }
 
-.sq-profile-friends-chip .line-md-icon {
+.sq-profile-friends-chip ion-icon {
   color: var(--sq-green-athletic-tint, #22c55e);
   font-size: 1rem;
 }

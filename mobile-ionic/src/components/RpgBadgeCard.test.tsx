@@ -8,7 +8,7 @@ describe("RpgBadgeCard Component", () => {
       <RpgBadgeCard
         name="Pionnier 10K"
         description="Parcourir 10km en une sortie"
-        icon="star"
+        icon="ribbon-outline"
         unlocked={true}
         unlockedAt="12 Oct 2026"
       />,
@@ -18,7 +18,6 @@ describe("RpgBadgeCard Component", () => {
       screen.getByText("Parcourir 10km en une sortie"),
     ).toBeInTheDocument();
     expect(screen.getByText("12 Oct 2026")).toBeInTheDocument();
-    expect(document.querySelector('[data-icon="star"]')).toBeInTheDocument();
   });
 
   it("displays locked badge with locked state indicator", () => {
@@ -26,15 +25,12 @@ describe("RpgBadgeCard Component", () => {
       <RpgBadgeCard
         name="Conquérant des Cimes"
         description="Gravir 1 000m de D+"
-        icon="security"
+        icon="shield-outline"
         unlocked={false}
       />,
     );
     expect(screen.getByText("Conquérant des Cimes")).toBeInTheDocument();
     expect(screen.getByText(/Verrouillé/i)).toBeInTheDocument();
-    expect(
-      document.querySelector('[data-icon="security"]'),
-    ).toBeInTheDocument();
   });
 
   it("supports keyboard accessibility when onClick is provided", () => {

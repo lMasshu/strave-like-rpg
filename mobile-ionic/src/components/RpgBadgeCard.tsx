@@ -1,12 +1,13 @@
 import React from "react";
-import LineMdIcon, { type LineMdIconName } from "./LineMdIcon";
+import { IonIcon } from "@ionic/react";
+import { lockClosedOutline, ribbonOutline } from "ionicons/icons";
 import "./RpgBadgeCard.css";
 
 export interface RpgBadgeCardProps {
   id?: string;
   name: string;
   description: string;
-  icon?: LineMdIconName;
+  icon?: string;
   unlocked?: boolean;
   unlockedAt?: string;
   category?: string;
@@ -42,10 +43,13 @@ const RpgBadgeCard: React.FC<RpgBadgeCardProps> = ({
     >
       <div className="sq-badge-card-icon-wrapper">
         {unlocked ? (
-          <LineMdIcon name={icon || "star"} className="sq-badge-card-icon" />
+          <IonIcon
+            icon={icon || ribbonOutline}
+            className="sq-badge-card-icon"
+          />
         ) : (
-          <LineMdIcon
-            name="security"
+          <IonIcon
+            icon={lockClosedOutline}
             className="sq-badge-card-icon locked-icon"
           />
         )}

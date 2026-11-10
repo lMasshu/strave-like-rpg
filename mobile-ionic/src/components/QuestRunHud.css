@@ -129,7 +129,7 @@
   color: #94a3b8;
 }
 
-.quest-stat-meta .line-md-icon {
+.quest-stat-meta ion-icon {
   font-size: 0.85rem;
   color: var(--sq-green-athletic, #aff33e);
 }

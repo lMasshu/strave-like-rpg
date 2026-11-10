@@ -1,6 +1,18 @@
 import React from "react";
-import { IonButton, IonContent, IonPage } from "@ionic/react";
-import LineMdIcon, { type LineMdIconName } from "../components/LineMdIcon";
+import { IonButton, IonContent, IonIcon, IonPage } from "@ionic/react";
+import {
+  bicycleOutline,
+  compassOutline,
+  fitnessOutline,
+  flameOutline,
+  peopleOutline,
+  ribbonOutline,
+  shieldOutline,
+  sparklesOutline,
+  timeOutline,
+  trophyOutline,
+  walkOutline,
+} from "ionicons/icons";
 import TopBar from "../components/TopBar";
 import StatMetric from "../components/StatMetric";
 import RpgBadgeCard from "../components/RpgBadgeCard";
@@ -13,35 +25,35 @@ import {
 } from "../data/demo";
 import "./Profile.css";
 
-function getBadgeIcon(iconName: string): LineMdIconName {
+function getBadgeIcon(iconName: string): string {
   switch (iconName) {
     case "ribbon-outline":
-      return "star";
+      return ribbonOutline;
     case "flame-outline":
-      return "sunny-loop";
+      return flameOutline;
     case "compass-outline":
-      return "compass";
+      return compassOutline;
     case "shield-outline":
-      return "security";
+      return shieldOutline;
     case "trophy-outline":
-      return "star";
+      return trophyOutline;
     default:
-      return "star";
+      return ribbonOutline;
   }
 }
 
-function getActivityIcon(type: UserActivity["type"]): LineMdIconName {
+function getActivityIcon(type: UserActivity["type"]): string {
   switch (type) {
     case "quest":
-      return "compass";
+      return compassOutline;
     case "run":
-      return "speed";
+      return fitnessOutline;
     case "walk":
-      return "speed";
+      return walkOutline;
     case "cycle":
-      return "speed";
+      return bicycleOutline;
     default:
-      return "speed";
+      return fitnessOutline;
   }
 }
 
@@ -122,11 +134,11 @@ const Profile: React.FC = () => {
               <div className="sq-profile-identity">
                 <div className="sq-profile-identity-tags">
                   <span className="sq-badge sq-badge-gold">
-                    <LineMdIcon name="sunny-loop" />
+                    <IonIcon icon={flameOutline} />
                     Niveau {profile.level}
                   </span>
                   <span className="sq-badge sq-badge-green">
-                    <LineMdIcon name="star" />
+                    <IonIcon icon={sparklesOutline} />
                     {profile.title}
                   </span>
                 </div>
@@ -140,7 +152,7 @@ const Profile: React.FC = () => {
                     size="small"
                     className="sq-profile-friends-chip"
                   >
-                    <LineMdIcon slot="start" name="account-add" />
+                    <IonIcon slot="start" icon={peopleOutline} />
                     <span>{profile.friendsCount} compagnons</span>
                   </IonButton>
                 </div>
@@ -268,7 +280,7 @@ const Profile: React.FC = () => {
                 </p>
               </div>
               <span className="sq-badge sq-badge-gold">
-                <LineMdIcon name="star" />
+                <IonIcon icon={trophyOutline} />
                 {unlockedBadgesCount} / {DEMO_BADGES.length}
               </span>
             </div>
@@ -310,7 +322,7 @@ const Profile: React.FC = () => {
                 >
                   <div className="sq-activity-card-header">
                     <div className="sq-activity-type-icon">
-                      <LineMdIcon name={getActivityIcon(activity.type)} />
+                      <IonIcon icon={getActivityIcon(activity.type)} />
                     </div>
                     <div className="sq-activity-identity">
                       <div className="sq-activity-title-row">
@@ -323,7 +335,7 @@ const Profile: React.FC = () => {
                         <span>{getActivityTypeLabel(activity.type)}</span>
                         <span>•</span>
                         <span className="sq-activity-date">
-                          <LineMdIcon name="watch" />
+                          <IonIcon icon={timeOutline} />
                           {activity.date}
                         </span>
                       </div>
@@ -362,7 +374,7 @@ const Profile: React.FC = () => {
 
                   {activity.badgeUnlocked && (
                     <div className="sq-activity-badge-pill">
-                      <LineMdIcon name="star" />
+                      <IonIcon icon={ribbonOutline} />
                       <span>Badge débloqué : {activity.badgeUnlocked}</span>
                     </div>
                   )}

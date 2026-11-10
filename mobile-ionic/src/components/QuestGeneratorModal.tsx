@@ -1,5 +1,19 @@
 import React, { useState } from "react";
-import { IonModal, IonSpinner } from "@ionic/react";
+import { IonModal, IonSpinner, IonIcon } from "@ionic/react";
+import {
+  diceOutline,
+  sparklesOutline,
+  repeatOutline,
+  locationOutline,
+  navigateOutline,
+  closeOutline,
+  flameOutline,
+  walkOutline,
+  bicycleOutline,
+  checkmarkOutline,
+  trendingUpOutline,
+  timeOutline,
+} from "ionicons/icons";
 import type mapboxgl from "mapbox-gl";
 import {
   generateRandomQuest,
@@ -7,7 +21,6 @@ import {
   QuestType,
 } from "../services/questGenerator";
 import { TransportProfile } from "../services/mapboxDirections";
-import LineMdIcon from "./LineMdIcon";
 import "./QuestGeneratorModal.css";
 
 interface QuestGeneratorModalProps {
@@ -114,7 +127,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
             onClick={onDismiss}
             aria-label="Fermer"
           >
-            <LineMdIcon name="close" />
+            <IonIcon icon={closeOutline} />
           </button>
         </header>
 
@@ -127,7 +140,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 className={`quest-chip ${selectedType === "any" ? "active" : ""}`}
                 onClick={() => setSelectedType("any")}
               >
-                <LineMdIcon name="star" />
+                <IonIcon icon={sparklesOutline} />
                 <span>Aléatoire</span>
               </button>
               <button
@@ -135,7 +148,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 className={`quest-chip ${selectedType === "loop" ? "active" : ""}`}
                 onClick={() => setSelectedType("loop")}
               >
-                <LineMdIcon name="rotate-180" />
+                <IonIcon icon={repeatOutline} />
                 <span>Boucle</span>
               </button>
               <button
@@ -143,7 +156,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 className={`quest-chip ${selectedType === "poi" ? "active" : ""}`}
                 onClick={() => setSelectedType("poi")}
               >
-                <LineMdIcon name="map-marker" />
+                <IonIcon icon={locationOutline} />
                 <span>Lieu d'intérêt</span>
               </button>
               <button
@@ -151,7 +164,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 className={`quest-chip ${selectedType === "linear" ? "active" : ""}`}
                 onClick={() => setSelectedType("linear")}
               >
-                <LineMdIcon name="compass" />
+                <IonIcon icon={navigateOutline} />
                 <span>Aller simple</span>
               </button>
             </div>
@@ -190,7 +203,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 className={`quest-chip ${selectedProfile === "pedestrian" ? "active" : ""}`}
                 onClick={() => setSelectedProfile("pedestrian")}
               >
-                <LineMdIcon name="speed" />
+                <IonIcon icon={walkOutline} />
                 <span>À pied</span>
               </button>
               <button
@@ -198,7 +211,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 className={`quest-chip ${selectedProfile === "bicycle" ? "active" : ""}`}
                 onClick={() => setSelectedProfile("bicycle")}
               >
-                <LineMdIcon name="speed" />
+                <IonIcon icon={bicycleOutline} />
                 <span>À vélo</span>
               </button>
             </div>
@@ -217,7 +230,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
               />
             ) : (
               <>
-                <LineMdIcon name="circle" />
+                <IonIcon icon={diceOutline} />
                 <span>
                   {generatedQuest
                     ? "Générer un autre tracé"
@@ -241,7 +254,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                   </span>
                 </div>
                 <div className="quest-xp-badge">
-                  <LineMdIcon name="sunny-loop" />
+                  <IonIcon icon={flameOutline} />
                   <span>+{generatedQuest.xpReward} XP</span>
                 </div>
               </div>
@@ -251,7 +264,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
 
               {generatedQuest.targetPoiName && (
                 <div className="quest-poi-highlight">
-                  <LineMdIcon name="map-marker" />
+                  <IonIcon icon={locationOutline} />
                   <span>
                     Destination :{" "}
                     <strong>{generatedQuest.targetPoiName}</strong>
@@ -269,14 +282,14 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                 <div className="quest-metric-box">
                   <span className="m-label">Durée est.</span>
                   <span className="m-value">
-                    <LineMdIcon name="watch" className="mini-icon" />
+                    <IonIcon icon={timeOutline} className="mini-icon" />
                     {generatedQuest.route.durationMinutes} min
                   </span>
                 </div>
                 <div className="quest-metric-box">
                   <span className="m-label">Dénivelé</span>
                   <span className="m-value d-plus">
-                    <LineMdIcon name="arrow-up" className="mini-icon" />+
+                    <IonIcon icon={trendingUpOutline} className="mini-icon" />+
                     {generatedQuest.route.elevationGain ?? 0}m
                   </span>
                 </div>
@@ -288,7 +301,7 @@ export const QuestGeneratorModal: React.FC<QuestGeneratorModalProps> = ({
                   className="quest-accept-btn"
                   onClick={handleAccept}
                 >
-                  <LineMdIcon name="confirm" />
+                  <IonIcon icon={checkmarkOutline} />
                   <span>Sélectionner cet itinéraire</span>
                 </button>
               </div>

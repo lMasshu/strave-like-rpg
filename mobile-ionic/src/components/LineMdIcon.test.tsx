@@ -34,10 +34,28 @@ describe("LineMdIcon", () => {
     const icon = container.querySelector('[data-icon="account-add"]');
     expect(icon).toHaveClass("line-md-icon", "toolbar-icon");
     expect(icon).toHaveAttribute("slot", "icon-only");
-    expect(icon).toHaveStyle({
-      "--line-md-icon-size": "24px",
-      color: "currentColor",
-    });
+    expect(icon).toHaveStyle({ "--line-md-icon-size": "24px" });
+    expect((icon as HTMLElement).style.color).toBe("");
+  });
+
+  it("lets the surrounding CSS choose the icon colour", () => {
+    const { container } = render(
+      <LineMdIcon name="home" style={{ color: "rgb(1, 2, 3)" }} />,
+    );
+
+    const icon = container.querySelector('[data-icon="home"]');
+    expect(icon).toHaveStyle({ color: "rgb(1, 2, 3)" });
+  });
+
+  it("mirrors Ionic slot geometry for span-based icons", () => {
+    const css = readFileSync(
+      resolve(process.cwd(), "src/components/LineMdIcon.css"),
+      "utf8",
+    );
+
+    expect(css).toMatch(/ion-button\s+\.line-md-icon\[slot="start"\]/);
+    expect(css).toMatch(/ion-button\s+\.line-md-icon\[slot="icon-only"\]/);
+    expect(css).toMatch(/ion-tab-button\s+\.line-md-icon/);
   });
 
   it("ships a non-empty local SVG for every declared icon name", () => {
@@ -48,7 +66,20 @@ describe("LineMdIcon", () => {
         `${name}.svg`,
       );
       expect(existsSync(iconPath), `${name}.svg is missing`).toBe(true);
-      expect(readFileSync(iconPath, "utf8")).toContain("<svg");
+
+      const svg = readFileSync(iconPath, "utf8");
+      expect(svg).toContain("<svg");
+      expect(svg).toMatch(/viewBox="0 0 24 24"/);
+      expect(svg, `${name}.svg must not animate`).not.toMatch(
+        /<animate\b|<animateTransform\b|<set\b/,
+      );
+      expect(svg, `${name}.svg must not hide content`).not.toMatch(
+        /opacity="0"/,
+      );
+
+      for (const match of svg.matchAll(/stroke-dashoffset="([^"]+)"/g)) {
+        expect(match[1], `${name}.svg has a hidden stroke`).toBe("0");
+      }
     }
   });
 

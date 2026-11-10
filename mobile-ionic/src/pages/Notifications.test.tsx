@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { IonReactRouter } from "@ionic/react-router";
 import Notifications from "./Notifications";
+import { getNotificationIcon } from "../components/lineMdMappings";
+import type { NotificationType } from "../data/demo";
 
 describe("Notifications Page", () => {
   it("renders page header and category filter tabs", () => {
@@ -21,6 +23,10 @@ describe("Notifications Page", () => {
     expect(
       document.querySelector('[data-icon="account-add"]'),
     ).toBeInTheDocument();
+  });
+
+  it("falls back to a valid icon for an unknown notification type", () => {
+    expect(getNotificationIcon("unknown" as NotificationType)).toBe("bell");
   });
 
   it("filters notifications when category tab is selected", () => {

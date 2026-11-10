@@ -1,6 +1,7 @@
 import React from "react";
 import { IonButton, IonContent, IonPage } from "@ionic/react";
-import LineMdIcon, { type LineMdIconName } from "../components/LineMdIcon";
+import LineMdIcon from "../components/LineMdIcon";
+import { getActivityIcon, getBadgeIcon } from "../components/lineMdMappings";
 import TopBar from "../components/TopBar";
 import StatMetric from "../components/StatMetric";
 import RpgBadgeCard from "../components/RpgBadgeCard";
@@ -12,38 +13,6 @@ import {
   UserActivity,
 } from "../data/demo";
 import "./Profile.css";
-
-function getBadgeIcon(iconName: string): LineMdIconName {
-  switch (iconName) {
-    case "ribbon-outline":
-      return "star";
-    case "flame-outline":
-      return "sunny-loop";
-    case "compass-outline":
-      return "compass";
-    case "shield-outline":
-      return "security";
-    case "trophy-outline":
-      return "star";
-    default:
-      return "star";
-  }
-}
-
-function getActivityIcon(type: UserActivity["type"]): LineMdIconName {
-  switch (type) {
-    case "quest":
-      return "compass";
-    case "run":
-      return "speed";
-    case "walk":
-      return "speed";
-    case "cycle":
-      return "speed";
-    default:
-      return "speed";
-  }
-}
 
 function getActivityTypeLabel(type: UserActivity["type"]): string {
   switch (type) {

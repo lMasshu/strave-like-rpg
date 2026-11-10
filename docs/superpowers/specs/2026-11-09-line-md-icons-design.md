@@ -14,9 +14,31 @@ Remplacer les Ionicons actuellement visibles dans l’application mobile par des
 - Inventorier tous les usages d’`IonIcon` et leur rôle sémantique.
 - Télécharger depuis `line-md` uniquement les SVG nécessaires et les versionner dans les ressources du mobile.
 - Fournir un composant React partagé qui conserve `currentColor`, la taille héritée et les attributs d’accessibilité.
-- Remplacer les icônes existantes par leur équivalent sémantique Line MD, sans forcer un remplacement lorsqu’aucun équivalent pertinent n’existe.
-- Conserver des animations discrètes uniquement lorsqu’elles renforcent l’état ou l’action, et respecter `prefers-reduced-motion`.
+- Remplacer toutes les icônes existantes par l’équivalent sémantique Line MD le plus proche. Lorsque la collection ne propose pas de glyphe littéral, utiliser un symbole voisin et documenter la correspondance ci-dessous.
+- Livrer des SVG statiques : les éléments SMIL sont résolus sur leur image finale afin que le rendu en masque CSS soit complet et qu’aucune animation ne subsiste, ce qui respecte `prefers-reduced-motion` par construction.
 - Ajouter à `AGENTS.md` la règle suivante pour les futures modifications : privilégier Line MD, stocker les SVG localement, ne jamais charger une icône depuis un CDN, et fournir un nom accessible aux actions sans texte.
+
+## Correspondances retenues
+
+Line MD ne fournit pas de glyphes littéraux pour plusieurs concepts sportifs ou RPG. La correspondance suivante est volontaire : elle privilégie une seule famille visuelle et un symbole compréhensible dans son contexte.
+
+| Usage d’origine | Icône Line MD | Raison |
+| :--- | :--- | :--- |
+| Flamme, énergie, raid | `alert` | Pas de flamme dans Line MD ; le triangle signale l’intensité ou le danger. |
+| Crâne, boss | `alert` | Pas de crâne ; même registre de danger. |
+| Marche, vélo, course, activité | `speed` | Pas de glyphes sportifs ; compteur de vitesse commun, partagé volontairement. |
+| Dé, aléatoire | `circle` | Pas de dé ; cercle neutre pour l’action de génération. |
+| Trophée, ruban, badge | `star` | Pas de trophée ni de ruban ; étoile de récompense. |
+| Cadenas, verrouillé | `security` | Pas de cadenas ; bouclier de sécurité. |
+| Cible, enregistrement | `circle` | Pas de cible ; cercle d’enregistrement. |
+| Drapeau, défis | `star` | Pas de drapeau ; étoile de défi. |
+| Étincelles | `star` | Pas d’étincelles ; étoile de mise en avant. |
+| Outils, construction | `construction` | Équivalent littéral disponible. |
+| Accueil, carte, position, boussole, horloge, validation, fermeture, chevron, cœur, lecture, répétition, tendance, cloche, soleil, lune, profil, ajout d’ami | `home`, `map-marker-radius`, `my-location`, `compass`, `watch`, `confirm`, `close`/`close-circle`, `chevron-small-right`, `heart`, `play`, `rotate-180`, `arrow-up`, `bell`, `sunny`, `moon`, `account`, `account-add` | Équivalents littéraux ou sémantiques directs. |
+
+Les collisions `speed` (marche/vélo/course) et `star` (trophée/ruban/badge) sont assumées pour conserver une seule collection embarquée ; elles pourront être séparées si Line MD ajoute des glyphes dédiés.
+
+L’état actif des onglets utilise `--sq-tab-selected` : `#3f6212` en thème clair pour rester lisible sur fond clair, `#aff33e` en thème sombre. L’indicateur supérieur et le libellé actif partagent cette couleur.
 
 ## Contraintes et non-objectifs
 

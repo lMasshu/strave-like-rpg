@@ -77,8 +77,9 @@ strave-like-rpg/
   - Utiliser en priorité les icônes de [Material Line Icons](https://icon-sets.iconify.design/line-md/) (dépôt : [cyberalien/line-md](https://github.com/cyberalien/line-md), licence MIT) lorsqu'un équivalent pertinent existe.
   - Embarquer chaque SVG utilisé dans `mobile-ionic/public/icons/line-md/` et le déclarer dans l'union `LineMdIconName` de `mobile-ionic/src/components/LineMdIcon.tsx`. Ne jamais charger une icône depuis un CDN ou une URL distante à l'exécution.
   - Rendre les icônes via le composant `LineMdIcon`, avec `currentColor`, une taille héritée ou explicite et les slots Ionic préservés. Ne pas réintroduire `IonIcon` pour les icônes d'interface.
-  - Marquer les icônes décoratives `aria-hidden`; toute action sans texte visible doit conserver un nom accessible (`aria-label`). Les animations restent discrètes et respectent `prefers-reduced-motion`.
-  - Si Line MD ne propose pas d'équivalent, choisir le symbole sémantique le plus proche de la collection et documenter ce choix dans la revue ou la PR.
+  - Livrer des SVG statiques : résoudre les animations SMIL sur leur image finale plutôt que d'embarquer des variantes animées, afin que le masque CSS soit complet et que `prefers-reduced-motion` soit respecté par construction.
+  - Marquer les icônes décoratives `aria-hidden`; toute action sans texte visible doit conserver un nom accessible (`aria-label`).
+  - Si Line MD ne propose pas d'équivalent, choisir le symbole sémantique le plus proche de la collection et documenter ce choix dans le tableau de correspondances de `docs/superpowers/specs/2026-11-09-line-md-icons-design.md` ou dans la PR.
 
 #### Backend & Logique Métier (`apps/`) :
 - **Algorithme de Quêtes & POI** :

@@ -8,7 +8,8 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import LineMdIcon, { type LineMdIconName } from "../components/LineMdIcon";
+import LineMdIcon from "../components/LineMdIcon";
+import { getNotificationIcon } from "../components/lineMdMappings";
 import { useMemo, useState } from "react";
 import {
   AppNotification,
@@ -30,13 +31,6 @@ const CATEGORY_TABS: CategoryTab[] = [
   { id: "succes", label: "Succès" },
   { id: "amis", label: "Amis" },
 ];
-
-const ICONS: Record<NotificationType, LineMdIconName> = {
-  follow: "account-add",
-  kudos: "heart",
-  raid: "alert",
-  level: "star",
-};
 
 const CATEGORY_LABELS: Record<NotificationType, string> = {
   raid: "Raid",
@@ -189,7 +183,7 @@ const Notifications: React.FC = () => {
                   }}
                 >
                   <div className={`notif-icon-wrap type-${notification.type}`}>
-                    <LineMdIcon name={ICONS[notification.type]} />
+                    <LineMdIcon name={getNotificationIcon(notification.type)} />
                   </div>
 
                   <div className="notif-body">

@@ -27,6 +27,8 @@
   --sq-green-athletic-tint: #c3f668;
   --sq-green-athletic-shade: #8ec72f;
   --sq-green-athletic-bg: rgba(175, 243, 62, 0.15);
+  /* Variante lisible sur fond clair pour l'état actif des onglets. */
+  --sq-tab-selected: #3f6212;
 
   --sq-color-primary: var(--sq-green-athletic);
   --sq-primary-fg: #000000;
@@ -100,6 +102,7 @@
   --sq-green-athletic-tint: #c3f668;
   --sq-green-athletic-shade: #8ec72f;
   --sq-green-athletic-bg: rgba(175, 243, 62, 0.15);
+  --sq-tab-selected: #aff33e;
 
   --sq-color-primary: var(--sq-green-athletic);
   --sq-primary-fg: #000000;
@@ -169,6 +172,7 @@
     --sq-green-athletic-tint: #c3f668;
     --sq-green-athletic-shade: #8ec72f;
     --sq-green-athletic-bg: rgba(175, 243, 62, 0.15);
+    --sq-tab-selected: #aff33e;
     --sq-color-primary: #aff33e;
     --sq-primary-fg: #000000;
     --sq-gold-rpg: #f59e0b;

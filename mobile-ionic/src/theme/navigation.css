@@ -18,7 +18,7 @@ ion-tab-bar {
 
 ion-tab-button {
   --color: var(--sq-text-muted);
-  --color-selected: var(--sq-green-athletic);
+  --color-selected: var(--sq-tab-selected);
   font-family: var(--sq-font-sans, sans-serif);
   font-weight: 500;
   font-size: 0.72rem;
@@ -36,7 +36,7 @@ ion-tab-button .line-md-icon {
 }
 
 ion-tab-button.tab-selected {
-  --color: var(--sq-green-athletic);
+  --color: var(--sq-tab-selected);
   font-weight: 700;
 }
 
@@ -54,7 +54,7 @@ ion-tab-button.tab-selected::after {
   width: 24px;
   height: 3px;
   border-radius: 0 0 3px 3px;
-  background: var(--sq-green-athletic);
+  background: var(--sq-tab-selected);
 }
 
 /* Bouton central d'enregistrement */

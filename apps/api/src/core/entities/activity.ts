@@ -1,3 +1,4 @@
+import type { ActivityRecording } from './activityRecording.js';
 export type ActivityType = 'walk' | 'run' | 'bike' | 'hike';
 
 export interface GeoPoint {
@@ -17,6 +18,7 @@ export interface Activity {
   distanceMeters: number;
   elevationGainMeters: number;
   coordinates: CoordinatePair[];
+  recording?: ActivityRecording;
   createdAt: Date;
 }
 
@@ -29,4 +31,5 @@ export interface CreateActivityInput {
   distanceMeters: number;
   elevationGainMeters?: number;
   coordinates: CoordinatePair[];
+  recording?: ActivityRecording;
 }

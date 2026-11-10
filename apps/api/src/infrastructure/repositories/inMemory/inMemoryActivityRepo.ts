@@ -5,13 +5,13 @@ export class InMemoryActivityRepository implements IActivityRepository {
   private readonly activities = new Map<string, Activity>();
 
   async create(activity: Activity): Promise<Activity> {
-    this.activities.set(activity.id, { ...activity });
-    return activity;
+    this.activities.set(activity.id, structuredClone(activity));
+    return structuredClone(activity);
   }
 
   async findById(id: string): Promise<Activity | null> {
     const act = this.activities.get(id);
-    return act ? { ...act } : null;
+    return act ? structuredClone(act) : null;
   }
 
   async findByPlayerId(playerId: string, limit = 20): Promise<Activity[]> {
@@ -19,6 +19,6 @@ export class InMemoryActivityRepository implements IActivityRepository {
       .filter((a) => a.playerId === playerId)
       .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
       .slice(0, limit);
-    return list.map((a) => ({ ...a }));
+    return list.map((a) => structuredClone(a));
   }
 }

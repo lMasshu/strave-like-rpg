@@ -55,6 +55,7 @@ describe("useGeolocationTracker hook", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(Date, "now").mockReturnValue(1800000000000);
     watchCallback = null;
 
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
@@ -133,6 +134,7 @@ describe("useGeolocationTracker hook", () => {
       longitude: 2.3522,
       altitude: 35.5,
       speed: 2.8,
+      speedSource: "native",
       accuracy: 4.2,
       heading: 180,
       altitudeAccuracy: 1.5,
@@ -406,7 +408,7 @@ describe("useGeolocationTracker hook", () => {
     expect(result.current.position).toBeNull();
   });
 
-  it("should sanitize negative speed and negative accuracy to null and 0", async () => {
+  it("should preserve unknown speed and accuracy as null", async () => {
     const { result } = renderHook(() => useGeolocationTracker(true));
 
     await waitFor(() => {
@@ -426,7 +428,7 @@ describe("useGeolocationTracker hook", () => {
 
     expect(result.current.status).toBe("tracking");
     expect(result.current.position?.speed).toBeNull();
-    expect(result.current.position?.accuracy).toBe(0);
+    expect(result.current.position?.accuracy).toBeNull();
   });
 
   it("should detect permission denial when watchError is a raw string", async () => {
@@ -533,6 +535,7 @@ describe("useGeolocationTracker hook", () => {
     expect(result.current.position?.speed).not.toBeNull();
     expect(result.current.position?.speed).toBeGreaterThan(4.5);
     expect(result.current.position?.speed).toBeLessThan(6.5);
+    expect(result.current.position?.speedSource).toBe("derived");
   });
 
   it("should consider speed as 0 when GPS displacement is within jitter threshold", async () => {
@@ -574,4 +577,60 @@ describe("useGeolocationTracker hook", () => {
 
     expect(result.current.position?.speed).toBe(0);
   });
+
+  it.each([0, NaN, Infinity, 1800000000001, 1699999999999, 1700000000000])(
+    "ignores invalid, future, duplicate or reversed timestamp %s",
+    async (timestamp) => {
+      const { result } = renderHook(() => useGeolocationTracker(true));
+      await waitFor(() => expect(watchCallback).not.toBeNull());
+      act(() =>
+        watchCallback?.(
+          createMockPosition(
+            { latitude: 48, longitude: 2, accuracy: 0, speed: 3.125 },
+            1700000000000,
+          ),
+        ),
+      );
+      const previous = result.current.position;
+      expect(previous?.speed).toBe(3.125);
+      expect(previous?.speedSource).toBe("native");
+      expect(previous?.accuracy).toBe(0);
+      act(() =>
+        watchCallback?.(
+          createMockPosition(
+            { latitude: 49, longitude: 3, accuracy: 5 },
+            timestamp,
+          ),
+        ),
+      );
+      expect(result.current.position).toBe(previous);
+    },
+  );
+
+  it.each(["gap", "error"])(
+    "does not derive speed across a GPS %s",
+    async (kind) => {
+      const { result } = renderHook(() => useGeolocationTracker(true));
+      await waitFor(() => expect(watchCallback).not.toBeNull());
+      act(() =>
+        watchCallback?.(
+          createMockPosition(
+            { latitude: 48, longitude: 2, accuracy: 5 },
+            1700000000000,
+          ),
+        ),
+      );
+      if (kind === "error") act(() => watchCallback?.(null, new Error("lost")));
+      act(() =>
+        watchCallback?.(
+          createMockPosition(
+            { latitude: 48.0001, longitude: 2, accuracy: 5 },
+            1700000000000 + (kind === "gap" ? 5001 : 1000),
+          ),
+        ),
+      );
+      expect(result.current.position?.speed).toBeNull();
+      expect(result.current.position?.speedSource).toBeNull();
+    },
+  );
 });

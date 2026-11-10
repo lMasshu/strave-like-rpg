@@ -104,6 +104,33 @@ describe("Design System CSS tokens", () => {
     );
   });
 
+  it("defines complete light and dark tokens for each selectable palette", () => {
+    const cssContent = fs.readFileSync(cssPath, "utf-8");
+    const varContent = fs.readFileSync(variablesPath, "utf-8");
+
+    expect(cssContent).toMatch(/\[data-palette=["']lime-frost["']\]/);
+    expect(cssContent).toMatch(/\[data-palette=["']violet-bloom["']\]/);
+    expect(cssContent).toMatch(/\[data-palette=["']scarlet-snow["']\]/);
+    expect(cssContent).toMatch(
+      /\[data-theme=["']dark["']\]\[data-palette=["']violet-bloom["']\]/,
+    );
+    expect(cssContent).toMatch(
+      /\[data-theme=["']dark["']\]\[data-palette=["']scarlet-snow["']\]/,
+    );
+
+    expect(cssContent).toContain("--sq-color-primary: #7033ff;");
+    expect(cssContent).toContain("--sq-bg-base: #fdfdfd;");
+    expect(cssContent).toContain("--sq-border: #e7e7ee;");
+    expect(cssContent).toContain("--sq-color-primary: #e11d48;");
+    expect(cssContent).toContain("--sq-bg-base: #fffafa;");
+    expect(cssContent).toContain("--sq-border: #f1d7dc;");
+    expect(cssContent).toContain("--sq-color-primary: #8c5cff;");
+    expect(cssContent).toContain("--sq-color-primary: #fb7185;");
+
+    expect(varContent).toContain("--ion-color-primary: var(--sq-color-primary);");
+    expect(varContent).toContain("--ion-color-primary-contrast: var(--sq-primary-fg);");
+  });
+
   it("should have common utility classes, micro-interactions and tabular numbers", () => {
     const cssContent = fs.readFileSync(cssPath, "utf-8");
 

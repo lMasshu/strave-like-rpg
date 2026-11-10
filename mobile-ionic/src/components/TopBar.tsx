@@ -12,6 +12,7 @@ import {
   notificationsOutline,
   personAddOutline,
   personOutline,
+  settingsOutline,
   sunnyOutline,
 } from "ionicons/icons";
 import { getUnreadCount } from "../data/demo";
@@ -46,6 +47,15 @@ const TopBar: React.FC<TopBarProps> = ({
         <IonTitle>{title}</IonTitle>
 
         <IonButtons slot="end">
+          <IonButton
+            routerLink="/parametres"
+            routerDirection="forward"
+            aria-label="Paramètres"
+            className="top-bar-action-btn"
+          >
+            <IonIcon slot="icon-only" icon={settingsOutline} />
+          </IonButton>
+
           <IonButton
             onClick={toggleTheme}
             aria-label={

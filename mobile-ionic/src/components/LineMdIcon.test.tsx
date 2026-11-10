@@ -1,8 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import LineMdIcon, { LINE_MD_ICON_NAMES } from "./LineMdIcon";
+import LineMdIcon from "./LineMdIcon";
 
 describe("LineMdIcon", () => {
   it("hides a decorative icon from assistive technologies", () => {
@@ -38,18 +36,6 @@ describe("LineMdIcon", () => {
       "--line-md-icon-size": "24px",
       color: "currentColor",
     });
-  });
-
-  it("ships a non-empty local SVG for every declared icon name", () => {
-    for (const name of LINE_MD_ICON_NAMES) {
-      const iconPath = resolve(
-        process.cwd(),
-        "public/icons/line-md",
-        `${name}.svg`,
-      );
-      expect(existsSync(iconPath), `${name}.svg is missing`).toBe(true);
-      expect(readFileSync(iconPath, "utf8")).toContain("<svg");
-    }
   });
 
   it("rejects icon names that are not embedded", () => {

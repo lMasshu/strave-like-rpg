@@ -1,36 +1,33 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 import "./LineMdIcon.css";
 
-export const LINE_MD_ICON_NAMES = [
-  "account",
-  "account-add",
-  "alert",
-  "arrow-up",
-  "bell",
-  "chevron-small-right",
-  "circle",
-  "close",
-  "close-circle",
-  "compass",
-  "confirm",
-  "construction",
-  "heart",
-  "home",
-  "map-marker",
-  "map-marker-radius",
-  "moon",
-  "my-location",
-  "play",
-  "rotate-180",
-  "security",
-  "speed",
-  "star",
-  "sunny",
-  "sunny-loop",
-  "watch",
-] as const;
-
-export type LineMdIconName = (typeof LINE_MD_ICON_NAMES)[number];
+export type LineMdIconName =
+  | "account"
+  | "account-add"
+  | "alert"
+  | "arrow-up"
+  | "bell"
+  | "chevron-small-right"
+  | "circle"
+  | "close"
+  | "close-circle"
+  | "compass"
+  | "confirm"
+  | "construction"
+  | "heart"
+  | "home"
+  | "map-marker"
+  | "map-marker-radius"
+  | "moon"
+  | "my-location"
+  | "play"
+  | "rotate-180"
+  | "security"
+  | "speed"
+  | "star"
+  | "sunny"
+  | "sunny-loop"
+  | "watch";
 
 export interface LineMdIconProps extends HTMLAttributes<HTMLSpanElement> {
   name: LineMdIconName;

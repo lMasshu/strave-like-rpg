@@ -32,10 +32,7 @@ export const LINE_MD_ICON_NAMES = [
 
 export type LineMdIconName = (typeof LINE_MD_ICON_NAMES)[number];
 
-export interface LineMdIconProps extends Omit<
-  HTMLAttributes<HTMLSpanElement>,
-  "children" | "color"
-> {
+export interface LineMdIconProps extends HTMLAttributes<HTMLSpanElement> {
   name: LineMdIconName;
   label?: string;
   size?: string | number;
@@ -55,13 +52,11 @@ const LineMdIcon = ({
   ...props
 }: LineMdIconProps) => {
   const iconSize = typeof size === "number" ? `${size}px` : size;
-  const baseUrl = import.meta.env.BASE_URL.endsWith("/")
-    ? import.meta.env.BASE_URL
-    : `${import.meta.env.BASE_URL}/`;
   const iconStyle: IconStyle = {
     ...style,
-    ...(iconSize ? { "--line-md-icon-size": iconSize } : {}),
-    "--line-md-icon-url": `url("${baseUrl}icons/line-md/${name}.svg")`,
+    color: "currentColor",
+    "--line-md-icon-size": iconSize,
+    "--line-md-icon-url": `url("/icons/line-md/${name}.svg")`,
   };
 
   return (

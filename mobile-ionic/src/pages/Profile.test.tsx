@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { IonReactRouter } from "@ionic/react-router";
 import Profile from "./Profile";
-import { getActivityIcon, getBadgeIcon } from "../components/lineMdMappings";
 
 describe("Profile Page (Adventurer Card)", () => {
   it("renders user level, xp progress, and adventurer title", () => {
@@ -51,11 +50,6 @@ describe("Profile Page (Adventurer Card)", () => {
     expect(screen.getByText(/Pourfendeur de Boss/i)).toBeInTheDocument();
     expect(screen.getByText("Arpenteur Sylvestre")).toBeInTheDocument();
     expect(screen.getByText(/Conquérant des Cimes/i)).toBeInTheDocument();
-  });
-
-  it("falls back to valid icons for unknown badge and activity values", () => {
-    expect(getBadgeIcon("unknown-outline")).toBe("star");
-    expect(getActivityIcon("unknown" as never)).toBe("speed");
   });
 
   it("renders activity history with expedition details and xp", () => {

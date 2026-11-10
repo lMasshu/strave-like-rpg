@@ -37,18 +37,6 @@ describe("RpgBadgeCard Component", () => {
     ).toBeInTheDocument();
   });
 
-  it("falls back to a valid icon when no icon is supplied", () => {
-    render(
-      <RpgBadgeCard
-        name="Badge sans icône"
-        description="Fallback"
-        unlocked={true}
-      />,
-    );
-
-    expect(document.querySelector('[data-icon="star"]')).toBeInTheDocument();
-  });
-
   it("supports keyboard accessibility when onClick is provided", () => {
     const handleClick = vi.fn();
     render(

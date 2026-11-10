@@ -29,6 +29,7 @@ import Parcours from "./pages/Parcours";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import FriendSearch from "./pages/FriendSearch";
+import Settings from "./pages/Settings";
 
 import "@ionic/react/css/core.css";
 import "@ionic/react/css/normalize.css";
@@ -49,7 +50,7 @@ import "./theme/navigation.css";
 setupIonicReact();
 
 // Pages "poussées" où la barre d'onglets est masquée
-const ROUTES_WITHOUT_TAB_BAR = ["/notifications"];
+const ROUTES_WITHOUT_TAB_BAR = ["/notifications", "/parametres"];
 
 const AppTabs: React.FC = () => {
   const { pathname } = useLocation();
@@ -69,6 +70,7 @@ const AppTabs: React.FC = () => {
         <Route path="/profil" element={<Profile />} />
 
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/parametres" element={<Settings />} />
 
         {/* Anciennes URLs de la carte */}
         <Route path="/map" element={<Navigate to="/enregistrer" replace />} />

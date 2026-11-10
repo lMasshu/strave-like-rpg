@@ -9,10 +9,7 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import { checkmarkCircle } from "ionicons/icons";
-import {
-  ColorPalette,
-  useThemeMode,
-} from "../hooks/useThemeMode";
+import { ColorPalette, useThemeMode } from "../hooks/useThemeMode";
 import "./Settings.css";
 
 interface PaletteOption {
@@ -51,11 +48,7 @@ const Settings: React.FC = () => {
       <IonHeader className="top-bar" translucent>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton
-              defaultHref="/accueil"
-              text=""
-              aria-label="Retour"
-            />
+            <IonBackButton defaultHref="/accueil" text="" aria-label="Retour" />
           </IonButtons>
           <IonTitle>Paramètres</IonTitle>
         </IonToolbar>
@@ -73,7 +66,10 @@ const Settings: React.FC = () => {
             <div className="settings-section-heading">
               <div>
                 <h2 id="palette-heading">Thème de l’interface</h2>
-                <p>Choisissez une palette. Le mode clair ou sombre reste indépendant.</p>
+                <p>
+                  Choisissez une palette. Le mode clair ou sombre reste
+                  indépendant.
+                </p>
               </div>
             </div>
 
@@ -94,7 +90,10 @@ const Settings: React.FC = () => {
                     className={`settings-palette-card ${isSelected ? "is-selected" : ""}`}
                     onClick={() => setPalette(option.id)}
                   >
-                    <span className="settings-palette-preview" aria-hidden="true">
+                    <span
+                      className="settings-palette-preview"
+                      aria-hidden="true"
+                    >
                       {option.colors.map((color) => (
                         <span key={color} style={{ backgroundColor: color }} />
                       ))}

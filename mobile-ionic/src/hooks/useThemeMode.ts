@@ -2,10 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 
 export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
-export type ColorPalette =
-  | "lime-frost"
-  | "violet-bloom"
-  | "scarlet-snow";
+export type ColorPalette = "lime-frost" | "violet-bloom" | "scarlet-snow";
 
 const THEME_STORAGE_KEY = "stride_theme_preference";
 const PALETTE_STORAGE_KEY = "stride_color_palette";

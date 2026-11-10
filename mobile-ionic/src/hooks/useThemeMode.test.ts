@@ -34,9 +34,7 @@ describe("useThemeMode hook", () => {
     });
 
     expect(result.current.palette).toBe("scarlet-snow");
-    expect(localStorage.getItem("stride_color_palette")).toBe(
-      "scarlet-snow",
-    );
+    expect(localStorage.getItem("stride_color_palette")).toBe("scarlet-snow");
     expect(document.documentElement.getAttribute("data-palette")).toBe(
       "scarlet-snow",
     );
@@ -52,9 +50,7 @@ describe("useThemeMode hook", () => {
 
     expect(result.current.palette).toBe("violet-bloom");
     expect(result.current.resolvedTheme).toBe("dark");
-    expect(localStorage.getItem("stride_color_palette")).toBe(
-      "violet-bloom",
-    );
+    expect(localStorage.getItem("stride_color_palette")).toBe("violet-bloom");
     expect(localStorage.getItem("stride_theme_preference")).toBe("dark");
   });
 

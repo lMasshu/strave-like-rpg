@@ -127,8 +127,12 @@ describe("Design System CSS tokens", () => {
     expect(cssContent).toContain("--sq-color-primary: #8c5cff;");
     expect(cssContent).toContain("--sq-color-primary: #fb7185;");
 
-    expect(varContent).toContain("--ion-color-primary: var(--sq-color-primary);");
-    expect(varContent).toContain("--ion-color-primary-contrast: var(--sq-primary-fg);");
+    expect(varContent).toContain(
+      "--ion-color-primary: var(--sq-color-primary);",
+    );
+    expect(varContent).toContain(
+      "--ion-color-primary-contrast: var(--sq-primary-fg);",
+    );
   });
 
   it("should have common utility classes, micro-interactions and tabular numbers", () => {

@@ -17,17 +17,25 @@ describe("Settings page", () => {
       </IonReactRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: "Paramètres" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Paramètres" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Thème de l’interface" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("radiogroup", { name: "Palette de couleurs" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("radiogroup", { name: "Palette de couleurs" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /Lime Frost/i })).toHaveAttribute(
       "aria-checked",
       "true",
     );
-    expect(screen.getByRole("radio", { name: /Violet Bloom/i })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Scarlet Snow/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: /Violet Bloom/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: /Scarlet Snow/i }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Retour")).toBeInTheDocument();
   });
 
@@ -40,10 +48,9 @@ describe("Settings page", () => {
 
     fireEvent.click(screen.getByRole("radio", { name: /Violet Bloom/i }));
 
-    expect(screen.getByRole("radio", { name: /Violet Bloom/i })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
+    expect(
+      screen.getByRole("radio", { name: /Violet Bloom/i }),
+    ).toHaveAttribute("aria-checked", "true");
     expect(localStorage.getItem("stride_color_palette")).toBe("violet-bloom");
     expect(document.documentElement).toHaveAttribute(
       "data-palette",

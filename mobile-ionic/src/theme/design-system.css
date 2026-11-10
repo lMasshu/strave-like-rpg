@@ -261,9 +261,9 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not(
-      [data-palette="violet-bloom"]
-    ):not([data-palette="scarlet-snow"]) {
+  :root:not([data-theme="light"]):not([data-palette="violet-bloom"]):not(
+      [data-palette="scarlet-snow"]
+    ) {
     --sq-bg-base: #020617;
     --sq-surface-card: #0f172a;
     --sq-surface-card-subtle: #1e293b;

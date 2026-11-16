@@ -6,7 +6,52 @@ describe("useThemeMode hook", () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute("data-palette");
+    document.body.removeAttribute("data-palette");
     document.documentElement.classList.remove("ion-palette-dark");
+  });
+
+  it("uses Lime Frost when no valid palette preference exists", () => {
+    localStorage.setItem("stride_color_palette", "unknown-palette");
+
+    const { result } = renderHook(() => useThemeMode());
+
+    expect(result.current.palette).toBe("lime-frost");
+    expect(document.documentElement.getAttribute("data-palette")).toBe(
+      "lime-frost",
+    );
+    expect(document.body.getAttribute("data-palette")).toBe("lime-frost");
+  });
+
+  it("restores and persists a supported color palette", () => {
+    localStorage.setItem("stride_color_palette", "violet-bloom");
+    const { result } = renderHook(() => useThemeMode());
+
+    expect(result.current.palette).toBe("violet-bloom");
+
+    act(() => {
+      result.current.setPalette("scarlet-snow");
+    });
+
+    expect(result.current.palette).toBe("scarlet-snow");
+    expect(localStorage.getItem("stride_color_palette")).toBe("scarlet-snow");
+    expect(document.documentElement.getAttribute("data-palette")).toBe(
+      "scarlet-snow",
+    );
+  });
+
+  it("keeps palette and appearance preferences independent", () => {
+    const { result } = renderHook(() => useThemeMode());
+
+    act(() => {
+      result.current.setPalette("violet-bloom");
+      result.current.setTheme("dark");
+    });
+
+    expect(result.current.palette).toBe("violet-bloom");
+    expect(result.current.resolvedTheme).toBe("dark");
+    expect(localStorage.getItem("stride_color_palette")).toBe("violet-bloom");
+    expect(localStorage.getItem("stride_theme_preference")).toBe("dark");
   });
 
   it("defaults to resolved theme and toggles between light and dark", () => {

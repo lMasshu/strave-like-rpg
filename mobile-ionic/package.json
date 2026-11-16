@@ -27,8 +27,8 @@
     "@types/mapbox-gl": "^3.4.1",
     "ionicons": "^8.1.0",
     "mapbox-gl": "^3.32.0",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
     "react-router": "^6.30.0",
     "react-router-dom": "^6.30.0"
   },

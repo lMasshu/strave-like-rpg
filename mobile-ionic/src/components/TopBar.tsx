@@ -10,11 +10,13 @@ import {
 import {
   moonOutline,
   notificationsOutline,
+  person,
   personAddOutline,
   personOutline,
   settingsOutline,
   sunnyOutline,
 } from "ionicons/icons";
+import { useAuth0 } from "@auth0/auth0-react";
 import { getUnreadCount } from "../data/demo";
 import { useThemeMode } from "../hooks/useThemeMode";
 import "./TopBar.css";
@@ -29,6 +31,7 @@ const TopBar: React.FC<TopBarProps> = ({
   unreadCount = getUnreadCount(),
 }) => {
   const { resolvedTheme, toggleTheme } = useThemeMode();
+  const { isAuthenticated } = useAuth0();
 
   return (
     <IonHeader className="top-bar" translucent>
@@ -89,10 +92,19 @@ const TopBar: React.FC<TopBarProps> = ({
           <IonButton
             routerLink="/profil"
             routerDirection="forward"
-            aria-label="Mon Profil"
-            className="top-bar-action-btn"
+            aria-label={
+              isAuthenticated
+                ? "Mon Profil (Connecté avec Auth0)"
+                : "Mon Profil"
+            }
+            className={`top-bar-action-btn ${
+              isAuthenticated ? "top-bar-profile-connected" : ""
+            }`}
           >
-            <IonIcon slot="icon-only" icon={personOutline} />
+            <IonIcon
+              slot="icon-only"
+              icon={isAuthenticated ? person : personOutline}
+            />
           </IonButton>
         </IonButtons>
       </IonToolbar>

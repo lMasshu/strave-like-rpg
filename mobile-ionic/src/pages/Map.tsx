@@ -26,6 +26,7 @@ import {
 } from "../services/questGenerator";
 import { useActiveWorkout } from "../hooks/useActiveWorkout";
 import { useThemeMode } from "../hooks/useThemeMode";
+import { useAuth0 } from "@auth0/auth0-react";
 import { apiClient } from "../services/apiClient";
 import { createQuestMarkerElement } from "../services/questMarker";
 import { getLivePaceCaption } from "../services/livePacePresentation";
@@ -142,6 +143,7 @@ const MapPage: React.FC = () => {
   workoutSegmentsRef.current = workout.metrics.trackSegments;
   const [workoutSegment, setWorkoutSegment] = useState<"map" | "stats">("map");
   const [workoutFinishedModal, setWorkoutFinishedModal] = useState(false);
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const savingRef = useRef(false);
@@ -151,8 +153,22 @@ const MapPage: React.FC = () => {
     const savedSessionId = workout.metrics.recordingSessionId;
     savingRef.current = true;
     try {
+      let token: string | undefined;
+      if (isAuthenticated) {
+        try {
+          token = await getAccessTokenSilently();
+        } catch (authErr) {
+          console.warn(
+            "Impossible de récupérer l'access token Auth0 :",
+            authErr,
+          );
+        }
+      }
+
       const res = await apiClient.saveActivity(
         createActivityPayload(workout.metrics.recordingSnapshot, "run"),
+        undefined,
+        token,
       );
 
       const levelUpText = res.levelUp
@@ -175,7 +191,7 @@ const MapPage: React.FC = () => {
     } finally {
       savingRef.current = false;
     }
-  }, [workout]);
+  }, [workout, isAuthenticated, getAccessTokenSilently]);
 
   // Centrage & Suivi automatique du joueur (Follow-me)
   const hasInitialCenteredRef = useRef(false);

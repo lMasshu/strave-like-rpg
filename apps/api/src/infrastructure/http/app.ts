@@ -52,6 +52,17 @@ export async function buildApp(
     antiCheat,
   );
 
+  // 0. Root info route
+  app.get('/', async () => {
+    return {
+      service: 'stride-quest-api',
+      status: 'online',
+      message: "Bienvenue sur l'API REST de Stride Quest. Pour l'application mobile, ouvrez http://localhost:5173",
+      frontendUrl: 'http://localhost:5173',
+      healthcheck: '/health',
+    };
+  });
+
   // 1. Healthcheck route
   app.get('/health', async () => {
     return {
@@ -61,8 +72,33 @@ export async function buildApp(
     };
   });
 
-  // Helper to extract authenticated/current player ID
+  // Helper to extract authenticated/current player ID from Authorization Bearer or x-player-id
+  const extractSubFromBearer = (authHeader: unknown): string | null => {
+    if (typeof authHeader !== 'string') return null;
+    const parts = authHeader.trim().split(' ');
+    if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') return null;
+    const token = parts[1];
+    try {
+      const jwtSegments = token.split('.');
+      if (jwtSegments.length >= 2) {
+        const payloadBase64 = jwtSegments[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf-8');
+        const payload = JSON.parse(payloadJson);
+        if (typeof payload?.sub === 'string' && payload.sub.trim()) {
+          return payload.sub.trim();
+        }
+      }
+    } catch {
+      // Ignorer si ce n'est pas un JWT décodable
+    }
+    return null;
+  };
+
   const getPlayerId = (req: { headers: Record<string, unknown> }): string => {
+    const bearerSub = extractSubFromBearer(req.headers['authorization']);
+    if (bearerSub) {
+      return bearerSub;
+    }
     const headerId = req.headers['x-player-id'];
     if (typeof headerId === 'string' && headerId.trim()) {
       return headerId.trim();
@@ -73,7 +109,17 @@ export async function buildApp(
   // 2. Player routes
   app.get('/api/players/me', async (req, reply) => {
     const playerId = getPlayerId(req);
-    const player = await playerRepo.findById(playerId);
+    let player = await playerRepo.findById(playerId);
+    if (!player && (playerId.includes('|') || req.headers['authorization'])) {
+      // Provisionne automatiquement le joueur Auth0
+      player = await playerRepo.create({
+        id: playerId,
+        username: `adventurer_${playerId.slice(-6)}`,
+        level: 1,
+        experience: 0,
+        createdAt: new Date(),
+      });
+    }
     if (!player) {
       return reply.status(404).send({ error: 'Player not found' });
     }
@@ -103,6 +149,17 @@ export async function buildApp(
       }
 
       const playerId = getPlayerId(req);
+      // Auto-provisionne le joueur Auth0 s'il n'existe pas encore
+      const existingPlayer = await playerRepo.findById(playerId);
+      if (!existingPlayer && (playerId.includes('|') || req.headers['authorization'])) {
+        await playerRepo.create({
+          id: playerId,
+          username: `adventurer_${playerId.slice(-6)}`,
+          level: 1,
+          experience: 0,
+          createdAt: new Date(),
+        });
+      }
       const body = parseResult.data;
 
       try {

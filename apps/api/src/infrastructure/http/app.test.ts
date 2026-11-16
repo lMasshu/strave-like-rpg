@@ -102,4 +102,45 @@ describe('Fastify REST API', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json().error).toMatch(/speed|vitesse|anti-cheat/i);
   });
+
+  it('POST /api/activities extracts user.sub from Authorization Bearer token', async () => {
+    // Simule un token JWT Auth0 contenant un sub Google OAuth2
+    const fakePayload = Buffer.from(
+      JSON.stringify({ sub: 'google-oauth2|987654321', name: 'Adventurer Test' }),
+    ).toString('base64');
+    const fakeJwt = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.${fakePayload}.fakesig`;
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/activities',
+      headers: {
+        authorization: `Bearer ${fakeJwt}`,
+      },
+      payload: {
+        activityType: 'walk',
+        startedAt: '2026-11-07T14:00:00.000Z',
+        endedAt: '2026-11-07T14:20:00.000Z',
+        durationSeconds: 1200,
+        distanceMeters: 1500,
+        elevationGainMeters: 5,
+        coordinates: [],
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    const body = response.json();
+    expect(body).toHaveProperty('activityId');
+    expect(body.xpEarned).toBe(160); // 150 + 10 = 160 XP
+
+    // Vérifie que le profil joueur me retourne bien le sub extrait
+    const profileRes = await app.inject({
+      method: 'GET',
+      url: '/api/players/me',
+      headers: {
+        authorization: `Bearer ${fakeJwt}`,
+      },
+    });
+    expect(profileRes.statusCode).toBe(200);
+    expect(profileRes.json().id).toBe('google-oauth2|987654321');
+  });
 });

@@ -85,4 +85,41 @@ describe("ApiClient", () => {
       }),
     ).rejects.toThrow(/Excessive speed/);
   });
+
+  it("passes Authorization Bearer header when token is supplied", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        activityId: "act-456",
+        xpEarned: 200,
+        newLevel: 1,
+        levelUp: false,
+        totalExperience: 1020,
+      }),
+    });
+
+    await client.saveActivity(
+      {
+        activityType: "walk",
+        startedAt: "2026-11-07T11:00:00Z",
+        endedAt: "2026-11-07T11:20:00Z",
+        durationSeconds: 1200,
+        distanceMeters: 2000,
+        coordinates: [],
+      },
+      "player-auth0-sub",
+      "mock-jwt-token-xyz",
+    );
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://test-api:3000/api/activities",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer mock-jwt-token-xyz",
+          "x-player-id": "player-auth0-sub",
+        }),
+      }),
+    );
+  });
 });

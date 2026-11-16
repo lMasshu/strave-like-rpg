@@ -70,4 +70,19 @@ describe("Profile Page (Adventurer Card)", () => {
       screen.getByText(/Badge débloqué : Arpenteur Sylvestre/i),
     ).toBeInTheDocument();
   });
+
+  it("shows cloud sync banner and connect button when guest, and user details when authenticated", () => {
+    // 1. Invité
+    render(
+      <IonReactRouter>
+        <Profile />
+      </IonReactRouter>,
+    );
+    expect(
+      screen.getByText(/Sauvegardez votre progression dans le cloud/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Se connecter" }),
+    ).toBeInTheDocument();
+  });
 });

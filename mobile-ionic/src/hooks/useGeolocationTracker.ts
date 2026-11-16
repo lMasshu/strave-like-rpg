@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Geolocation, type Position } from "@capacitor/geolocation";
 import { haversineMeters, type LngLat } from "../services/geo";
@@ -9,7 +9,8 @@ export interface TrackedPosition {
   longitude: number;
   altitude: number | null; // en mètres
   speed: number | null; // en m/s
-  accuracy: number; // en mètres
+  speedSource?: "native" | "derived" | null;
+  accuracy: number | null; // en mètres, null si inconnue
   heading?: number | null;
   altitudeAccuracy?: number | null;
   timestamp: number;
@@ -21,6 +22,7 @@ interface GeolocationTracker {
   position: TrackedPosition | null;
   status: GeolocationStatus;
   error: string | null;
+  resetSpeedHistory: () => void;
 }
 
 export const GPS_TRACKING_OPTIONS = {
@@ -37,7 +39,13 @@ export const GPS_TRACKING_OPTIONS = {
  * Dans le navigateur, le plugin Capacitor s'appuie sur la géolocalisation
  * du navigateur (localhost ou HTTPS obligatoire).
  */
-export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
+export function useGeolocationTracker(
+  enabled: boolean,
+  onPosition?: (position: TrackedPosition) => void,
+  onSignalLost?: () => void,
+): GeolocationTracker {
+  const listeners = useRef({ onPosition, onSignalLost });
+  listeners.current = { onPosition, onSignalLost };
   const [position, setPosition] = useState<TrackedPosition | null>(null);
   const [status, setStatus] = useState<GeolocationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -47,12 +55,19 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
     timestamp: number;
     speed: number | null;
   } | null>(null);
+  const lastTimestampRef = useRef(0);
+  const speedEpochRef = useRef(0);
+  const resetSpeedHistory = useCallback((): void => {
+    lastFixRef.current = null;
+    speedEpochRef.current = Date.now();
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
       setStatus("idle");
       setError(null);
       lastFixRef.current = null;
+      lastTimestampRef.current = 0;
       return;
     }
 
@@ -80,33 +95,38 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
         Number.isFinite(coords.accuracy) &&
         coords.accuracy >= 0
           ? coords.accuracy
-          : 0;
+          : null;
 
       const altitude =
         typeof coords.altitude === "number" && Number.isFinite(coords.altitude)
           ? coords.altitude
           : null;
 
-      const timestamp =
-        typeof nextPosition.timestamp === "number" &&
-        Number.isFinite(nextPosition.timestamp) &&
-        nextPosition.timestamp > 0
-          ? nextPosition.timestamp
-          : Date.now();
+      const timestamp = nextPosition.timestamp;
+      if (
+        !Number.isSafeInteger(timestamp) ||
+        timestamp <= 0 ||
+        timestamp > Date.now() ||
+        timestamp <= lastTimestampRef.current
+      )
+        return;
+      lastTimestampRef.current = timestamp;
 
       // Calcul ou fiabilisation de la vitesse (fallback dérivé si coords.speed est null sur mobile)
       let speed: number | null = null;
+      let speedSource: "native" | "derived" | null = null;
       if (
         typeof coords.speed === "number" &&
         Number.isFinite(coords.speed) &&
         coords.speed >= 0
       ) {
         speed = coords.speed;
-      } else if (lastFixRef.current) {
+        speedSource = "native";
+      } else if (lastFixRef.current && accuracy !== null && accuracy <= 25) {
         const prev = lastFixRef.current;
         const deltaSeconds = (timestamp - prev.timestamp) / 1000;
 
-        if (deltaSeconds >= 0.5 && deltaSeconds <= 30) {
+        if (deltaSeconds >= 0.5 && deltaSeconds <= 5) {
           const deltaMeters = haversineMeters(
             [coords.longitude, coords.latitude],
             prev.coords,
@@ -123,15 +143,14 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
             // Rejeter les téléportations absurdes (> 45 m/s = 162 km/h)
             if (instantSpeed <= 45) {
               if (typeof prev.speed === "number" && prev.speed >= 0) {
-                speed = Number(
-                  (0.6 * instantSpeed + 0.4 * prev.speed).toFixed(2),
-                );
+                speed = Number(0.6 * instantSpeed + 0.4 * prev.speed);
               } else {
-                speed = Number(instantSpeed.toFixed(2));
+                speed = instantSpeed;
               }
             }
           }
         }
+        if (speed !== null) speedSource = "derived";
       }
 
       lastFixRef.current = {
@@ -139,20 +158,29 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
         timestamp,
         speed,
       };
+      if (
+        accuracy === null ||
+        accuracy > 25 ||
+        timestamp <= speedEpochRef.current
+      )
+        lastFixRef.current = null;
 
       setError(null);
       setStatus("tracking");
-      setPosition({
+      const tracked: TrackedPosition = {
         coords: [coords.longitude, coords.latitude],
         latitude: coords.latitude,
         longitude: coords.longitude,
         altitude,
         speed,
+        speedSource,
         accuracy,
         heading: coords.heading ?? null,
         altitudeAccuracy: coords.altitudeAccuracy ?? null,
         timestamp,
-      });
+      };
+      listeners.current.onPosition?.(tracked);
+      setPosition(tracked);
     };
 
     const start = async () => {
@@ -202,7 +230,7 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
         if (typeof Geolocation.getCurrentPosition === "function") {
           void Geolocation.getCurrentPosition(GPS_TRACKING_OPTIONS)
             .then((pos) => {
-              if (!cancelled && pos && !lastFixRef.current) {
+              if (!cancelled && pos) {
                 handleValidPosition(pos);
               }
             })
@@ -216,6 +244,8 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
             if (cancelled) return;
 
             if (watchError || !nextPosition) {
+              lastFixRef.current = null;
+              listeners.current.onSignalLost?.();
               const errorMessage =
                 watchError instanceof Error
                   ? watchError.message
@@ -319,5 +349,5 @@ export function useGeolocationTracker(enabled: boolean): GeolocationTracker {
     };
   }, [enabled]);
 
-  return { position, status, error };
+  return { position, status, error, resetSpeedHistory };
 }

@@ -2,8 +2,18 @@ import { useEffect, useState, useCallback } from "react";
 
 export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
+export type ColorPalette = "lime-frost" | "violet-bloom" | "scarlet-snow";
 
 const THEME_STORAGE_KEY = "stride_theme_preference";
+const PALETTE_STORAGE_KEY = "stride_color_palette";
+
+function isColorPalette(value: string | null): value is ColorPalette {
+  return (
+    value === "lime-frost" ||
+    value === "violet-bloom" ||
+    value === "scarlet-snow"
+  );
+}
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined" || !window.matchMedia) {
@@ -44,6 +54,11 @@ export function useThemeMode() {
   });
 
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
+  const [palette, setPaletteState] = useState<ColorPalette>(() => {
+    if (typeof localStorage === "undefined") return "lime-frost";
+    const saved = localStorage.getItem(PALETTE_STORAGE_KEY);
+    return isColorPalette(saved) ? saved : "lime-frost";
+  });
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -68,6 +83,12 @@ export function useThemeMode() {
     applyThemeToDOM(resolvedTheme);
   }, [resolvedTheme]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.setAttribute("data-palette", palette);
+    if (document.body) document.body.setAttribute("data-palette", palette);
+  }, [palette]);
+
   const setTheme = useCallback((newTheme: ThemePreference) => {
     setThemeState(newTheme);
     if (typeof localStorage !== "undefined") {
@@ -81,10 +102,19 @@ export function useThemeMode() {
     setTheme(nextTheme);
   }, [resolvedTheme, setTheme]);
 
+  const setPalette = useCallback((newPalette: ColorPalette) => {
+    setPaletteState(newPalette);
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(PALETTE_STORAGE_KEY, newPalette);
+    }
+  }, []);
+
   return {
     theme,
     resolvedTheme,
+    palette,
     toggleTheme,
     setTheme,
+    setPalette,
   };
 }

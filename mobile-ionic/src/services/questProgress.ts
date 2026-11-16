@@ -15,7 +15,7 @@ export type QuestRunStatus = "running" | "success" | "failed";
 
 export interface PositionFix {
   coords: LngLat;
-  accuracy: number; // en mètres
+  accuracy: number | null; // en mètres
 }
 
 export interface QuestRunState {
@@ -184,7 +184,13 @@ export function advanceQuestRun(
   let checkpointIndex = state.checkpointIndex;
   let remainingMeters = state.remainingMeters;
 
-  if (fix && fix.accuracy <= MAX_ACCEPTED_ACCURACY_METERS) {
+  if (
+    fix &&
+    fix.accuracy !== null &&
+    Number.isFinite(fix.accuracy) &&
+    fix.accuracy >= 0 &&
+    fix.accuracy <= MAX_ACCEPTED_ACCURACY_METERS
+  ) {
     while (
       checkpointIndex < checkpoints.length &&
       haversineMeters(fix.coords, checkpoints[checkpointIndex]) <=

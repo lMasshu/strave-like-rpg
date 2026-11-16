@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { validateRecording } from './recordingValidation.js';
 import type { Activity, CreateActivityInput } from '../entities/activity.js';
 import { calculateLevel } from '../entities/player.js';
 import type { IActivityRepository } from '../ports/activityRepository.js';
@@ -26,7 +27,7 @@ export interface RecordActivityResult {
 
 /**
  * Service orchestrant l'enregistrement des courses et la progression RPG.
- * 
+ *
  * 1. Filtre la sortie via l'AntiCheatService.
  * 2. Calcule le gain d'XP (100 XP/km + 2 XP/m D+).
  * 3. Met à jour le niveau du joueur.
@@ -43,10 +44,15 @@ export class ActivityService {
 
   /**
    * Enregistre une activité sportive, applique la progression RPG et publie l'effort.
-   * 
+   *
    * @throws Error si l'anti-triche échoue ou si le joueur n'existe pas
    */
-  async recordActivity(input: CreateActivityInput): Promise<RecordActivityResult> {
+  async recordActivity(
+    input: CreateActivityInput,
+  ): Promise<RecordActivityResult> {
+    const recordingValidation = validateRecording(input);
+    if (!recordingValidation.isValid)
+      throw new Error(recordingValidation.reason);
     // 1. Contrôle Anti-triche
     const validation = this.antiCheat.validateActivity(input);
     if (!validation.isValid) {
@@ -71,7 +77,11 @@ export class ActivityService {
     const levelUp = newLevel > previousLevel;
 
     // 4. Mise à jour atomique du profil joueur
-    await this.playerRepo.updateExperienceAndLevel(player.id, newTotalExperience, newLevel);
+    await this.playerRepo.updateExperienceAndLevel(
+      player.id,
+      newTotalExperience,
+      newLevel,
+    );
 
     // 5. Persistance de l'activité
     const activity: Activity = {
@@ -84,6 +94,7 @@ export class ActivityService {
       distanceMeters: input.distanceMeters,
       elevationGainMeters: input.elevationGainMeters || 0,
       coordinates: input.coordinates,
+      ...(input.recording ? { recording: input.recording } : {}),
       createdAt: new Date(),
     };
 

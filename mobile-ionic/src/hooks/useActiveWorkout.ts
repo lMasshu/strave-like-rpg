@@ -1,32 +1,25 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import {
-  haversineMeters,
-  pointAlongRoute,
-  calculateBearing,
-} from "../services/geo";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { pointAlongRoute, calculateBearing } from "../services/geo";
 import type { GeneratedQuest } from "../services/questGenerator";
+import { getLivePace, type LivePaceState } from "../services/livePace";
+import {
+  createRecordingState,
+  reduceRecording,
+  getRecordingSnapshot,
+  getRecordingDurations,
+  type RecordingAction,
+  type RecordingSnapshot,
+} from "../services/workoutRecording";
 import {
   useGeolocationTracker,
   type TrackedPosition,
   type GeolocationStatus,
 } from "./useGeolocationTracker";
 
-/**
- * État de la machine à états de l'entraînement.
- */
 export type WorkoutStatus = "idle" | "recording" | "paused" | "finished";
-
-/**
- * Qualité du signal GPS perçu par l'appareil.
- */
 export type GpsSignalQuality = "optimal" | "weak" | "none";
-
-/** Seuil maximal d'imprécision GPS en mètres accepté pour l'accumulation sportive */
 export const MAX_ACCURACY_THRESHOLD = 25;
 
-/**
- * Métriques télémétriques temps réel d'un entraînement actif.
- */
 export interface ActiveWorkoutMetrics {
   status: WorkoutStatus;
   elapsedSeconds: number;
@@ -34,9 +27,14 @@ export interface ActiveWorkoutMetrics {
   distanceKm: number;
   speedKmh: number;
   paceMinPerKm: string;
+  paceState: LivePaceState;
   elevationGainMeters: number;
   xpEarned: number;
   trackCoordinates: [number, number][];
+  trackSegments: [number, number][][];
+  recordingSnapshot: RecordingSnapshot | null;
+  recordingError: string | null;
+  recordingSessionId: number;
   currentPosition: TrackedPosition | null;
   gpsStatus: GeolocationStatus;
   gpsError: string | null;
@@ -44,9 +42,6 @@ export interface ActiveWorkoutMetrics {
   simulating: boolean;
 }
 
-/**
- * Contrôleur d'entraînement permettant de piloter l'enregistrement sportif.
- */
 export interface ActiveWorkoutController {
   metrics: ActiveWorkoutMetrics;
   startWorkout: () => void;
@@ -57,297 +52,255 @@ export interface ActiveWorkoutController {
   toggleSimulation: () => void;
 }
 
-function formatPace(
-  speedMs: number | null,
-  distanceKm: number,
-  elapsedSec: number,
-): string {
-  // Préférer la vitesse instantanée si disponible (> 0.5 m/s)
-  if (speedMs && speedMs > 0.5) {
-    const secPerKm = 1000 / speedMs;
-    const mins = Math.floor(secPerKm / 60);
-    const secs = Math.round(secPerKm % 60);
-    if (mins < 30) {
-      return `${mins}:${String(secs).padStart(2, "0")}`;
-    }
-  }
+const SIMULATION_SPEED_MS = 3;
 
-  // Sinon vitesse moyenne globale si distance suffisante
-  if (distanceKm > 0.05 && elapsedSec > 5) {
-    const avgSecPerKm = elapsedSec / distanceKm;
-    const mins = Math.floor(avgSecPerKm / 60);
-    const secs = Math.round(avgSecPerKm % 60);
-    if (mins < 30) {
-      return `${mins}:${String(secs).padStart(2, "0")}`;
-    }
-  }
-
-  return "--:--";
-}
-
-const SIMULATION_SPEED_MS = 3.0; // ~10.8 km/h
-
-/**
- * Hook central orchestrant l'enregistrement d'une course ou d'une marche active.
- *
- * - Pilote le chronomètre actif (pause / reprise / fin).
- * - Filtre le flux GPS natif via useGeolocationTracker (rejet accuracy > 25m, seuil anti-saut statique).
- * - Calcule en continu la distance Haversine, la vitesse, l'allure (min/km), le dénivelé et les points d'XP.
- * - Fournit un mode de simulation dynamique pour tester le tracé même sans signal GPS réel.
- *
- * @param activeQuest Quête optionnelle à suivre lors de la sortie
- * @returns Contrôleur d'entraînement exposé à l'interface utilisateur
- */
+/** Actual measurements and lifecycle events are the source of truth, not timer ticks. */
 export function useActiveWorkout(
   activeQuest?: GeneratedQuest | null,
 ): ActiveWorkoutController {
-  const [status, setStatus] = useState<WorkoutStatus>("idle");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [distanceMeters, setDistanceMeters] = useState(0);
-  const [elevationGainMeters, setElevationGainMeters] = useState(0);
-  const [trackCoordinates, setTrackCoordinates] = useState<[number, number][]>(
-    [],
-  );
+  const [session, setSession] = useState(createRecordingState);
+  const sessionRef = useRef(session);
+  const sessionIdRef = useRef(0);
+  const [clock, setClock] = useState(Date.now);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [simulatedPosition, setSimulatedPosition] =
     useState<TrackedPosition | null>(null);
+  const simulationOriginRef = useRef<[number, number]>([2.3522, 48.8566]);
+  const simulationStepRef = useRef(0);
+  const simulatedDistanceRef = useRef(0);
+  const status = session.status;
 
-  const tracker = useGeolocationTracker(!simulating);
+  const apply = useCallback((action: RecordingAction): void => {
+    try {
+      const previous = sessionRef.current;
+      const next = reduceRecording(previous, action);
+      if (
+        next !== previous &&
+        (action.type === "start" || action.type === "reset")
+      )
+        sessionIdRef.current++;
+      sessionRef.current = next;
+      setSession(next);
+      setRecordingError(null);
+    } catch (error: unknown) {
+      setRecordingError(
+        error instanceof Error
+          ? error.message
+          : "Erreur de chronologie de course.",
+      );
+    }
+  }, []);
+
+  const capturePosition = useCallback(
+    (position: TrackedPosition): void => {
+      apply({
+        type: "sample",
+        receivedAtMs: Date.now(),
+        sample: {
+          latitude: position.latitude,
+          longitude: position.longitude,
+          timestampMs: position.timestamp,
+          altitudeMeters: position.altitude,
+          horizontalAccuracyMeters: position.accuracy,
+          speedMetersPerSecond: position.speed,
+          speedSource: position.speedSource ?? null,
+          source: "gps",
+        },
+      });
+    },
+    [apply],
+  );
+  const captureSignalLoss = useCallback(
+    (): void => apply({ type: "signalLost" }),
+    [apply],
+  );
+  const tracker = useGeolocationTracker(
+    !simulating,
+    capturePosition,
+    captureSignalLoss,
+  );
+  const { resetSpeedHistory } = tracker;
   const currentPosition = simulating ? simulatedPosition : tracker.position;
 
-  const lastAltitudeRef = useRef<number | null>(null);
-  const lastRecordedCoordRef = useRef<[number, number] | null>(null);
-  const lastTimestampRef = useRef<number | null>(null);
-  const simulationOriginRef = useRef<[number, number]>([2.3522, 48.8566]); // Paris centre par défaut
-  const simulationStepRef = useRef(0);
-  const simulatedDistanceMetersRef = useRef(0);
-
-  // Réinitialiser la distance de simulation dès qu'une nouvelle quête est chargée
   useEffect(() => {
-    simulatedDistanceMetersRef.current = 0;
+    simulatedDistanceRef.current = 0;
     simulationStepRef.current = 0;
   }, [activeQuest?.id]);
 
-  // 1. Horloge : Incrémentation du temps écoulé tant que le statut est 'recording'
   useEffect(() => {
     if (status !== "recording") return;
-
-    const timer = window.setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-
+    const timer = window.setInterval(() => setClock(Date.now()), 250);
     return () => window.clearInterval(timer);
   }, [status]);
 
-  // 2. Traitement des positions réelles (GPS) avec filtre de précision sportive
   useEffect(() => {
-    if (status !== "recording" || simulating || !tracker.position) return;
-
-    const pos = tracker.position;
-
-    // Filtre 1 : Rejeter immédiatement les points trop imprécis (> 25m) pour éviter les sauts
-    if (pos.accuracy > MAX_ACCURACY_THRESHOLD) {
+    if (status !== "recording" || simulating) return;
+    if (tracker.status !== "tracking") {
+      apply({ type: "signalLost" });
       return;
     }
-
-    const newCoord = pos.coords;
-    const altitude = pos.altitude;
-    const timestamp = pos.timestamp;
-
-    setTrackCoordinates((prev) => {
-      if (prev.length === 0) {
-        lastRecordedCoordRef.current = newCoord;
-        if (altitude !== null) lastAltitudeRef.current = altitude;
-        lastTimestampRef.current = timestamp;
-        return [newCoord];
-      }
-
-      const prevCoord = lastRecordedCoordRef.current || prev[prev.length - 1];
-      const deltaM = haversineMeters(newCoord, prevCoord);
-
-      // Filtre 2 : Seuil anti-bruit adaptatif proportionnel à l'imprécision
-      const minDistanceThreshold = Math.max(2.0, pos.accuracy * 0.4);
-      if (deltaM < minDistanceThreshold) {
-        return prev;
-      }
-
-      // Filtre 3 : Rejet des téléportations absurdes (> 12 m/s = 43 km/h pour un coureur)
-      if (lastTimestampRef.current) {
-        const deltaSec = (timestamp - lastTimestampRef.current) / 1000;
-        if (deltaSec > 0.4) {
-          const speed = deltaM / deltaSec;
-          if (speed > 12) {
-            return prev;
-          }
-        }
-      }
-
-      setDistanceMeters((d) => d + deltaM);
-      lastRecordedCoordRef.current = newCoord;
-      lastTimestampRef.current = timestamp;
-
-      if (altitude !== null && lastAltitudeRef.current !== null) {
-        const deltaAlt = altitude - lastAltitudeRef.current;
-        if (deltaAlt > 0.5) {
-          setElevationGainMeters((gain) => gain + Math.round(deltaAlt));
-        }
-        lastAltitudeRef.current = altitude;
-      } else if (altitude !== null) {
-        lastAltitudeRef.current = altitude;
-      }
-
-      return [...prev, newCoord];
+    if (!currentPosition) return;
+    apply({
+      type: "sample",
+      receivedAtMs: Date.now(),
+      sample: {
+        latitude: currentPosition.latitude,
+        longitude: currentPosition.longitude,
+        timestampMs: currentPosition.timestamp,
+        altitudeMeters: currentPosition.altitude,
+        horizontalAccuracyMeters: currentPosition.accuracy,
+        speedMetersPerSecond: currentPosition.speed,
+        speedSource: currentPosition.speedSource ?? null,
+        source: simulating ? "simulation" : "gps",
+      },
     });
-  }, [tracker.position, status, simulating]);
+  }, [currentPosition, tracker.status, status, simulating, apply]);
 
-  // 3. Mode Simulation unifié (Quête ou Course libre)
   useEffect(() => {
     if (status !== "recording" || !simulating) return;
-
-    const simTimer = window.setInterval(() => {
-      simulationStepRef.current += 1;
-      const step = simulationStepRef.current;
-      let simCoord: [number, number];
-
-      // Si une quête est active, on avance le long de l'itinéraire de la quête
-      let heading = 90;
-      if (activeQuest && activeQuest.route?.coordinates?.length > 1) {
-        simulatedDistanceMetersRef.current += SIMULATION_SPEED_MS;
-        const along = pointAlongRoute(
-          activeQuest.route.coordinates,
-          simulatedDistanceMetersRef.current,
-        );
-        simCoord =
-          along ||
+    const timer = window.setInterval(() => {
+      const step = ++simulationStepRef.current;
+      const previous = sessionRef.current.lastTrackSample;
+      let coords: [number, number];
+      if (activeQuest && activeQuest.route.coordinates.length > 1) {
+        simulatedDistanceRef.current += SIMULATION_SPEED_MS;
+        coords =
+          pointAlongRoute(
+            activeQuest.route.coordinates,
+            simulatedDistanceRef.current,
+          ) ??
           activeQuest.route.coordinates[
             activeQuest.route.coordinates.length - 1
           ];
-
-        if (lastRecordedCoordRef.current) {
-          heading = calculateBearing(lastRecordedCoordRef.current, simCoord);
-        }
       } else {
-        // Sinon, boucle progressive de course libre
-        const origin = simulationOriginRef.current;
-        const lngOffset = Math.sin(step * 0.05) * 0.003 + step * 0.00015;
-        const latOffset = Math.cos(step * 0.05) * 0.002 + step * 0.0001;
-        simCoord = [
-          Number((origin[0] + lngOffset).toFixed(6)),
-          Number((origin[1] + latOffset).toFixed(6)),
+        // A physical-size synthetic step (3 m), not the old ~15 m step at 3 m/s.
+        coords = [
+          simulationOriginRef.current[0],
+          simulationOriginRef.current[1] +
+            (step * SIMULATION_SPEED_MS) / 111195,
         ];
-
-        if (lastRecordedCoordRef.current) {
-          heading = calculateBearing(lastRecordedCoordRef.current, simCoord);
-        }
       }
-
-      const simPos: TrackedPosition = {
-        coords: simCoord,
-        longitude: simCoord[0],
-        latitude: simCoord[1],
+      const position: TrackedPosition = {
+        coords,
+        longitude: coords[0],
+        latitude: coords[1],
         altitude: 40 + Math.sin(step * 0.1) * 5,
         speed: SIMULATION_SPEED_MS,
+        speedSource: "native",
         accuracy: 4,
-        heading,
+        heading: previous
+          ? calculateBearing([previous.longitude, previous.latitude], coords)
+          : 0,
         altitudeAccuracy: 1,
         timestamp: Date.now(),
       };
-
-      setSimulatedPosition(simPos);
-
-      setTrackCoordinates((prev) => {
-        if (prev.length === 0) {
-          lastRecordedCoordRef.current = simCoord;
-          return [simCoord];
-        }
-
-        const prevCoord = lastRecordedCoordRef.current || prev[prev.length - 1];
-        const deltaM = haversineMeters(simCoord, prevCoord);
-
-        if (deltaM >= 1.0) {
-          setDistanceMeters((d) => d + deltaM);
-          lastRecordedCoordRef.current = simCoord;
-        }
-
-        return [...prev, simCoord];
+      setSimulatedPosition(position);
+      apply({
+        type: "sample",
+        receivedAtMs: Date.now(),
+        sample: {
+          latitude: position.latitude,
+          longitude: position.longitude,
+          timestampMs: position.timestamp,
+          altitudeMeters: position.altitude,
+          horizontalAccuracyMeters: position.accuracy,
+          speedMetersPerSecond: position.speed,
+          speedSource: "native",
+          source: "simulation",
+        },
       });
     }, 1000);
+    return () => window.clearInterval(timer);
+  }, [status, simulating, activeQuest, apply]);
 
-    return () => window.clearInterval(simTimer);
-  }, [status, simulating, activeQuest]);
-
-  // Contrôles
-  const startWorkout = useCallback(() => {
-    setStatus("recording");
-    if (tracker.position) {
-      simulationOriginRef.current = tracker.position.coords;
-    }
-  }, [tracker.position]);
-
-  const pauseWorkout = useCallback(() => {
-    setStatus("paused");
-  }, []);
-
-  const resumeWorkout = useCallback(() => {
-    setStatus("recording");
-  }, []);
-
-  const finishWorkout = useCallback(() => {
-    setStatus("finished");
-  }, []);
-
-  const resetWorkout = useCallback(() => {
-    setStatus("idle");
-    setElapsedSeconds(0);
-    setDistanceMeters(0);
-    setElevationGainMeters(0);
-    setTrackCoordinates([]);
+  const startWorkout = useCallback((): void => {
+    resetSpeedHistory?.();
+    if (tracker.position) simulationOriginRef.current = tracker.position.coords;
+    apply({ type: "start", timestampMs: Date.now() });
+  }, [apply, tracker.position, resetSpeedHistory]);
+  const pauseWorkout = useCallback(
+    (): void => apply({ type: "pause", timestampMs: Date.now() }),
+    [apply],
+  );
+  const resumeWorkout = useCallback((): void => {
+    resetSpeedHistory?.();
+    apply({ type: "resume", timestampMs: Date.now() });
+  }, [apply, resetSpeedHistory]);
+  const finishWorkout = useCallback(
+    (): void => apply({ type: "finish", timestampMs: Date.now() }),
+    [apply],
+  );
+  const resetWorkout = useCallback((): void => {
+    apply({ type: "reset" });
     setSimulatedPosition(null);
     simulationStepRef.current = 0;
-    simulatedDistanceMetersRef.current = 0;
-    lastRecordedCoordRef.current = null;
-    lastAltitudeRef.current = null;
-  }, []);
+    simulatedDistanceRef.current = 0;
+  }, [apply]);
+  const toggleSimulation = useCallback((): void => {
+    resetSpeedHistory?.();
+    setSimulating(!simulating);
+    if (!simulating && sessionRef.current.status === "idle")
+      apply({ type: "start", timestampMs: Date.now() });
+  }, [apply, simulating, resetSpeedHistory]);
 
-  const toggleSimulation = useCallback(() => {
-    setSimulating((prev) => {
-      const next = !prev;
-      if (next && status === "idle") {
-        setStatus("recording");
+  // Clone only on actual journal changes, never the entire history on each 250 ms tick.
+  const frozenSnapshot = useMemo(
+    () => getRecordingSnapshot(session, Date.now()),
+    [session],
+  );
+  const durations = getRecordingDurations(session, Math.max(clock, Date.now()));
+  const recordingSnapshot = frozenSnapshot
+    ? {
+        ...frozenSnapshot,
+        recording: { ...frozenSnapshot.recording, ...durations },
       }
-      return next;
-    });
-  }, [status]);
-
-  // Métriques dérivées
-  const distanceKm = Number((distanceMeters / 1000).toFixed(2));
-  const currentSpeedMs =
-    currentPosition?.speed ?? (simulating ? SIMULATION_SPEED_MS : 0);
-  const speedKmh = Number(((currentSpeedMs || 0) * 3.6).toFixed(1));
-  const paceMinPerKm = formatPace(currentSpeedMs, distanceKm, elapsedSeconds);
-  const xpEarned = Math.round(distanceKm * 100 + elevationGainMeters * 2);
-
-  const gpsQuality: GpsSignalQuality = currentPosition
-    ? currentPosition.accuracy <= 20
-      ? "optimal"
-      : "weak"
-    : "none";
-
+    : null;
+  const trackSegments = useMemo(
+    (): [number, number][][] =>
+      session.recording.segments.map((segment) =>
+        segment.sampleIndices.map((index) => {
+          const point = session.recording.samples[index];
+          return [point.longitude, point.latitude];
+        }),
+      ),
+    [session.recording],
+  );
+  const trackCoordinates = useMemo(() => trackSegments.flat(), [trackSegments]);
+  const latestEvent = session.recording.events.at(-1);
+  const pacePosition =
+    currentPosition &&
+    latestEvent &&
+    currentPosition.timestamp > latestEvent.timestampMs &&
+    (simulating || tracker.status === "tracking")
+      ? currentPosition
+      : null;
+  const pace = getLivePace(pacePosition, Date.now(), status);
+  const distanceKm = Number((session.distanceMeters / 1000).toFixed(2));
   return {
     metrics: {
       status,
-      elapsedSeconds,
-      distanceMeters: Math.round(distanceMeters),
+      elapsedSeconds: Math.floor(durations.activeDurationMs / 1000),
+      distanceMeters: Math.round(session.distanceMeters),
       distanceKm,
-      speedKmh,
-      paceMinPerKm,
-      elevationGainMeters,
-      xpEarned,
+      speedKmh: Number(((currentPosition?.speed ?? 0) * 3.6).toFixed(1)),
+      paceMinPerKm: pace.paceMinPerKm,
+      paceState: pace.state,
+      elevationGainMeters: session.elevationGainMeters,
+      xpEarned: Math.round(distanceKm * 100 + session.elevationGainMeters * 2),
       trackCoordinates,
+      trackSegments,
+      recordingSnapshot,
+      recordingError,
+      recordingSessionId: sessionIdRef.current,
       currentPosition,
       gpsStatus: tracker.status,
       gpsError: tracker.error,
-      gpsQuality,
+      gpsQuality: !currentPosition
+        ? "none"
+        : currentPosition.accuracy !== null && currentPosition.accuracy <= 20
+          ? "optimal"
+          : "weak",
       simulating,
     },
     startWorkout,

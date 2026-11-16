@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
 import { IonReactRouter } from "@ionic/react-router";
 import TopBar from "./TopBar";
@@ -6,10 +6,11 @@ import TopBar from "./TopBar";
 describe("TopBar Component", () => {
   beforeEach(() => {
     localStorage.clear();
+    window.history.replaceState({}, "", "/accueil");
     document.documentElement.removeAttribute("data-theme");
   });
 
-  it("renders app title and navigation buttons", () => {
+  it("renders app title and navigation buttons", async () => {
     render(
       <IonReactRouter>
         <TopBar title="Test Title" />
@@ -19,6 +20,10 @@ describe("TopBar Component", () => {
     expect(screen.getByText("Test Title")).toBeInTheDocument();
     expect(screen.getByLabelText(/Trouver des amis/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Notifications/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("Paramètres"));
+    await waitFor(() => {
+      expect(window.location.pathname).toBe("/parametres");
+    });
   });
 
   it("renders theme toggle button and toggles theme on click", () => {

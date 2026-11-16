@@ -1,6 +1,7 @@
 import fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { z } from 'zod';
+import { recordingSchema } from './recordingSchema.js';
 import { AntiCheatService } from '../../core/services/antiCheatService.js';
 import { ActivityService } from '../../core/services/activityService.js';
 import { InMemoryActivityRepository } from '../repositories/inMemory/inMemoryActivityRepo.js';
@@ -23,10 +24,16 @@ const createActivitySchema = z.object({
   durationSeconds: z.number().nonnegative(),
   distanceMeters: z.number().nonnegative(),
   elevationGainMeters: z.number().optional().default(0),
-  coordinates: z.array(z.tuple([z.number(), z.number()])).optional().default([]),
+  coordinates: z
+    .array(z.tuple([z.number(), z.number()]))
+    .optional()
+    .default([]),
+  recording: recordingSchema.optional(),
 });
 
-export async function buildApp(deps?: AppDependencies): Promise<FastifyInstance> {
+export async function buildApp(
+  deps?: AppDependencies,
+): Promise<FastifyInstance> {
   const app = fastify({ logger: false });
 
   await app.register(cors, {
@@ -38,7 +45,12 @@ export async function buildApp(deps?: AppDependencies): Promise<FastifyInstance>
   const playerRepo = deps?.playerRepo ?? new InMemoryPlayerRepository();
   const eventPublisher = deps?.eventPublisher ?? new InMemoryEventPublisher();
   const antiCheat = new AntiCheatService();
-  const activityService = new ActivityService(activityRepo, playerRepo, eventPublisher, antiCheat);
+  const activityService = new ActivityService(
+    activityRepo,
+    playerRepo,
+    eventPublisher,
+    antiCheat,
+  );
 
   // 1. Healthcheck route
   app.get('/health', async () => {
@@ -78,45 +90,50 @@ export async function buildApp(deps?: AppDependencies): Promise<FastifyInstance>
   });
 
   // 3. Activity routes
-  app.post('/api/activities', async (req, reply) => {
-    const parseResult = createActivitySchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return reply.status(400).send({
-        error: 'Invalid payload schema',
-        details: parseResult.error.format(),
-      });
-    }
+  app.post(
+    '/api/activities',
+    { bodyLimit: 32 * 1024 * 1024 },
+    async (req, reply) => {
+      const parseResult = createActivitySchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: 'Invalid payload schema',
+          details: parseResult.error.format(),
+        });
+      }
 
-    const playerId = getPlayerId(req);
-    const body = parseResult.data;
+      const playerId = getPlayerId(req);
+      const body = parseResult.data;
 
-    try {
-      const result = await activityService.recordActivity({
-        playerId,
-        activityType: body.activityType,
-        startedAt: new Date(body.startedAt),
-        endedAt: new Date(body.endedAt),
-        durationSeconds: body.durationSeconds,
-        distanceMeters: body.distanceMeters,
-        elevationGainMeters: body.elevationGainMeters,
-        coordinates: body.coordinates,
-      });
+      try {
+        const result = await activityService.recordActivity({
+          playerId,
+          activityType: body.activityType,
+          startedAt: new Date(body.startedAt),
+          endedAt: new Date(body.endedAt),
+          durationSeconds: body.durationSeconds,
+          distanceMeters: body.distanceMeters,
+          elevationGainMeters: body.elevationGainMeters,
+          coordinates: body.coordinates,
+          recording: body.recording,
+        });
 
-      return reply.status(201).send({
-        activityId: result.activity.id,
-        xpEarned: result.xpEarned,
-        newLevel: result.newLevel,
-        previousLevel: result.previousLevel,
-        levelUp: result.levelUp,
-        totalExperience: result.totalExperience,
-        distanceMeters: result.activity.distanceMeters,
-        durationSeconds: result.activity.durationSeconds,
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      return reply.status(400).send({ error: message });
-    }
-  });
+        return reply.status(201).send({
+          activityId: result.activity.id,
+          xpEarned: result.xpEarned,
+          newLevel: result.newLevel,
+          previousLevel: result.previousLevel,
+          levelUp: result.levelUp,
+          totalExperience: result.totalExperience,
+          distanceMeters: result.activity.distanceMeters,
+          durationSeconds: result.activity.durationSeconds,
+        });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        return reply.status(400).send({ error: message });
+      }
+    },
+  );
 
   app.get('/api/activities/me', async (req) => {
     const playerId = getPlayerId(req);

@@ -1,3 +1,5 @@
+import type { ActivityRecording } from "../data/activityRecording";
+
 /**
  * Données d'une course à soumettre pour enregistrement.
  */
@@ -16,6 +18,7 @@ export interface SaveActivityDto {
   elevationGainMeters?: number;
   /** Liste ordonnée des coordonnées géographiques GPS du tracé */
   coordinates?: [longitude: number, latitude: number][];
+  recording?: ActivityRecording;
 }
 
 /**

@@ -48,6 +48,16 @@ function buildQuest(
 
 const linearQuest = buildQuest("linear", [START, FAR], [START, FAR]);
 
+it("does not validate a checkpoint with unknown accuracy", () => {
+  const next = advanceQuestRun(
+    createQuestRun(linearQuest),
+    linearQuest,
+    { coords: FAR, accuracy: null },
+    1,
+  );
+  expect(next.checkpointIndex).toBe(0);
+});
+
 // Boucle : départ -> aller -> retour au départ
 const loopQuest = buildQuest(
   "loop",

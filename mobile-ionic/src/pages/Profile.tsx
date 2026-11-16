@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { IonButton, IonContent, IonIcon, IonPage } from "@ionic/react";
 import {
   bicycleOutline,
+  cloudUploadOutline,
   compassOutline,
   fitnessOutline,
   flameOutline,
+  logOutOutline,
+  mailOutline,
   peopleOutline,
   ribbonOutline,
   shieldOutline,
@@ -13,9 +16,11 @@ import {
   trophyOutline,
   walkOutline,
 } from "ionicons/icons";
+import { useAuth0 } from "@auth0/auth0-react";
 import TopBar from "../components/TopBar";
 import StatMetric from "../components/StatMetric";
 import RpgBadgeCard from "../components/RpgBadgeCard";
+import LoginModal from "../components/LoginModal";
 import {
   DEMO_BADGES,
   DEMO_USER_ACTIVITIES,
@@ -89,7 +94,19 @@ function formatElevation(meters: number): string {
 }
 
 const Profile: React.FC = () => {
+  const { user, isAuthenticated, logout } = useAuth0();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   const profile = DEMO_USER_PROFILE;
+
+  const displayName =
+    isAuthenticated && (user?.name || user?.nickname)
+      ? user.name || user.nickname
+      : profile.username;
+
+  const displayAvatarLetter =
+    (displayName && displayName.charAt(0).toUpperCase()) || "A";
+
   const progressPercent =
     profile.nextLevelExperience <= 0
       ? 100
@@ -108,6 +125,14 @@ const Profile: React.FC = () => {
   );
   const unlockedBadgesCount = DEMO_BADGES.filter((b) => b.unlocked).length;
 
+  const handleLogout = () => {
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin,
+      },
+    });
+  };
+
   return (
     <IonPage>
       <TopBar title="Profil" />
@@ -122,9 +147,17 @@ const Profile: React.FC = () => {
             <div className="sq-profile-avatar-row">
               <div className="sq-profile-avatar-container">
                 <div className="sq-profile-avatar-ring">
-                  <div className="sq-profile-avatar">
-                    {profile.username.charAt(0).toUpperCase()}
-                  </div>
+                  {isAuthenticated && user?.picture ? (
+                    <img
+                      src={user.picture}
+                      alt={displayName}
+                      className="sq-profile-avatar-img"
+                    />
+                  ) : (
+                    <div className="sq-profile-avatar">
+                      {displayAvatarLetter}
+                    </div>
+                  )}
                 </div>
                 <span className="sq-profile-avatar-level-chip">
                   Niv. {profile.level}
@@ -141,9 +174,19 @@ const Profile: React.FC = () => {
                     <IonIcon icon={sparklesOutline} />
                     {profile.title}
                   </span>
+                  {isAuthenticated && (
+                    <span className="sq-badge sq-badge-cyan">Auth0 Cloud</span>
+                  )}
                 </div>
 
-                <h1 className="sq-profile-username">{profile.username}</h1>
+                <h1 className="sq-profile-username">{displayName}</h1>
+
+                {isAuthenticated && user?.email && (
+                  <div className="sq-profile-email-chip">
+                    <IonIcon icon={mailOutline} />
+                    <span>{user.email}</span>
+                  </div>
+                )}
 
                 <div className="sq-profile-social-row">
                   <IonButton
@@ -158,6 +201,39 @@ const Profile: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Bannière de connexion ou bouton de déconnexion */}
+            {isAuthenticated ? (
+              <div className="sq-profile-auth-actions">
+                <button
+                  type="button"
+                  className="sq-profile-logout-btn"
+                  onClick={handleLogout}
+                  aria-label="Se déconnecter"
+                >
+                  <IonIcon icon={logOutOutline} />
+                  <span>Déconnexion</span>
+                </button>
+              </div>
+            ) : (
+              <div className="sq-profile-cloud-banner">
+                <div className="sq-profile-cloud-text">
+                  <IonIcon
+                    icon={cloudUploadOutline}
+                    className="sq-profile-cloud-icon"
+                  />
+                  <span>Sauvegardez votre progression dans le cloud</span>
+                </div>
+                <button
+                  type="button"
+                  className="sq-profile-login-btn"
+                  onClick={() => setIsLoginModalOpen(true)}
+                  aria-label="Se connecter"
+                >
+                  Se connecter
+                </button>
+              </div>
+            )}
 
             {/* Jauge d'XP et progression */}
             <div className="sq-profile-xp-section">
@@ -383,6 +459,11 @@ const Profile: React.FC = () => {
             </div>
           </section>
         </main>
+
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+        />
       </IonContent>
     </IonPage>
   );

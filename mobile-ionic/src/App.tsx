@@ -22,6 +22,7 @@ import {
   radioButtonOn,
   radioButtonOnOutline,
 } from "ionicons/icons";
+import { Auth0Provider } from "@auth0/auth0-react";
 import Home from "./pages/Home";
 import MapPage from "./pages/Map";
 import Defis from "./pages/Defis";
@@ -30,6 +31,7 @@ import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import FriendSearch from "./pages/FriendSearch";
 import Settings from "./pages/Settings";
+import LoginPage from "./pages/Login";
 
 import "@ionic/react/css/core.css";
 import "@ionic/react/css/normalize.css";
@@ -50,7 +52,7 @@ import "./theme/navigation.css";
 setupIonicReact();
 
 // Pages "poussées" où la barre d'onglets est masquée
-const ROUTES_WITHOUT_TAB_BAR = ["/notifications", "/parametres"];
+const ROUTES_WITHOUT_TAB_BAR = ["/notifications", "/parametres", "/login"];
 
 const AppTabs: React.FC = () => {
   const { pathname } = useLocation();
@@ -71,6 +73,9 @@ const AppTabs: React.FC = () => {
 
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/parametres" element={<Settings />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/connexion" element={<Navigate to="/login" replace />} />
+        <Route path="/callback" element={<Navigate to="/accueil" replace />} />
 
         {/* Anciennes URLs de la carte */}
         <Route path="/map" element={<Navigate to="/enregistrer" replace />} />
@@ -111,12 +116,32 @@ const AppTabs: React.FC = () => {
   );
 };
 
+const auth0Domain =
+  import.meta.env.VITE_AUTH0_DOMAIN || "dev-stridequest.us.auth0.com";
+const auth0ClientId =
+  import.meta.env.VITE_AUTH0_CLIENT_ID || "stride-quest-client-id";
+const auth0Audience = import.meta.env.VITE_AUTH0_AUDIENCE;
+
+const redirectUri =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : "http://localhost:5173";
+
 const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <AppTabs />
-    </IonReactRouter>
-  </IonApp>
+  <Auth0Provider
+    domain={auth0Domain}
+    clientId={auth0ClientId}
+    authorizationParams={{
+      redirect_uri: redirectUri,
+      ...(auth0Audience ? { audience: auth0Audience } : {}),
+    }}
+  >
+    <IonApp>
+      <IonReactRouter>
+        <AppTabs />
+      </IonReactRouter>
+    </IonApp>
+  </Auth0Provider>
 );
 
 export default App;

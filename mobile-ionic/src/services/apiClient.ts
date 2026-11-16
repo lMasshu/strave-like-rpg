@@ -68,6 +68,7 @@ export interface HealthCheckResponse {
  */
 export class ApiClient {
   private readonly baseUrl: string;
+  private defaultToken?: string;
 
   constructor(baseUrl?: string) {
     this.baseUrl =
@@ -75,6 +76,13 @@ export class ApiClient {
       (typeof import.meta !== "undefined" &&
         import.meta.env?.VITE_API_BASE_URL) ||
       "http://localhost:3000";
+  }
+
+  /**
+   * Définit un jeton d'authentification Bearer par défaut pour les futures requêtes.
+   */
+  setAuthToken(token?: string): void {
+    this.defaultToken = token;
   }
 
   /**
@@ -95,12 +103,19 @@ export class ApiClient {
    */
   async getCurrentPlayer(
     playerId = "player-default-001",
+    token?: string,
   ): Promise<PlayerProfileDto> {
+    const headers: Record<string, string> = {
+      "x-player-id": playerId,
+    };
+    const activeToken = token || this.defaultToken;
+    if (activeToken) {
+      headers["Authorization"] = `Bearer ${activeToken}`;
+    }
+
     const res = await fetch(`${this.baseUrl}/api/players/me`, {
       method: "GET",
-      headers: {
-        "x-player-id": playerId,
-      },
+      headers,
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -117,13 +132,20 @@ export class ApiClient {
   async saveActivity(
     data: SaveActivityDto,
     playerId = "player-default-001",
+    token?: string,
   ): Promise<ActivitySaveResult> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-player-id": playerId,
+    };
+    const activeToken = token || this.defaultToken;
+    if (activeToken) {
+      headers["Authorization"] = `Bearer ${activeToken}`;
+    }
+
     const res = await fetch(`${this.baseUrl}/api/activities`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-player-id": playerId,
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -140,12 +162,19 @@ export class ApiClient {
    */
   async getPlayerActivities(
     playerId = "player-default-001",
+    token?: string,
   ): Promise<unknown[]> {
+    const headers: Record<string, string> = {
+      "x-player-id": playerId,
+    };
+    const activeToken = token || this.defaultToken;
+    if (activeToken) {
+      headers["Authorization"] = `Bearer ${activeToken}`;
+    }
+
     const res = await fetch(`${this.baseUrl}/api/activities/me`, {
       method: "GET",
-      headers: {
-        "x-player-id": playerId,
-      },
+      headers,
     });
     if (!res.ok) {
       throw new Error(`Failed to fetch activities (${res.status})`);

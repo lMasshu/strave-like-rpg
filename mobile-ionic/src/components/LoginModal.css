@@ -1,0 +1,230 @@
+/**
+ * LoginModal.css - Thème Lime Frost pour l'authentification Stride Quest
+ */
+
+.sq-login-modal {
+  --background: rgba(15, 23, 42, 0.95);
+  --backdrop-opacity: 0.7;
+}
+
+.sq-login-card {
+  max-width: 440px;
+  margin: 0 auto;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border-highlight);
+  border-radius: var(--sq-radius-xl);
+  padding: 28px 24px 20px;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(175, 243, 62, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* En-tête avec bouton fermer */
+.sq-login-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -10px;
+}
+
+.sq-login-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--sq-text-muted);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sq-radius-full);
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.sq-login-close-btn:hover {
+  color: var(--sq-text-main);
+  background-color: var(--sq-surface-card-hover);
+}
+
+/* Identité visuelle */
+.sq-login-brand {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.sq-login-logo-container {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(175, 243, 62, 0.2) 0%,
+    rgba(15, 23, 42, 0.9) 100%
+  );
+  border: 2px solid var(--sq-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 24px rgba(175, 243, 62, 0.25);
+}
+
+.sq-login-logo-symbol {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.sq-login-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--sq-text-main);
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sq-login-title-accent {
+  color: var(--sq-color-primary);
+}
+
+.sq-login-slogan {
+  font-size: 14px;
+  color: var(--sq-text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Avantages RPG */
+.sq-login-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--sq-surface-card-subtle);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md);
+  padding: 12px 14px;
+  margin-bottom: 24px;
+}
+
+.sq-login-perk-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--sq-text-secondary);
+}
+
+.sq-login-perk-icon {
+  color: var(--sq-color-primary);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Boutons d'action Auth */
+.sq-login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.sq-login-btn-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #ffffff;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 14px 20px;
+  border-radius: var(--sq-radius-md);
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+  width: 100%;
+}
+
+.sq-login-btn-google:hover {
+  background: #f9fafb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.sq-login-google-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sq-login-btn-email {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--sq-surface-card-subtle);
+  color: var(--sq-text-main);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 20px;
+  border-radius: var(--sq-radius-md);
+  border: 1px solid var(--sq-border);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+  width: 100%;
+}
+
+.sq-login-btn-email:hover {
+  background: var(--sq-surface-card-hover);
+  border-color: var(--sq-border-highlight);
+}
+
+.sq-login-btn-email ion-icon {
+  font-size: 18px;
+  color: var(--sq-color-primary);
+}
+
+/* Alerte de configuration manquante */
+.sq-login-config-alert {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid var(--sq-gold-rpg);
+  border-radius: var(--sq-radius-sm);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--sq-gold-rpg-tint);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+/* Pied de modale / Mentions légales */
+.sq-login-footer {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--sq-border);
+}
+
+.sq-login-legal-text {
+  font-size: 11px;
+  color: var(--sq-text-subtle);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.sq-login-legal-link {
+  color: var(--sq-color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}

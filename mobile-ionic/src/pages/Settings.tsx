@@ -9,7 +9,9 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import { checkmarkCircle } from "ionicons/icons";
+import WatchLinkSection from "../components/WatchLinkSection";
 import { ColorPalette, useThemeMode } from "../hooks/useThemeMode";
+import { useWatchLink } from "../hooks/useWatchLink";
 import "./Settings.css";
 
 interface PaletteOption {
@@ -42,6 +44,7 @@ const PALETTES: PaletteOption[] = [
 
 const Settings: React.FC = () => {
   const { palette, setPalette } = useThemeMode();
+  const watch = useWatchLink();
 
   return (
     <IonPage>
@@ -112,6 +115,16 @@ const Settings: React.FC = () => {
               })}
             </div>
           </section>
+
+          <WatchLinkSection
+            status={watch.status}
+            workouts={watch.workouts}
+            isBusy={watch.isBusy}
+            error={watch.error}
+            onLink={() => void watch.link()}
+            onRefresh={() => void watch.refresh()}
+            onOpenSettings={() => void watch.openSettings()}
+          />
         </main>
       </IonContent>
     </IonPage>

@@ -31,6 +31,7 @@ describe('ActivityService', () => {
       }),
       findById: vi.fn(async (id) => activities.find((a) => a.id === id) || null),
       findByPlayerId: vi.fn(async (pId) => activities.filter((a) => a.playerId === pId)),
+      findSummariesBetween: vi.fn(async () => []),
       findByExternalRef: vi.fn(
         async (pId, ref) =>
           activities.find(

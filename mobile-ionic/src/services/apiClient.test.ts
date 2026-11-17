@@ -222,6 +222,23 @@ describe("ApiClient", () => {
     );
   });
 
+  it("demande les résumés d'une période avec des bornes ISO", async () => {
+    client.setAuthToken("session-token");
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, { activities: [{ id: "act-1" }] }),
+    );
+
+    const summaries = await client.getActivitySummaries(
+      new Date("2026-11-15T23:00:00.000Z"),
+      new Date("2026-11-22T23:00:00.000Z"),
+    );
+
+    expect(summaries).toEqual([{ id: "act-1" }]);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://test-api:3000/api/activities/me/summary?from=2026-11-15T23%3A00%3A00.000Z&to=2026-11-22T23%3A00%3A00.000Z",
+    );
+  });
+
   it("fetches player activities from /api/activities/me", async () => {
     fetchMock.mockResolvedValue(
       jsonResponse(200, {

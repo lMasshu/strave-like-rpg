@@ -31,6 +31,8 @@ import RpgBadgeCard from "../components/RpgBadgeCard";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { historyOutline } from "../components/customIcons";
 import ProfileTabs, { ProfileTab } from "../components/ProfileTabs";
+import ProfileStatsPanel from "../components/ProfileStatsPanel";
+import { periodRange, StatsPeriod } from "../services/activityStats";
 import { panelId, tabId } from "../components/profileTabIds";
 import {
   DEMO_BADGES,
@@ -41,6 +43,7 @@ import {
 } from "../data/demo";
 import {
   ActivityDto,
+  ActivitySummaryDto,
   apiClient,
   PlayerProfileDto,
 } from "../services/apiClient";
@@ -202,6 +205,15 @@ const Profile: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDemoOnly, setShowDemoOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTabId>("stats");
+  const [statsPeriod, setStatsPeriod] = useState<StatsPeriod>("week");
+  const [periodActivities, setPeriodActivities] = useState<
+    ActivitySummaryDto[]
+  >([]);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [statsNow, setStatsNow] = useState(() => new Date());
+  /** Incrémenté après chaque rechargement du profil (ex. import montre) pour relire les stats. */
+  const [dataVersion, setDataVersion] = useState(0);
 
   const panelProps = (id: ProfileTabId) => ({
     role: "tabpanel",
@@ -237,12 +249,41 @@ const Profile: React.FC = () => {
       console.warn("Impossible de synchroniser les données du profil :", error);
     } finally {
       setIsLoading(false);
+      setDataVersion((version) => version + 1);
     }
   }, [playerId]);
 
   useEffect(() => {
     loadProfileData();
   }, [loadProfileData]);
+
+  // Statistiques de la période choisie, recalculées à partir des vraies activités.
+  useEffect(() => {
+    if (dataVersion === 0) return; // attend le premier chargement (import montre compris)
+    let cancelled = false;
+    const now = new Date();
+    const range = periodRange(statsPeriod, now);
+    setStatsLoading(true);
+    setStatsError(null);
+    apiClient
+      .getActivitySummaries(range.from, range.to)
+      .then((summaries) => {
+        if (cancelled) return;
+        setPeriodActivities(summaries);
+        setStatsNow(now);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStatsError("Impossible de charger les statistiques.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [statsPeriod, dataVersion]);
 
   useIonViewDidEnter(() => {
     loadProfileData();
@@ -403,7 +444,22 @@ const Profile: React.FC = () => {
               label="Sections du profil"
             />
 
-            {activeTab === "stats" && (
+            {/* Toujours les vraies statistiques du compte (zéros s'il n'a pas encore de sortie) */}
+            {activeTab === "stats" && !showDemoOnly && (
+              <div {...panelProps("stats")}>
+                <ProfileStatsPanel
+                  period={statsPeriod}
+                  onPeriodChange={setStatsPeriod}
+                  activities={periodActivities}
+                  loading={statsLoading}
+                  error={statsError}
+                  now={statsNow}
+                />
+              </div>
+            )}
+
+            {/* « Voir démo » : mêmes données fictives que l'historique de démo */}
+            {activeTab === "stats" && showDemoOnly && (
               <div {...panelProps("stats")}>
                 {/* Grille de statistiques de carrière */}
                 <section

@@ -1,0 +1,49 @@
+.sq-stats-header {
+  align-items: center;
+}
+
+/* Sélecteur Semaine / Mois / Année */
+.sq-stats-periods {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md, 12px);
+}
+
+.sq-stats-periods button {
+  min-height: 40px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--sq-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--sq-radius-md, 12px) - 4px);
+  cursor: pointer;
+}
+
+.sq-stats-periods button.is-active {
+  color: var(--ion-color-primary-contrast, #0f172a);
+  background: var(--sq-green-athletic);
+}
+
+.sq-stats-periods button:focus-visible {
+  outline: 3px solid var(--sq-border-highlight);
+  outline-offset: 2px;
+}
+
+.sq-stats-message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sq-text-muted);
+  text-align: center;
+}
+
+/* Année : 12 barres, libellés plus serrés */
+.sq-stats-chart-year .sq-barchart-label,
+.sq-stats-chart-year .sq-barchart-val {
+  font-size: 0.6rem;
+}

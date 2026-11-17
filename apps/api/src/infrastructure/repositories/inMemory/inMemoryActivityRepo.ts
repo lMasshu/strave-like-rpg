@@ -1,5 +1,6 @@
 import type {
   Activity,
+  ActivitySummary,
   ExternalActivityRef,
 } from '../../../core/entities/activity.js';
 import {
@@ -25,16 +26,38 @@ export class InMemoryActivityRepository implements IActivityRepository {
   }
 
   async findByPlayerId(playerId: string, limit = 20): Promise<Activity[]> {
-    const list = Array.from(this.activities.values())
-      .filter((a) => a.playerId === playerId)
-      // Plus récente en premier ; à départ identique, la dernière enregistrée d'abord.
+    return this.newestFirst((a) => a.playerId === playerId)
+      .slice(0, limit)
+      .map((a) => structuredClone(a));
+  }
+
+  async findSummariesBetween(
+    playerId: string,
+    from: Date,
+    to: Date,
+    limit: number,
+  ): Promise<ActivitySummary[]> {
+    return this.newestFirst(
+      (a) =>
+        a.playerId === playerId &&
+        a.startedAt.getTime() >= from.getTime() &&
+        a.startedAt.getTime() < to.getTime(),
+    )
+      .slice(0, limit)
+      .map(({ coordinates: _coordinates, recording: _recording, ...summary }) =>
+        structuredClone(summary),
+      );
+  }
+
+  /** Plus récente en premier ; à départ identique, la dernière enregistrée d'abord. */
+  private newestFirst(predicate: (activity: Activity) => boolean): Activity[] {
+    return Array.from(this.activities.values())
+      .filter(predicate)
       .sort(
         (a, b) =>
           b.startedAt.getTime() - a.startedAt.getTime() ||
           b.createdAt.getTime() - a.createdAt.getTime(),
-      )
-      .slice(0, limit);
-    return list.map((a) => structuredClone(a));
+      );
   }
 
   async findByExternalRef(

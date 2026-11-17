@@ -120,5 +120,15 @@ describe.skipIf(!url)('dépôts PostgreSQL', () => {
     // Séance montre du 17/11 avant la course téléphone du 16/11.
     expect(history.map((a) => a.id)).toEqual([imported.id, withTrack.id]);
     expect(await activities.findById('pas-un-uuid')).toBeNull();
+
+    const summaries = await activities.findSummariesBetween(
+      player.id,
+      new Date('2026-11-17T00:00:00Z'),
+      new Date('2026-11-18T00:00:00Z'),
+      100,
+    );
+    expect(summaries.map((a) => a.id)).toEqual([imported.id]);
+    expect(summaries[0]).not.toHaveProperty('coordinates');
+    expect(summaries[0].external?.deviceName).toBe('Garmin Forerunner 255');
   });
 });

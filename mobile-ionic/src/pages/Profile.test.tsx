@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import { IonReactRouter } from "@ionic/react-router";
 import Profile from "./Profile";
 
@@ -84,5 +84,96 @@ describe("Profile Page (Adventurer Card)", () => {
     expect(
       screen.getByRole("button", { name: "Se connecter" }),
     ).toBeInTheDocument();
+  });
+
+  it("loads and displays real activities from the API when available", async () => {
+    const { apiClient } = await import("../services/apiClient");
+    const getActivitiesSpy = vi
+      .spyOn(apiClient, "getPlayerActivities")
+      .mockResolvedValue([
+        {
+          id: "real-act-1",
+          playerId: "player-default-001",
+          activityType: "run",
+          startedAt: "2026-11-17T08:00:00.000Z",
+          endedAt: "2026-11-17T08:35:00.000Z",
+          durationSeconds: 2100,
+          distanceMeters: 6500,
+          elevationGainMeters: 80,
+          coordinates: [],
+          createdAt: "2026-11-17T08:35:00.000Z",
+        },
+      ]);
+    const getPlayerSpy = vi
+      .spyOn(apiClient, "getCurrentPlayer")
+      .mockResolvedValue({
+        id: "player-default-001",
+        username: "Alexis_Runner",
+        level: 4,
+        experience: 3500,
+        createdAt: "2026-11-01T00:00:00.000Z",
+      });
+
+    render(
+      <IonReactRouter>
+        <Profile />
+      </IonReactRouter>,
+    );
+
+    // Wait for the async activity to appear
+    expect(await screen.findByText(/Course d'endurance/i)).toBeInTheDocument();
+    expect(screen.getByText(/6.5 km/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 réelle/i)).toBeInTheDocument();
+
+    getActivitiesSpy.mockRestore();
+    getPlayerSpy.mockRestore();
+  });
+
+  it("toggles between real activities and demo data without crashing", async () => {
+    const { apiClient } = await import("../services/apiClient");
+    const getActivitiesSpy = vi
+      .spyOn(apiClient, "getPlayerActivities")
+      .mockResolvedValue([
+        {
+          id: "real-act-1",
+          playerId: "player-default-001",
+          activityType: "run",
+          startedAt: "2026-11-17T08:00:00.000Z",
+          endedAt: "2026-11-17T08:35:00.000Z",
+          durationSeconds: 2100,
+          distanceMeters: 6500,
+          elevationGainMeters: 80,
+          coordinates: [],
+          createdAt: "2026-11-17T08:35:00.000Z",
+        },
+      ]);
+
+    render(
+      <IonReactRouter>
+        <Profile />
+      </IonReactRouter>,
+    );
+
+    // Initialement les activités réelles sont affichées
+    expect(await screen.findByText(/Course d'endurance/i)).toBeInTheDocument();
+    const toggleBtn = screen.getByRole("button", { name: /voir démo/i });
+    expect(toggleBtn).toBeInTheDocument();
+
+    // Clic pour passer en mode démo
+    fireEvent.click(toggleBtn);
+
+    // Vérifie que les données de démo s'affichent sans crash (pas de page blanche)
+    expect(
+      screen.getByText(/Reconnaissance des Remparts/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /voir mes sorties/i }),
+    ).toBeInTheDocument();
+
+    // Clic pour revenir aux vraies sorties
+    fireEvent.click(screen.getByRole("button", { name: /voir mes sorties/i }));
+    expect(screen.getByText(/Course d'endurance/i)).toBeInTheDocument();
+
+    getActivitiesSpy.mockRestore();
   });
 });

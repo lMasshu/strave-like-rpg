@@ -53,6 +53,10 @@ export interface UserActivity {
   elevationMeters: number;
   xpEarned: number;
   badgeUnlocked?: string;
+  /** Provenance de la sortie : « Téléphone », « Montre connectée » ou le nom de la montre. */
+  source?: string;
+  /** La sortie vient d'une montre (pour l'icône). */
+  fromWatch?: boolean;
 }
 
 export interface DailyQuest {

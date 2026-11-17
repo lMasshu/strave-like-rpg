@@ -9,7 +9,9 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import { checkmarkCircle } from "ionicons/icons";
+import AccountSection from "../components/AccountSection";
 import WatchLinkSection from "../components/WatchLinkSection";
+import { useAuth } from "../auth/authContext";
 import { ColorPalette, useThemeMode } from "../hooks/useThemeMode";
 import { useWatchLink } from "../hooks/useWatchLink";
 import "./Settings.css";
@@ -45,6 +47,7 @@ const PALETTES: PaletteOption[] = [
 const Settings: React.FC = () => {
   const { palette, setPalette } = useThemeMode();
   const watch = useWatchLink();
+  const { player, logout } = useAuth();
 
   return (
     <IonPage>
@@ -64,6 +67,9 @@ const Settings: React.FC = () => {
             <h1>Paramètres</h1>
             <p>Adaptez Stride Quest à votre style d’aventure.</p>
           </header>
+
+          {/* La déconnexion efface la session : l'appli affiche alors la page de connexion. */}
+          <AccountSection player={player} onLogout={logout} />
 
           <section aria-labelledby="palette-heading">
             <div className="settings-section-heading">
@@ -118,11 +124,9 @@ const Settings: React.FC = () => {
 
           <WatchLinkSection
             status={watch.status}
-            workouts={watch.workouts}
             isBusy={watch.isBusy}
             error={watch.error}
             onLink={() => void watch.link()}
-            onRefresh={() => void watch.refresh()}
             onOpenSettings={() => void watch.openSettings()}
           />
         </main>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildApp } from './app.js';
+import { appWithPlayer } from '../../test/testApp.js';
 import { recordedActivity } from '../../test/recordingFixture.js';
 import type { CreateActivityInput } from '../../core/entities/activity.js';
 import { readFileSync } from 'node:fs';
@@ -33,7 +33,7 @@ const corruptions: [string, (input: CreateActivityInput) => void][] = [
 
 describe('recording HTTP round-trip', () => {
   it('accepts the documented mobile wire fixture', async () => {
-    const app = await buildApp();
+    const { app, headers } = await appWithPlayer();
     try {
       const payload = JSON.parse(
         readFileSync('../../docs/api/recording.example.json', 'utf8'),
@@ -41,12 +41,14 @@ describe('recording HTTP round-trip', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/activities',
+        headers,
         payload,
       });
       expect(response.statusCode).toBe(201);
       const detail = await app.inject({
         method: 'GET',
         url: `/api/activities/${response.json().activityId}`,
+        headers,
       });
       expect(detail.json().recording).toEqual(recordedActivity().recording);
     } finally {
@@ -55,12 +57,13 @@ describe('recording HTTP round-trip', () => {
   });
 
   it('accepts a body above the old 1 MiB limit but rejects above 32 MiB', async () => {
-    const app = await buildApp();
+    const { app, headers } = await appWithPlayer();
     try {
       const input = recordedActivity();
       const response = await app.inject({
         method: 'POST',
         url: '/api/activities',
+        headers,
         payload: {
           ...input,
           startedAt: input.startedAt.toISOString(),
@@ -73,6 +76,7 @@ describe('recording HTTP round-trip', () => {
         method: 'POST',
         url: '/api/activities',
         headers: {
+          ...headers,
           'content-type': 'application/json',
           'content-length': String(32 * 1024 * 1024 + 1),
         },
@@ -84,12 +88,13 @@ describe('recording HTTP round-trip', () => {
     }
   });
   it('preserves the complete recording in detail and history', async () => {
-    const app = await buildApp();
+    const { app, headers } = await appWithPlayer();
     try {
       const input = recordedActivity();
       const response = await app.inject({
         method: 'POST',
         url: '/api/activities',
+        headers,
         payload: {
           ...input,
           startedAt: input.startedAt.toISOString(),
@@ -100,11 +105,13 @@ describe('recording HTTP round-trip', () => {
       const detail = await app.inject({
         method: 'GET',
         url: `/api/activities/${response.json().activityId}`,
+        headers,
       });
       expect(detail.json().recording).toEqual(input.recording);
       const history = await app.inject({
         method: 'GET',
         url: '/api/activities/me',
+        headers,
       });
       expect(history.json().activities[0].recording).toEqual(input.recording);
     } finally {
@@ -114,16 +121,17 @@ describe('recording HTTP round-trip', () => {
   it.each(corruptions)(
     'rejects %s without awarding XP',
     async (_name, corrupt) => {
-      const app = await buildApp();
+      const { app, headers } = await appWithPlayer();
       try {
         const profile = (
-          await app.inject({ method: 'GET', url: '/api/players/me' })
+          await app.inject({ method: 'GET', url: '/api/players/me', headers })
         ).json();
         const input = recordedActivity();
         corrupt(input);
         const response = await app.inject({
           method: 'POST',
           url: '/api/activities',
+        headers,
           payload: {
             ...input,
             startedAt: input.startedAt.toISOString(),
@@ -132,7 +140,7 @@ describe('recording HTTP round-trip', () => {
         });
         expect(response.statusCode).toBe(400);
         expect(
-          (await app.inject({ method: 'GET', url: '/api/players/me' })).json(),
+          (await app.inject({ method: 'GET', url: '/api/players/me', headers })).json(),
         ).toEqual(profile);
       } finally {
         await app.close();

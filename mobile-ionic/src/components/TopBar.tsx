@@ -12,11 +12,9 @@ import {
   notificationsOutline,
   person,
   personAddOutline,
-  personOutline,
   settingsOutline,
   sunnyOutline,
 } from "ionicons/icons";
-import { useAuth0 } from "@auth0/auth0-react";
 import { getUnreadCount } from "../data/demo";
 import { useThemeMode } from "../hooks/useThemeMode";
 import "./TopBar.css";
@@ -31,7 +29,6 @@ const TopBar: React.FC<TopBarProps> = ({
   unreadCount = getUnreadCount(),
 }) => {
   const { resolvedTheme, toggleTheme } = useThemeMode();
-  const { isAuthenticated } = useAuth0();
 
   return (
     <IonHeader className="top-bar" translucent>
@@ -89,22 +86,14 @@ const TopBar: React.FC<TopBarProps> = ({
             )}
           </IonButton>
 
+          {/* La connexion est obligatoire : la barre n'est affichée qu'à un joueur connecté. */}
           <IonButton
             routerLink="/profil"
             routerDirection="forward"
-            aria-label={
-              isAuthenticated
-                ? "Mon Profil (Connecté avec Auth0)"
-                : "Mon Profil"
-            }
-            className={`top-bar-action-btn ${
-              isAuthenticated ? "top-bar-profile-connected" : ""
-            }`}
+            aria-label="Mon Profil"
+            className="top-bar-action-btn top-bar-profile-connected"
           >
-            <IonIcon
-              slot="icon-only"
-              icon={isAuthenticated ? person : personOutline}
-            />
+            <IonIcon slot="icon-only" icon={person} />
           </IonButton>
         </IonButtons>
       </IonToolbar>

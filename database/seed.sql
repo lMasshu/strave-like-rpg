@@ -1,9 +1,17 @@
 -- 1. Joueurs de test (avec UUID valides compatibles PostgreSQL)
-INSERT INTO players (id, username, level, experience, created_at)
+-- DÉVELOPPEMENT UNIQUEMENT : les trois comptes ont le mot de passe « stride-demo-2026 »
+-- (hash scrypt ci-dessous). Ne jamais charger ce fichier sur une base de production.
+INSERT INTO players (id, username, email, password_hash, level, experience, created_at)
 VALUES
-    ('11111111-1111-4111-8111-111111111111', 'Lucas_Run', 1, 820, '2026-01-01T00:00:00Z'),
-    ('22222222-2222-4222-8222-222222222222', 'Lea_Trail', 4, 3450, '2026-01-15T10:00:00Z'),
-    ('33333333-3333-4333-8333-333333333333', 'Hugo_Bike', 7, 6800, '2026-02-01T14:30:00Z')
+    ('11111111-1111-4111-8111-111111111111', 'Lucas_Run', 'lucas@stridequest.dev',
+     'scrypt$32768$8$1$7wlmwwj/EVMDyRSKfSe0Jw==$kxCDoxPmYdfWWVapXJgb7cwIsa+iBABE+IflLmzWYf1fvHwIimhPmfpo+Q3tjX0eGtaGEnloqitzRqnxPIF+vA==',
+     1, 820, '2026-01-01T00:00:00Z'),
+    ('22222222-2222-4222-8222-222222222222', 'Lea_Trail', 'lea@stridequest.dev',
+     'scrypt$32768$8$1$7wlmwwj/EVMDyRSKfSe0Jw==$kxCDoxPmYdfWWVapXJgb7cwIsa+iBABE+IflLmzWYf1fvHwIimhPmfpo+Q3tjX0eGtaGEnloqitzRqnxPIF+vA==',
+     4, 3450, '2026-01-15T10:00:00Z'),
+    ('33333333-3333-4333-8333-333333333333', 'Hugo_Bike', 'hugo@stridequest.dev',
+     'scrypt$32768$8$1$7wlmwwj/EVMDyRSKfSe0Jw==$kxCDoxPmYdfWWVapXJgb7cwIsa+iBABE+IflLmzWYf1fvHwIimhPmfpo+Q3tjX0eGtaGEnloqitzRqnxPIF+vA==',
+     7, 6800, '2026-02-01T14:30:00Z')
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Boss de Raid actifs (ST_MakePoint(longitude, latitude))

@@ -2,6 +2,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { IonReactRouter } from "@ionic/react-router";
 import Settings from "./Settings";
+import { fakeAuth, withAuth } from "../test/authTestUtils";
+
+const auth = fakeAuth();
 
 describe("Settings page", () => {
   beforeEach(() => {
@@ -11,11 +14,7 @@ describe("Settings page", () => {
   });
 
   it("presents the three interface palettes as an accessible radio group", () => {
-    render(
-      <IonReactRouter>
-        <Settings />
-      </IonReactRouter>,
-    );
+    render(<IonReactRouter>{withAuth(<Settings />, auth)}</IonReactRouter>);
 
     expect(
       screen.getByRole("heading", { name: "Paramètres" }),
@@ -40,11 +39,7 @@ describe("Settings page", () => {
   });
 
   it("applies the selected palette immediately", () => {
-    render(
-      <IonReactRouter>
-        <Settings />
-      </IonReactRouter>,
-    );
+    render(<IonReactRouter>{withAuth(<Settings />, auth)}</IonReactRouter>);
 
     fireEvent.click(screen.getByRole("radio", { name: /Violet Bloom/i }));
 
@@ -56,5 +51,26 @@ describe("Settings page", () => {
       "data-palette",
       "violet-bloom",
     );
+  });
+
+  it("présente le compte connecté et le déconnecte au clic", () => {
+    const session = fakeAuth({
+      player: {
+        ...auth.player!,
+        googleLinked: true,
+      },
+    });
+    render(<IonReactRouter>{withAuth(<Settings />, session)}</IonReactRouter>);
+
+    const account = screen.getByRole("region", { name: "Profil" });
+    expect(account).toHaveTextContent("Lucas_Run");
+    expect(account).toHaveTextContent("lucas@stridequest.dev");
+    const methods = screen.getByRole("list", { name: "Moyens de connexion" });
+    expect(methods).toHaveTextContent("E-mail et mot de passe");
+    expect(methods).toHaveTextContent("Google");
+
+    fireEvent.click(screen.getByRole("button", { name: /Se déconnecter/ }));
+
+    expect(session.logout).toHaveBeenCalledOnce();
   });
 });

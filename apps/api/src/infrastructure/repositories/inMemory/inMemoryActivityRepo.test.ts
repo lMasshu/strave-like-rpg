@@ -24,3 +24,27 @@ it('isolates saved data, returned data and subsequent readers', async () => {
   list[0].recording!.samples.length = 0;
   expect((await repo.findById(input.id))!.recording!.samples).toHaveLength(4);
 });
+
+it('retrouve une séance importée par sa référence externe, pour ce joueur uniquement', async () => {
+  const repo = new InMemoryActivityRepository();
+  const external = { source: 'health-connect' as const, id: 'hc-1' };
+  await repo.create({
+    ...recordedActivity(),
+    id: 'imported',
+    external,
+    createdAt: new Date(110000),
+    elevationGainMeters: 0,
+  });
+  const playerId = recordedActivity().playerId;
+
+  expect((await repo.findByExternalRef(playerId, external))?.id).toBe(
+    'imported',
+  );
+  expect(
+    await repo.findByExternalRef(playerId, { ...external, id: 'hc-2' }),
+  ).toBeNull();
+  expect(
+    await repo.findByExternalRef(playerId, { ...external, source: 'apple-health' }),
+  ).toBeNull();
+  expect(await repo.findByExternalRef('someone-else', external)).toBeNull();
+});

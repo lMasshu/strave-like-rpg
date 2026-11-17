@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { validateRecording } from './recordingValidation.js';
 import type { Activity, CreateActivityInput } from '../entities/activity.js';
-import { calculateLevel } from '../entities/player.js';
-import type { IActivityRepository } from '../ports/activityRepository.js';
+import {
+  DuplicateActivityError,
+  type IActivityRepository,
+} from '../ports/activityRepository.js';
 import type { IPlayerRepository } from '../ports/playerRepository.js';
 import type { IEventPublisher } from '../ports/eventPublisher.js';
 import type { AntiCheatService } from './antiCheatService.js';
@@ -25,6 +27,8 @@ export interface RecordActivityResult {
   totalExperience: number;
 }
 
+export { DuplicateActivityError };
+
 /**
  * Service orchestrant l'enregistrement des courses et la progression RPG.
  *
@@ -45,11 +49,22 @@ export class ActivityService {
   /**
    * Enregistre une activité sportive, applique la progression RPG et publie l'effort.
    *
+   * @throws DuplicateActivityError si la séance de montre a déjà été importée
    * @throws Error si l'anti-triche échoue ou si le joueur n'existe pas
    */
   async recordActivity(
     input: CreateActivityInput,
   ): Promise<RecordActivityResult> {
+    // 0. Dédoublonnage des imports de montre (avant tout gain d'XP).
+    // La contrainte UNIQUE de la table `activities` reste le garde-fou en cas d'envois simultanés.
+    if (input.external) {
+      const existing = await this.activityRepo.findByExternalRef(
+        input.playerId,
+        input.external,
+      );
+      if (existing) throw new DuplicateActivityError(existing.id);
+    }
+
     const recordingValidation = validateRecording(input);
     if (!recordingValidation.isValid)
       throw new Error(recordingValidation.reason);
@@ -71,19 +86,8 @@ export class ActivityService {
     const elevationXp = Math.floor((input.elevationGainMeters || 0) * 2);
     const xpEarned = distanceXp + elevationXp;
 
-    const previousLevel = player.level;
-    const newTotalExperience = player.experience + xpEarned;
-    const { level: newLevel } = calculateLevel(newTotalExperience);
-    const levelUp = newLevel > previousLevel;
-
-    // 4. Mise à jour atomique du profil joueur
-    await this.playerRepo.updateExperienceAndLevel(
-      player.id,
-      newTotalExperience,
-      newLevel,
-    );
-
-    // 5. Persistance de l'activité
+    // 4. Persistance de l'activité AVANT le gain d'XP : si la base refuse un doublon
+    // (contrainte UNIQUE sur la séance de montre), aucune XP n'est créditée.
     const activity: Activity = {
       id: randomUUID(),
       playerId: input.playerId,
@@ -95,10 +99,18 @@ export class ActivityService {
       elevationGainMeters: input.elevationGainMeters || 0,
       coordinates: input.coordinates,
       ...(input.recording ? { recording: input.recording } : {}),
+      ...(input.external ? { external: input.external } : {}),
       createdAt: new Date(),
     };
 
     const savedActivity = await this.activityRepo.create(activity);
+
+    // 5. Gain d'XP atomique côté stockage (pas de lecture puis écriture concurrente)
+    const previousLevel = player.level;
+    const updatedPlayer = await this.playerRepo.addExperience(player.id, xpEarned);
+    const newLevel = updatedPlayer.level;
+    const levelUp = newLevel > previousLevel;
+    const newTotalExperience = updatedPlayer.experience;
 
     // 6. Publication sur le broker de messages (RabbitMQ)
     await this.eventPublisher.publish('activity.completed', {

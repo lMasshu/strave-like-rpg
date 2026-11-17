@@ -356,6 +356,7 @@
 
 .sq-profile-activity-card .sq-activity-sub {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   font-size: 0.78rem;
@@ -366,6 +367,15 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Provenance : téléphone ou montre connectée (nom du modèle si connu) */
+.sq-profile-activity-card .sq-activity-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--sq-text-muted);
 }
 
 .sq-profile-activity-card .sq-activity-metrics-row {

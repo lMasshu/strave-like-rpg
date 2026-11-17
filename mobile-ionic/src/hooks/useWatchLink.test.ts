@@ -63,18 +63,17 @@ describe("useWatchLink", () => {
     removeListener.mockClear();
   });
 
-  it("lit l'état au montage sans lire les séances si non liée", async () => {
+  it("lit l'état au montage sans demander d'autorisation", async () => {
     const client = makeClient();
     const { result } = renderHook(() => useWatchLink(client));
 
     await waitFor(() =>
       expect(result.current.status?.state).toBe("not-linked"),
     );
-    expect(result.current.workouts).toEqual([]);
-    expect(client.queryWorkouts).not.toHaveBeenCalled();
+    expect(client.requestAuthorization).not.toHaveBeenCalled();
   });
 
-  it("charge les séances après la liaison", async () => {
+  it("passe à « liée » après la liaison, sans lire les séances (l'import se fait depuis le profil)", async () => {
     const client = makeClient();
     const { result } = renderHook(() => useWatchLink(client));
     await waitFor(() => expect(result.current.status).not.toBeNull());
@@ -82,7 +81,7 @@ describe("useWatchLink", () => {
     await act(() => result.current.link());
 
     expect(result.current.status?.state).toBe("linked");
-    expect(result.current.workouts.map((w) => w.externalId)).toEqual(["hc-1"]);
+    expect(client.queryWorkouts).not.toHaveBeenCalled();
     expect(result.current.isBusy).toBe(false);
   });
 

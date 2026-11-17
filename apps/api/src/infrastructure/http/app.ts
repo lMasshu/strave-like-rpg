@@ -1,9 +1,27 @@
-import fastify, { FastifyInstance } from 'fastify';
+import fastify, { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
+import jwt from '@fastify/jwt';
+import rateLimit from '@fastify/rate-limit';
 import { z } from 'zod';
 import { recordingSchema } from './recordingSchema.js';
 import { AntiCheatService } from '../../core/services/antiCheatService.js';
-import { ActivityService } from '../../core/services/activityService.js';
+import {
+  ActivityService,
+  DuplicateActivityError,
+} from '../../core/services/activityService.js';
+import {
+  AuthService,
+  EmailAlreadyUsedError,
+  type IGoogleIdentityVerifier,
+  InvalidCredentialsError,
+  UnverifiedGoogleEmailError,
+  UsernameTakenError,
+} from '../../core/services/authService.js';
+import {
+  type Player,
+  toPlayerProfile,
+  toPublicPlayer,
+} from '../../core/entities/player.js';
 import { InMemoryActivityRepository } from '../repositories/inMemory/inMemoryActivityRepo.js';
 import { InMemoryPlayerRepository } from '../repositories/inMemory/inMemoryPlayerRepo.js';
 import { InMemoryEventPublisher } from '../events/inMemoryEventPublisher.js';
@@ -11,11 +29,27 @@ import type { IActivityRepository } from '../../core/ports/activityRepository.js
 import type { IPlayerRepository } from '../../core/ports/playerRepository.js';
 import type { IEventPublisher } from '../../core/ports/eventPublisher.js';
 
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    payload: { sub: string };
+    user: { sub: string };
+  }
+}
+
 export interface AppDependencies {
+  /** Secret de signature des jetons de session (au moins 32 caractères). */
+  jwtSecret: string;
   activityRepo?: IActivityRepository;
   playerRepo?: IPlayerRepository;
   eventPublisher?: IEventPublisher;
+  /** Vérificateur Auth0 pour « Continuer avec Google » ; absent = connexion Google désactivée. */
+  googleVerifier?: IGoogleIdentityVerifier | null;
+  /** Tentatives d'authentification autorisées par minute et par adresse IP. */
+  authRateLimitPerMinute?: number;
 }
+
+/** Durée de validité d'une session. */
+export const SESSION_TTL = '7d';
 
 const createActivitySchema = z.object({
   activityType: z.enum(['walk', 'run', 'bike', 'hike']),
@@ -29,21 +63,72 @@ const createActivitySchema = z.object({
     .optional()
     .default([]),
   recording: recordingSchema.optional(),
+  external: z
+    .object({
+      source: z.enum(['health-connect', 'apple-health']),
+      id: z.string().trim().min(1).max(200),
+      deviceName: z.string().trim().min(1).max(100).optional(),
+    })
+    .optional(),
 });
 
-export async function buildApp(
-  deps?: AppDependencies,
-): Promise<FastifyInstance> {
+const emailSchema = z
+  .string({ required_error: "L'e-mail est obligatoire" })
+  .trim()
+  .max(254, 'E-mail trop long')
+  .email('E-mail invalide');
+
+const registerSchema = z.object({
+  email: emailSchema,
+  password: z
+    .string({ required_error: 'Le mot de passe est obligatoire' })
+    .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+    .max(128, 'Le mot de passe est trop long (128 caractères maximum)')
+    .refine((value) => value.trim().length > 0, 'Le mot de passe ne peut pas être vide'),
+  username: z
+    .string({ required_error: 'Le pseudo est obligatoire' })
+    .trim()
+    .min(3, 'Le pseudo doit contenir au moins 3 caractères')
+    .max(40, 'Le pseudo doit contenir au plus 40 caractères')
+    .regex(/^[A-Za-z0-9_.-]+$/, 'Le pseudo ne peut contenir que lettres, chiffres, _ . -'),
+});
+
+const loginSchema = z.object({
+  email: z.string().trim().min(1).max(254),
+  password: z.string().min(1).max(128),
+});
+
+const googleSchema = z.object({
+  idToken: z.string().min(20).max(8192),
+});
+
+function firstIssue(error: z.ZodError): string {
+  return error.issues[0]?.message ?? 'Données invalides';
+}
+
+export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> {
+  if (!deps?.jwtSecret || deps.jwtSecret.length < 32) {
+    throw new Error('jwtSecret manquant ou trop court (32 caractères minimum)');
+  }
+
   const app = fastify({ logger: false });
 
   await app.register(cors, {
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });
+  await app.register(jwt, {
+    secret: deps.jwtSecret,
+    sign: { algorithm: 'HS256', expiresIn: SESSION_TTL },
+    verify: { algorithms: ['HS256'] },
+  });
+  // Limitation activée route par route (authentification uniquement).
+  await app.register(rateLimit, { global: false });
 
-  const activityRepo = deps?.activityRepo ?? new InMemoryActivityRepository();
-  const playerRepo = deps?.playerRepo ?? new InMemoryPlayerRepository();
-  const eventPublisher = deps?.eventPublisher ?? new InMemoryEventPublisher();
+  const activityRepo = deps.activityRepo ?? new InMemoryActivityRepository();
+  const playerRepo = deps.playerRepo ?? new InMemoryPlayerRepository();
+  const eventPublisher = deps.eventPublisher ?? new InMemoryEventPublisher();
+  const googleVerifier = deps.googleVerifier ?? null;
   const antiCheat = new AntiCheatService();
   const activityService = new ActivityService(
     activityRepo,
@@ -51,6 +136,25 @@ export async function buildApp(
     eventPublisher,
     antiCheat,
   );
+  const authService = new AuthService(playerRepo);
+
+  const authRateLimit = {
+    rateLimit: { max: deps.authRateLimitPerMinute ?? 10, timeWindow: '1 minute' },
+  };
+
+  /** Rejette (401) toute requête sans jeton de session valide et signé par cette API. */
+  const authenticate = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await req.jwtVerify();
+    } catch {
+      return reply.status(401).send({ error: 'Authentification requise' });
+    }
+  };
+
+  const sessionFor = (player: Player) => ({
+    token: app.jwt.sign({ sub: player.id }),
+    player: toPlayerProfile(player),
+  });
 
   // 0. Root info route
   app.get('/', async () => {
@@ -72,58 +176,74 @@ export async function buildApp(
     };
   });
 
-  // Helper to extract authenticated/current player ID from Authorization Bearer or x-player-id
-  const extractSubFromBearer = (authHeader: unknown): string | null => {
-    if (typeof authHeader !== 'string') return null;
-    const parts = authHeader.trim().split(' ');
-    if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') return null;
-    const token = parts[1];
+  // 2. Authentification
+  app.post('/api/auth/register', { config: authRateLimit }, async (req, reply) => {
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: firstIssue(parsed.error) });
+    }
     try {
-      const jwtSegments = token.split('.');
-      if (jwtSegments.length >= 2) {
-        const payloadBase64 = jwtSegments[1].replace(/-/g, '+').replace(/_/g, '/');
-        const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf-8');
-        const payload = JSON.parse(payloadJson);
-        if (typeof payload?.sub === 'string' && payload.sub.trim()) {
-          return payload.sub.trim();
-        }
+      const player = await authService.register(parsed.data);
+      return reply.status(201).send(sessionFor(player));
+    } catch (err) {
+      if (err instanceof EmailAlreadyUsedError || err instanceof UsernameTakenError) {
+        return reply.status(409).send({ error: err.message });
       }
+      throw err;
+    }
+  });
+
+  app.post('/api/auth/login', { config: authRateLimit }, async (req, reply) => {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "L'e-mail et le mot de passe sont obligatoires" });
+    }
+    try {
+      const player = await authService.login(parsed.data.email, parsed.data.password);
+      return sessionFor(player);
+    } catch (err) {
+      if (err instanceof InvalidCredentialsError) {
+        return reply.status(401).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
+  app.post('/api/auth/google', { config: authRateLimit }, async (req, reply) => {
+    if (!googleVerifier) {
+      return reply
+        .status(503)
+        .send({ error: "La connexion Google n'est pas configurée sur ce serveur" });
+    }
+    const parsed = googleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Jeton Google manquant' });
+    }
+
+    let identity;
+    try {
+      identity = await googleVerifier.verify(parsed.data.idToken);
     } catch {
-      // Ignorer si ce n'est pas un JWT décodable
+      return reply.status(401).send({ error: 'Jeton Google invalide ou expiré' });
     }
-    return null;
-  };
+    try {
+      return sessionFor(await authService.loginWithGoogle(identity));
+    } catch (err) {
+      if (err instanceof UnverifiedGoogleEmailError) {
+        return reply.status(403).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
 
-  const getPlayerId = (req: { headers: Record<string, unknown> }): string => {
-    const bearerSub = extractSubFromBearer(req.headers['authorization']);
-    if (bearerSub) {
-      return bearerSub;
-    }
-    const headerId = req.headers['x-player-id'];
-    if (typeof headerId === 'string' && headerId.trim()) {
-      return headerId.trim();
-    }
-    return 'player-default-001';
-  };
-
-  // 2. Player routes
-  app.get('/api/players/me', async (req, reply) => {
-    const playerId = getPlayerId(req);
-    let player = await playerRepo.findById(playerId);
-    if (!player && (playerId.includes('|') || req.headers['authorization'])) {
-      // Provisionne automatiquement le joueur Auth0
-      player = await playerRepo.create({
-        id: playerId,
-        username: `adventurer_${playerId.slice(-6)}`,
-        level: 1,
-        experience: 0,
-        createdAt: new Date(),
-      });
-    }
+  // 3. Player routes
+  app.get('/api/players/me', { preHandler: authenticate }, async (req, reply) => {
+    const player = await playerRepo.findById(req.user.sub);
     if (!player) {
-      return reply.status(404).send({ error: 'Player not found' });
+      // Compte supprimé alors que la session était encore valide.
+      return reply.status(401).send({ error: 'Authentification requise' });
     }
-    return player;
+    return toPlayerProfile(player);
   });
 
   app.get('/api/players/:id', async (req, reply) => {
@@ -132,13 +252,13 @@ export async function buildApp(
     if (!player) {
       return reply.status(404).send({ error: 'Player not found' });
     }
-    return player;
+    return toPublicPlayer(player);
   });
 
-  // 3. Activity routes
+  // 4. Activity routes (toujours rattachées au joueur du jeton, jamais à un identifiant envoyé par le client)
   app.post(
     '/api/activities',
-    { bodyLimit: 32 * 1024 * 1024 },
+    { bodyLimit: 32 * 1024 * 1024, preHandler: authenticate },
     async (req, reply) => {
       const parseResult = createActivitySchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -148,23 +268,11 @@ export async function buildApp(
         });
       }
 
-      const playerId = getPlayerId(req);
-      // Auto-provisionne le joueur Auth0 s'il n'existe pas encore
-      const existingPlayer = await playerRepo.findById(playerId);
-      if (!existingPlayer && (playerId.includes('|') || req.headers['authorization'])) {
-        await playerRepo.create({
-          id: playerId,
-          username: `adventurer_${playerId.slice(-6)}`,
-          level: 1,
-          experience: 0,
-          createdAt: new Date(),
-        });
-      }
       const body = parseResult.data;
 
       try {
         const result = await activityService.recordActivity({
-          playerId,
+          playerId: req.user.sub,
           activityType: body.activityType,
           startedAt: new Date(body.startedAt),
           endedAt: new Date(body.endedAt),
@@ -173,6 +281,7 @@ export async function buildApp(
           elevationGainMeters: body.elevationGainMeters,
           coordinates: body.coordinates,
           recording: body.recording,
+          external: body.external,
         });
 
         return reply.status(201).send({
@@ -186,22 +295,28 @@ export async function buildApp(
           durationSeconds: result.activity.durationSeconds,
         });
       } catch (err: unknown) {
+        if (err instanceof DuplicateActivityError) {
+          return reply.status(409).send({
+            error: err.message,
+            activityId: err.existingActivityId,
+          });
+        }
         const message = err instanceof Error ? err.message : 'Unknown error';
         return reply.status(400).send({ error: message });
       }
     },
   );
 
-  app.get('/api/activities/me', async (req) => {
-    const playerId = getPlayerId(req);
-    const activities = await activityService.getPlayerActivities(playerId);
+  app.get('/api/activities/me', { preHandler: authenticate }, async (req) => {
+    const activities = await activityService.getPlayerActivities(req.user.sub);
     return { activities };
   });
 
-  app.get('/api/activities/:id', async (req, reply) => {
+  app.get('/api/activities/:id', { preHandler: authenticate }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const activity = await activityService.getActivityById(id);
-    if (!activity) {
+    // Le tracé est une donnée personnelle : seul son propriétaire peut le lire.
+    if (!activity || activity.playerId !== req.user.sub) {
       return reply.status(404).send({ error: 'Activity not found' });
     }
     return activity;

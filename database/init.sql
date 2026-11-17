@@ -1,13 +1,22 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS citext;
 
--- 1. Table des joueurs
+-- 1. Table des joueurs (= comptes utilisateurs)
 CREATE TABLE IF NOT EXISTS players (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(40) NOT NULL UNIQUE,
+    -- Identifiant de connexion, unique sans tenir compte de la casse
+    email CITEXT NOT NULL UNIQUE CHECK (length(email) <= 254),
+    -- Hash scrypt « scrypt$N$r$p$sel$hash » ; NULL pour un compte créé uniquement via Google
+    password_hash TEXT,
+    -- Identifiant Auth0 (ex. « google-oauth2|123 ») quand le compte est lié à Google
+    auth0_sub VARCHAR(255) UNIQUE,
     level INTEGER NOT NULL DEFAULT 1 CHECK (level > 0),
     experience INTEGER NOT NULL DEFAULT 0 CHECK (experience >= 0),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Un compte doit toujours avoir au moins un moyen de connexion
+    CHECK (password_hash IS NOT NULL OR auth0_sub IS NOT NULL)
 );
 
 -- 2. Table des Boss de Raid (géolocalisés)
@@ -39,11 +48,21 @@ CREATE TABLE IF NOT EXISTS activities (
     elevation_gain_meters INTEGER NOT NULL DEFAULT 0 CHECK (elevation_gain_meters >= 0),
     track GEOMETRY(LineString, 4326),
     recording JSONB,
+    -- Séance importée depuis une montre (Health Connect / Apple Santé), NULL si enregistrée par l'appli
+    external_source VARCHAR(20) CHECK (external_source IN ('health-connect', 'apple-health')),
+    external_id VARCHAR(200),
+    -- Montre d'origine si connue (ex. « Garmin Forerunner 255 »), affichée dans l'historique
+    external_device VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CHECK (ended_at IS NULL OR ended_at >= started_at)
+    CHECK (ended_at IS NULL OR ended_at >= started_at),
+    CHECK ((external_source IS NULL) = (external_id IS NULL))
 );
 
 CREATE INDEX IF NOT EXISTS activities_player_id_idx ON activities (player_id);
+-- Empêche d'importer deux fois la même séance de montre (et donc de recréditer l'XP)
+CREATE UNIQUE INDEX IF NOT EXISTS activities_external_ref_uniq
+    ON activities (player_id, external_source, external_id)
+    WHERE external_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS activities_started_at_idx ON activities (started_at DESC);
 CREATE INDEX IF NOT EXISTS activities_track_gist_idx ON activities USING GIST (track);
 

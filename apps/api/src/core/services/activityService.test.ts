@@ -1,16 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ActivityService } from './activityService.js';
+import { ActivityService, DuplicateActivityError } from './activityService.js';
 import { AntiCheatService } from './antiCheatService.js';
 import type { IActivityRepository } from '../ports/activityRepository.js';
 import type { IPlayerRepository } from '../ports/playerRepository.js';
 import type { IEventPublisher } from '../ports/eventPublisher.js';
 import type { Activity, CreateActivityInput } from '../entities/activity.js';
-import type { Player } from '../entities/player.js';
+import { calculateLevel, type Player } from '../entities/player.js';
 
 describe('ActivityService', () => {
   const mockPlayer: Player = {
     id: 'player-1',
     username: 'runner_hero',
+    email: 'runner@example.com',
+    passwordHash: 'scrypt$hash',
+    auth0Sub: null,
     level: 1,
     experience: 800,
     createdAt: new Date('2026-01-01'),
@@ -28,14 +31,27 @@ describe('ActivityService', () => {
       }),
       findById: vi.fn(async (id) => activities.find((a) => a.id === id) || null),
       findByPlayerId: vi.fn(async (pId) => activities.filter((a) => a.playerId === pId)),
+      findByExternalRef: vi.fn(
+        async (pId, ref) =>
+          activities.find(
+            (a) =>
+              a.playerId === pId &&
+              a.external?.source === ref.source &&
+              a.external?.id === ref.id,
+          ) ?? null,
+      ),
     };
 
     const playerRepo: IPlayerRepository = {
       findById: vi.fn(async (id) => (id === player.id ? player : null)),
+      findByEmail: vi.fn(async () => null),
       findByUsername: vi.fn(async (u) => (u === player.username ? player : null)),
-      create: vi.fn(async (p) => p),
-      updateExperienceAndLevel: vi.fn(async (id, exp, lvl) => {
-        player = { ...player, experience: exp, level: lvl };
+      findByAuth0Sub: vi.fn(async () => null),
+      create: vi.fn(),
+      linkAuth0Sub: vi.fn(),
+      addExperience: vi.fn(async (_id, xpDelta) => {
+        const experience = player.experience + xpDelta;
+        player = { ...player, experience, level: calculateLevel(experience).level };
         return player;
       }),
     };
@@ -98,7 +114,7 @@ describe('ActivityService', () => {
     expect(result.activity.id).toBeDefined();
 
     // Verify player updated
-    expect(playerRepo.updateExperienceAndLevel).toHaveBeenCalledWith('player-1', 1200, 2);
+    expect(playerRepo.addExperience).toHaveBeenCalledWith('player-1', 400);
 
     // Verify event published for RabbitMQ
     expect(eventPublisher.publish).toHaveBeenCalledOnce();
@@ -108,5 +124,30 @@ describe('ActivityService', () => {
       distanceMeters: 3000,
       xpEarned: 400,
     });
+  });
+
+  it('refuse une séance de montre déjà importée sans toucher à l’XP ni publier d’événement', async () => {
+    const { service, playerRepo, eventPublisher } = createService();
+    const watchInput: CreateActivityInput = {
+      playerId: 'player-1',
+      activityType: 'run',
+      startedAt: new Date('2026-11-16T07:00:00Z'),
+      endedAt: new Date('2026-11-16T08:01:00Z'),
+      durationSeconds: 3660,
+      distanceMeters: 10350,
+      coordinates: [],
+      external: { source: 'health-connect', id: 'hc-1' },
+    };
+
+    const first = await service.recordActivity(watchInput);
+    expect(first.activity.external).toEqual(watchInput.external);
+
+    const duplicate = service.recordActivity(watchInput);
+    await expect(duplicate).rejects.toBeInstanceOf(DuplicateActivityError);
+    await expect(duplicate).rejects.toMatchObject({
+      existingActivityId: first.activity.id,
+    });
+    expect(playerRepo.addExperience).toHaveBeenCalledOnce();
+    expect(eventPublisher.publish).toHaveBeenCalledOnce();
   });
 });

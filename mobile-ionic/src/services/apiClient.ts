@@ -1,5 +1,32 @@
 import type { ActivityRecording } from "../data/activityRecording";
 
+/** Séance importée depuis le magasin santé du téléphone (sert au dédoublonnage côté API). */
+export interface ExternalActivityRef {
+  source: "health-connect" | "apple-health";
+  id: string;
+  /** Montre d'origine si connue (ex. « Garmin Forerunner 255 »). */
+  deviceName?: string;
+}
+
+/** Erreur HTTP renvoyée par l'API (le statut permet de distinguer rejet et panne). */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+/** L'activité a déjà été importée : l'API l'a refusée sans recréditer d'XP (HTTP 409). */
+export class ActivityAlreadyImportedError extends ApiError {
+  constructor(readonly activityId: string | undefined) {
+    super("Activity already imported", 409);
+    this.name = "ActivityAlreadyImportedError";
+  }
+}
+
 /**
  * Données d'une course à soumettre pour enregistrement.
  */
@@ -19,6 +46,8 @@ export interface SaveActivityDto {
   /** Liste ordonnée des coordonnées géographiques GPS du tracé */
   coordinates?: [longitude: number, latitude: number][];
   recording?: ActivityRecording;
+  /** Renseigné pour une séance importée depuis une montre. */
+  external?: ExternalActivityRef;
 }
 
 /**
@@ -44,14 +73,32 @@ export interface ActivitySaveResult {
 }
 
 /**
- * Profil public ou authentifié du joueur.
+ * Profil du joueur connecté (renvoyé uniquement à son propriétaire).
  */
 export interface PlayerProfileDto {
   id: string;
   username: string;
+  email: string;
   level: number;
   experience: number;
   createdAt: string;
+  /** Le compte a un mot de passe (sinon : créé via Google). */
+  hasPassword: boolean;
+  /** Un compte Google est rattaché. */
+  googleLinked: boolean;
+}
+
+/** Session ouverte par l'inscription ou la connexion. */
+export interface AuthSession {
+  /** Jeton de session signé par l'API, à envoyer en `Authorization: Bearer`. */
+  token: string;
+  player: PlayerProfileDto;
+}
+
+export interface RegisterDto {
+  email: string;
+  password: string;
+  username: string;
 }
 
 /**
@@ -68,6 +115,7 @@ export interface ActivityDto {
   elevationGainMeters: number;
   coordinates: [longitude: number, latitude: number][];
   recording?: ActivityRecording;
+  external?: ExternalActivityRef;
   createdAt: string;
 }
 
@@ -82,10 +130,12 @@ export interface HealthCheckResponse {
 
 /**
  * Client HTTP pour communiquer avec l'API REST Fastify de Stride Quest.
+ * Le jeton de session est fourni par `AuthProvider` via `setAuthToken`.
  */
 export class ApiClient {
   private readonly baseUrl: string;
-  private defaultToken?: string;
+  private authToken?: string;
+  private unauthorizedHandler?: () => void;
 
   constructor(baseUrl?: string) {
     this.baseUrl =
@@ -95,11 +145,14 @@ export class ApiClient {
       "http://localhost:3000";
   }
 
-  /**
-   * Définit un jeton d'authentification Bearer par défaut pour les futures requêtes.
-   */
+  /** Définit (ou efface) le jeton envoyé avec chaque requête authentifiée. */
   setAuthToken(token?: string): void {
-    this.defaultToken = token;
+    this.authToken = token;
+  }
+
+  /** Appelé quand l'API rejette la session (401) : expirée, révoquée ou compte supprimé. */
+  onUnauthorized(handler?: () => void): void {
+    this.unauthorizedHandler = handler;
   }
 
   /**
@@ -115,89 +168,90 @@ export class ApiClient {
     return res.json();
   }
 
-  /**
-   * Récupère le profil du joueur actuellement identifié.
-   */
-  async getCurrentPlayer(
-    playerId = "player-default-001",
-    token?: string,
-  ): Promise<PlayerProfileDto> {
-    const headers: Record<string, string> = {
-      "x-player-id": playerId,
-    };
-    const activeToken = token || this.defaultToken;
-    if (activeToken) {
-      headers["Authorization"] = `Bearer ${activeToken}`;
-    }
+  /** Crée un compte e-mail + mot de passe et ouvre une session. */
+  register(data: RegisterDto): Promise<AuthSession> {
+    return this.authRequest("/api/auth/register", data);
+  }
 
-    const res = await fetch(`${this.baseUrl}/api/players/me`, {
+  /** Ouvre une session avec e-mail + mot de passe. */
+  login(email: string, password: string): Promise<AuthSession> {
+    return this.authRequest("/api/auth/login", { email, password });
+  }
+
+  /** Échange l'ID token Auth0 (connexion Google) contre une session Stride Quest. */
+  loginWithGoogle(idToken: string): Promise<AuthSession> {
+    return this.authRequest("/api/auth/google", { idToken });
+  }
+
+  /**
+   * Récupère le profil du joueur connecté.
+   */
+  async getCurrentPlayer(): Promise<PlayerProfileDto> {
+    const res = await this.authorizedFetch("/api/players/me", {
       method: "GET",
-      headers,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(
-        err.error || `Failed to fetch player profile (${res.status})`,
-      );
-    }
     return res.json();
   }
 
   /**
-   * Enregistre une activité terminée auprès du serveur backend.
+   * Enregistre une activité terminée pour le joueur connecté.
    */
-  async saveActivity(
-    data: SaveActivityDto,
-    playerId = "player-default-001",
-    token?: string,
-  ): Promise<ActivitySaveResult> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "x-player-id": playerId,
-    };
-    const activeToken = token || this.defaultToken;
-    if (activeToken) {
-      headers["Authorization"] = `Bearer ${activeToken}`;
-    }
-
-    const res = await fetch(`${this.baseUrl}/api/activities`, {
+  async saveActivity(data: SaveActivityDto): Promise<ActivitySaveResult> {
+    const res = await this.authorizedFetch("/api/activities", {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `Failed to save activity (${res.status})`);
-    }
-
     return res.json();
   }
 
   /**
-   * Récupère la liste des activités récentes du joueur.
+   * Récupère la liste des activités récentes du joueur connecté.
    */
-  async getPlayerActivities(
-    playerId = "player-default-001",
-    token?: string,
-  ): Promise<ActivityDto[]> {
-    const headers: Record<string, string> = {
-      "x-player-id": playerId,
-    };
-    const activeToken = token || this.defaultToken;
-    if (activeToken) {
-      headers["Authorization"] = `Bearer ${activeToken}`;
-    }
-
-    const res = await fetch(`${this.baseUrl}/api/activities/me`, {
+  async getPlayerActivities(): Promise<ActivityDto[]> {
+    const res = await this.authorizedFetch("/api/activities/me", {
       method: "GET",
-      headers,
     });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch activities (${res.status})`);
-    }
     const data = (await res.json()) as { activities?: ActivityDto[] };
     return data.activities || [];
+  }
+
+  private async authRequest(path: string, body: unknown): Promise<AuthSession> {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw await this.toError(res);
+    return res.json();
+  }
+
+  private async authorizedFetch(
+    path: string,
+    init: RequestInit & { headers?: Record<string, string> },
+  ): Promise<Response> {
+    const headers: Record<string, string> = { ...init.headers };
+    if (this.authToken) headers.Authorization = `Bearer ${this.authToken}`;
+
+    const res = await fetch(`${this.baseUrl}${path}`, { ...init, headers });
+    if (res.ok) return res;
+
+    if (res.status === 401) this.unauthorizedHandler?.();
+    throw await this.toError(res);
+  }
+
+  private async toError(res: Response): Promise<ApiError> {
+    const body = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      activityId?: string;
+    };
+    if (res.status === 409 && body.activityId !== undefined) {
+      return new ActivityAlreadyImportedError(body.activityId);
+    }
+    return new ApiError(
+      body.error || `Erreur du serveur (${res.status})`,
+      res.status,
+    );
   }
 }
 

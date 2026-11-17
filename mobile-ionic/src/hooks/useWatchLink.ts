@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { App } from "@capacitor/app";
 import { Health } from "@capgo/capacitor-health";
-import type { WatchLinkStatus, WatchWorkout } from "../data/watchLink";
+import type { WatchLinkStatus } from "../data/watchLink";
 import {
-  fetchRecentWatchWorkouts,
   getWatchLinkStatus,
   HealthClient,
   linkWatch,
@@ -11,7 +10,6 @@ import {
 
 export interface UseWatchLinkResult {
   status: WatchLinkStatus | null;
-  workouts: WatchWorkout[];
   isBusy: boolean;
   error: string | null;
   link: () => Promise<void>;
@@ -22,26 +20,17 @@ export interface UseWatchLinkResult {
 const ERROR_MESSAGE =
   "Impossible de lire Health Connect. Réessayez ou vérifiez les autorisations.";
 
-/** État de liaison montre ↔ appli, rafraîchi au montage et au retour au premier plan. */
+/**
+ * État de liaison montre ↔ appli, rafraîchi au montage et au retour au premier plan.
+ * L'import des séances se fait depuis le profil (voir `importWatchWorkouts`).
+ */
 export function useWatchLink(
   client: HealthClient = Health,
 ): UseWatchLinkResult {
   const [status, setStatus] = useState<WatchLinkStatus | null>(null);
-  const [workouts, setWorkouts] = useState<WatchWorkout[]>([]);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(true);
-
-  const applyStatus = useCallback(
-    async (next: WatchLinkStatus) => {
-      const recent =
-        next.state === "linked" ? await fetchRecentWatchWorkouts(client) : [];
-      if (!mounted.current) return;
-      setStatus(next);
-      setWorkouts(recent);
-    },
-    [client],
-  );
 
   const run = useCallback(async (task: () => Promise<void>) => {
     setIsBusy(true);
@@ -53,6 +42,10 @@ export function useWatchLink(
     } finally {
       if (mounted.current) setIsBusy(false);
     }
+  }, []);
+
+  const applyStatus = useCallback((next: WatchLinkStatus) => {
+    if (mounted.current) setStatus(next);
   }, []);
 
   const refresh = useCallback(
@@ -85,5 +78,5 @@ export function useWatchLink(
     };
   }, [refresh]);
 
-  return { status, workouts, isBusy, error, link, refresh, openSettings };
+  return { status, isBusy, error, link, refresh, openSettings };
 }

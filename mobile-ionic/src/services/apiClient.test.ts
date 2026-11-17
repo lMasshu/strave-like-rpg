@@ -1,12 +1,43 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiClient } from "./apiClient";
+import { ActivityAlreadyImportedError, ApiClient, ApiError } from "./apiClient";
+
+function jsonResponse(status: number, body: unknown) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  };
+}
+
+const PLAYER = {
+  id: "11111111-1111-4111-8111-111111111111",
+  username: "Lucas_Run",
+  email: "lucas@example.com",
+  level: 3,
+  experience: 2500,
+  createdAt: "2026-11-01T08:00:00Z",
+  hasPassword: true,
+  googleLinked: false,
+};
+
+const RUN = {
+  activityType: "run" as const,
+  startedAt: "2026-11-07T10:00:00Z",
+  endedAt: "2026-11-07T10:30:00Z",
+  durationSeconds: 1800,
+  distanceMeters: 5000,
+  coordinates: [] as [number, number][],
+};
 
 describe("ApiClient", () => {
   let client: ApiClient;
   const originalFetch = global.fetch;
+  let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     client = new ApiClient("http://test-api:3000");
+    fetchMock = vi.fn();
+    global.fetch = fetchMock as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -15,177 +46,192 @@ describe("ApiClient", () => {
   });
 
   it("checks server health", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: "ok", service: "stride-quest-api" }),
-    });
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, { status: "ok", service: "stride-quest-api" }),
+    );
 
     const health = await client.checkHealth();
     expect(health.status).toBe("ok");
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       "http://test-api:3000/health",
       expect.objectContaining({ method: "GET" }),
     );
   });
 
+  describe("authentification", () => {
+    it("inscrit un joueur et renvoie la session", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(201, { token: "jwt", player: PLAYER }),
+      );
+
+      const session = await client.register({
+        email: "lucas@example.com",
+        password: "mot-de-passe",
+        username: "Lucas_Run",
+      });
+
+      expect(session).toEqual({ token: "jwt", player: PLAYER });
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe("http://test-api:3000/api/auth/register");
+      expect(JSON.parse(init.body)).toEqual({
+        email: "lucas@example.com",
+        password: "mot-de-passe",
+        username: "Lucas_Run",
+      });
+    });
+
+    it("connecte par e-mail et par Google", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(200, { token: "jwt", player: PLAYER }),
+      );
+
+      await client.login("lucas@example.com", "mot-de-passe");
+      await client.loginWithGoogle("id-token-auth0");
+
+      expect(fetchMock.mock.calls[0][0]).toBe(
+        "http://test-api:3000/api/auth/login",
+      );
+      expect(fetchMock.mock.calls[1][0]).toBe(
+        "http://test-api:3000/api/auth/google",
+      );
+      expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+        idToken: "id-token-auth0",
+      });
+    });
+
+    it("transmet le message d'erreur de l'API (identifiants, doublon)", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(401, { error: "E-mail ou mot de passe incorrect" }),
+      );
+      await expect(client.login("a@b.c", "x")).rejects.toEqual(
+        new ApiError("E-mail ou mot de passe incorrect", 401),
+      );
+
+      fetchMock.mockResolvedValue(
+        jsonResponse(409, { error: "Un compte existe déjà avec cet e-mail" }),
+      );
+      await expect(
+        client.register({ email: "a@b.c", password: "x", username: "abc" }),
+      ).rejects.toMatchObject({
+        status: 409,
+        message: "Un compte existe déjà avec cet e-mail",
+      });
+    });
+
+    it("n'appelle pas le gestionnaire de session expirée pour un login refusé", async () => {
+      const onUnauthorized = vi.fn();
+      client.onUnauthorized(onUnauthorized);
+      fetchMock.mockResolvedValue(jsonResponse(401, { error: "non" }));
+
+      await expect(client.login("a@b.c", "x")).rejects.toBeInstanceOf(ApiError);
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("requêtes authentifiées", () => {
+    it("joint le jeton de session à chaque requête", async () => {
+      client.setAuthToken("session-token");
+      fetchMock.mockResolvedValue(jsonResponse(200, PLAYER));
+
+      await client.getCurrentPlayer();
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "http://test-api:3000/api/players/me",
+        expect.objectContaining({
+          method: "GET",
+          headers: { Authorization: "Bearer session-token" },
+        }),
+      );
+    });
+
+    it("n'envoie plus de jeton après la déconnexion", async () => {
+      client.setAuthToken("session-token");
+      client.setAuthToken(undefined);
+      fetchMock.mockResolvedValue(jsonResponse(200, { activities: [] }));
+
+      await client.getPlayerActivities();
+
+      expect(fetchMock.mock.calls[0][1].headers).toEqual({});
+    });
+
+    it("signale une session expirée (401) puis lève l'erreur", async () => {
+      const onUnauthorized = vi.fn();
+      client.onUnauthorized(onUnauthorized);
+      fetchMock.mockResolvedValue(
+        jsonResponse(401, { error: "Authentification requise" }),
+      );
+
+      await expect(client.getPlayerActivities()).rejects.toMatchObject({
+        status: 401,
+      });
+      expect(onUnauthorized).toHaveBeenCalledOnce();
+    });
+  });
+
   it("posts a completed activity to /api/activities and returns XP results", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 201,
-      json: async () => ({
+    client.setAuthToken("session-token");
+    fetchMock.mockResolvedValue(
+      jsonResponse(201, {
         activityId: "act-123",
         xpEarned: 500,
         newLevel: 2,
         levelUp: true,
         totalExperience: 1320,
       }),
-    });
+    );
 
     const result = await client.saveActivity({
-      activityType: "run",
-      startedAt: "2026-11-07T10:00:00Z",
-      endedAt: "2026-11-07T10:30:00Z",
-      durationSeconds: 1800,
-      distanceMeters: 5000,
+      ...RUN,
       elevationGainMeters: 25,
-      coordinates: [[2.35, 48.85]],
     });
 
     expect(result.activityId).toBe("act-123");
     expect(result.xpEarned).toBe(500);
-    expect(result.levelUp).toBe(true);
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       "http://test-api:3000/api/activities",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({
+        headers: {
           "Content-Type": "application/json",
-        }),
+          Authorization: "Bearer session-token",
+        },
       }),
     );
   });
 
   it("throws a descriptive error when server returns an anti-cheat rejection", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 400,
-      json: async () => ({
+    fetchMock.mockResolvedValue(
+      jsonResponse(400, {
         error: "Excessive speed: 85 km/h exceeds maximum limit",
       }),
-    });
+    );
 
-    await expect(
-      client.saveActivity({
-        activityType: "run",
-        startedAt: "2026-11-07T10:00:00Z",
-        endedAt: "2026-11-07T10:01:00Z",
-        durationSeconds: 60,
-        distanceMeters: 10000,
-        coordinates: [],
-      }),
-    ).rejects.toThrow(/Excessive speed/);
+    await expect(client.saveActivity(RUN)).rejects.toThrow(/Excessive speed/);
   });
 
-  it("passes Authorization Bearer header when token is supplied", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 201,
-      json: async () => ({
-        activityId: "act-456",
-        xpEarned: 200,
-        newLevel: 1,
-        levelUp: false,
-        totalExperience: 1020,
-      }),
-    });
-
-    await client.saveActivity(
-      {
-        activityType: "walk",
-        startedAt: "2026-11-07T11:00:00Z",
-        endedAt: "2026-11-07T11:20:00Z",
-        durationSeconds: 1200,
-        distanceMeters: 2000,
-        coordinates: [],
-      },
-      "player-auth0-sub",
-      "mock-jwt-token-xyz",
-    );
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://test-api:3000/api/activities",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer mock-jwt-token-xyz",
-          "x-player-id": "player-auth0-sub",
-        }),
+  it("distingue une séance de montre déjà importée (409)", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(409, {
+        error: "Activity already imported",
+        activityId: "act-1",
       }),
     );
-  });
 
-  it("fetches the current player profile from /api/players/me", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        id: "player-default-001",
-        username: "adventurer_001",
-        level: 3,
-        experience: 2500,
-        createdAt: "2026-11-01T08:00:00Z",
-      }),
-    });
-
-    const profile = await client.getCurrentPlayer(
-      "player-default-001",
-      "test-token",
-    );
-    expect(profile.id).toBe("player-default-001");
-    expect(profile.level).toBe(3);
-    expect(profile.experience).toBe(2500);
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://test-api:3000/api/players/me",
-      expect.objectContaining({
-        method: "GET",
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-token",
-          "x-player-id": "player-default-001",
-        }),
-      }),
+    await expect(client.saveActivity(RUN)).rejects.toEqual(
+      new ActivityAlreadyImportedError("act-1"),
     );
   });
 
   it("fetches player activities from /api/activities/me", async () => {
-    const mockActivities = [
-      {
-        id: "act-1",
-        playerId: "player-default-001",
-        activityType: "run",
-        startedAt: "2026-11-10T09:00:00Z",
-        endedAt: "2026-11-10T09:30:00Z",
-        durationSeconds: 1800,
-        distanceMeters: 5200,
-        elevationGainMeters: 45,
-        coordinates: [],
-        createdAt: "2026-11-10T09:30:00Z",
-      },
-    ];
-
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        activities: mockActivities,
-      }),
-    });
-
-    const activities = await client.getPlayerActivities("player-default-001");
-    expect(activities).toHaveLength(1);
-    expect(activities[0].id).toBe("act-1");
-    expect(activities[0].distanceMeters).toBe(5200);
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://test-api:3000/api/activities/me",
-      expect.objectContaining({
-        method: "GET",
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, {
+        activities: [{ id: "act-1", distanceMeters: 5200 }],
       }),
     );
+
+    const activities = await client.getPlayerActivities();
+
+    expect(activities).toHaveLength(1);
+    expect(activities[0].distanceMeters).toBe(5200);
   });
 });

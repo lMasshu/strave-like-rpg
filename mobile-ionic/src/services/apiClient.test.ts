@@ -122,4 +122,70 @@ describe("ApiClient", () => {
       }),
     );
   });
+
+  it("fetches the current player profile from /api/players/me", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: "player-default-001",
+        username: "adventurer_001",
+        level: 3,
+        experience: 2500,
+        createdAt: "2026-11-01T08:00:00Z",
+      }),
+    });
+
+    const profile = await client.getCurrentPlayer(
+      "player-default-001",
+      "test-token",
+    );
+    expect(profile.id).toBe("player-default-001");
+    expect(profile.level).toBe(3);
+    expect(profile.experience).toBe(2500);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://test-api:3000/api/players/me",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token",
+          "x-player-id": "player-default-001",
+        }),
+      }),
+    );
+  });
+
+  it("fetches player activities from /api/activities/me", async () => {
+    const mockActivities = [
+      {
+        id: "act-1",
+        playerId: "player-default-001",
+        activityType: "run",
+        startedAt: "2026-11-10T09:00:00Z",
+        endedAt: "2026-11-10T09:30:00Z",
+        durationSeconds: 1800,
+        distanceMeters: 5200,
+        elevationGainMeters: 45,
+        coordinates: [],
+        createdAt: "2026-11-10T09:30:00Z",
+      },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        activities: mockActivities,
+      }),
+    });
+
+    const activities = await client.getPlayerActivities("player-default-001");
+    expect(activities).toHaveLength(1);
+    expect(activities[0].id).toBe("act-1");
+    expect(activities[0].distanceMeters).toBe(5200);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://test-api:3000/api/activities/me",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+  });
 });

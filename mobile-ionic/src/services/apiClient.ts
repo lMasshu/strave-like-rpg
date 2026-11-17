@@ -55,6 +55,23 @@ export interface PlayerProfileDto {
 }
 
 /**
+ * Données d'une activité retournée par l'API REST.
+ */
+export interface ActivityDto {
+  id: string;
+  playerId: string;
+  activityType: "walk" | "run" | "bike" | "hike";
+  startedAt: string;
+  endedAt: string;
+  durationSeconds: number;
+  distanceMeters: number;
+  elevationGainMeters: number;
+  coordinates: [longitude: number, latitude: number][];
+  recording?: ActivityRecording;
+  createdAt: string;
+}
+
+/**
  * Diagnostic de l'API REST.
  */
 export interface HealthCheckResponse {
@@ -163,7 +180,7 @@ export class ApiClient {
   async getPlayerActivities(
     playerId = "player-default-001",
     token?: string,
-  ): Promise<unknown[]> {
+  ): Promise<ActivityDto[]> {
     const headers: Record<string, string> = {
       "x-player-id": playerId,
     };
@@ -179,7 +196,7 @@ export class ApiClient {
     if (!res.ok) {
       throw new Error(`Failed to fetch activities (${res.status})`);
     }
-    const data = await res.json();
+    const data = (await res.json()) as { activities?: ActivityDto[] };
     return data.activities || [];
   }
 }

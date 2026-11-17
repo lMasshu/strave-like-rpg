@@ -119,6 +119,9 @@ export interface ActivityDto {
   createdAt: string;
 }
 
+/** Activité sans tracé ni enregistrement brut, pour les statistiques par période. */
+export type ActivitySummaryDto = Omit<ActivityDto, "coordinates" | "recording">;
+
 /**
  * Diagnostic de l'API REST.
  */
@@ -213,6 +216,26 @@ export class ApiClient {
       method: "GET",
     });
     const data = (await res.json()) as { activities?: ActivityDto[] };
+    return data.activities || [];
+  }
+
+  /**
+   * Résumés des activités du joueur connecté commencées dans [from, to[.
+   * Les bornes sont calculées par l'appli, dans le fuseau horaire du téléphone.
+   */
+  async getActivitySummaries(
+    from: Date,
+    to: Date,
+  ): Promise<ActivitySummaryDto[]> {
+    const query = new URLSearchParams({
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+    const res = await this.authorizedFetch(
+      `/api/activities/me/summary?${query.toString()}`,
+      { method: "GET" },
+    );
+    const data = (await res.json()) as { activities?: ActivitySummaryDto[] };
     return data.activities || [];
   }
 

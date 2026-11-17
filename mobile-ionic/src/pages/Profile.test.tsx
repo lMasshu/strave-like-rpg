@@ -34,6 +34,7 @@ function openTab(name: RegExp) {
 describe("Profile Page (Adventurer Card)", () => {
   let getActivities: ReturnType<typeof vi.spyOn>;
   let getPlayer: ReturnType<typeof vi.spyOn>;
+  let getSummaries: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     importWatchWorkouts.mockReset();
@@ -49,6 +50,9 @@ describe("Profile Page (Adventurer Card)", () => {
     getPlayer = vi
       .spyOn(apiClient, "getCurrentPlayer")
       .mockResolvedValue(TEST_PLAYER);
+    getSummaries = vi
+      .spyOn(apiClient, "getActivitySummaries")
+      .mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -125,7 +129,7 @@ describe("Profile Page (Adventurer Card)", () => {
     );
     expect(
       screen.getByRole("tabpanel", { name: /Statistiques/ }),
-    ).toHaveTextContent(/Distance par semaine/);
+    ).toHaveTextContent(/Distance par jour/);
     expect(screen.queryByText(/Historique des sorties/i)).toBeNull();
     expect(screen.queryByText(/Pionnier 10K/i)).toBeNull();
 
@@ -140,24 +144,71 @@ describe("Profile Page (Adventurer Card)", () => {
     expect(screen.queryByText(/Historique des sorties/i)).toBeNull();
   });
 
-  it("calcule les statistiques à partir des vraies sorties", async () => {
+  it("calcule les statistiques de la semaine en cours à partir des vraies sorties", async () => {
+    const today = new Date();
+    const thisWeekRun = {
+      ...REAL_RUN,
+      startedAt: today.toISOString(),
+      distanceMeters: 6500,
+      elevationGainMeters: 80,
+    };
+    getActivities.mockResolvedValue([thisWeekRun]);
+    getSummaries.mockResolvedValue([thisWeekRun]);
+
+    renderProfile();
+
+    expect(
+      await screen.findByRole("heading", { name: "Statistiques" }),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByText("Distance").closest(".sq-stat-metric"),
+      ).toHaveTextContent("6.5km"),
+    );
+    expect(
+      screen.getByText("Dénivelé").closest(".sq-stat-metric"),
+    ).toHaveTextContent("80m D+");
+    expect(screen.queryByText(/Quêtes réussies/i)).toBeNull();
+
+    // La semaine en cours est demandée à l'API (lundi 00:00 → lundi suivant).
+    const [from, to] = getSummaries.mock.calls[0] as [Date, Date];
+    expect(from.getDay()).toBe(1);
+    expect(from.getHours()).toBe(0);
+    expect(to.getTime() - from.getTime()).toBeGreaterThanOrEqual(
+      7 * 24 * 3600 * 1000 - 3600 * 1000, // changement d'heure
+    );
+  });
+
+  it("recharge les statistiques quand on choisit le mois ou l'année", async () => {
     getActivities.mockResolvedValue([REAL_RUN]);
 
     renderProfile();
+    await screen.findByRole("heading", { name: "Statistiques" });
+    await waitFor(() => expect(getSummaries).toHaveBeenCalledTimes(1));
 
-    expect(await screen.findByText("6.5")).toBeInTheDocument();
-    expect(screen.getByText(/Distance totale/i)).toBeInTheDocument();
-    expect(screen.getByText(/Dénivelé cumulé/i)).toBeInTheDocument();
-    expect(screen.getByText(/Sorties totales/i)).toBeInTheDocument();
-    expect(screen.getByText(/Quêtes réussies/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Année" }));
+
+    await waitFor(() => expect(getSummaries).toHaveBeenCalledTimes(2));
+    const [from, to] = getSummaries.mock.calls[1] as [Date, Date];
+    expect([from.getMonth(), from.getDate()]).toEqual([0, 1]);
+    expect(to.getFullYear()).toBe(from.getFullYear() + 1);
+    expect(
+      screen.getByRole("list", { name: "Distance par mois" }),
+    ).toBeInTheDocument();
   });
 
-  it("garde les statistiques et l'historique de démo tant qu'il n'y a pas de vraie sortie", async () => {
+  it("sans aucune sortie : vraies statistiques à zéro, historique de démo", async () => {
     renderProfile();
-    await waitFor(() => expect(getActivities).toHaveBeenCalled());
+    await waitFor(() => expect(getSummaries).toHaveBeenCalled());
 
-    expect(screen.getByText("218.4")).toBeInTheDocument();
-    expect(screen.getByText("1 450")).toBeInTheDocument();
+    // Le compte n'a pas de sortie : on n'invente pas de chiffres.
+    expect(
+      screen.getByRole("heading", { name: "Statistiques" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("Aucune sortie sur cette période."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("218.4")).toBeNull();
 
     openTab(/Activités/);
     expect(screen.getByText(/Mode Démo/i)).toBeInTheDocument();

@@ -102,6 +102,25 @@ const googleSchema = z.object({
   idToken: z.string().min(20).max(8192),
 });
 
+/** Un peu plus d'un an : couvre « l'année en cours » quel que soit le fuseau. */
+const MAX_SUMMARY_SPAN_MS = 370 * 24 * 60 * 60 * 1000;
+
+const summaryQuerySchema = z
+  .object({
+    from: z
+      .string({ required_error: 'Paramètre from obligatoire (date ISO)' })
+      .datetime({ offset: true, message: 'Paramètre from invalide (date ISO)' }),
+    to: z
+      .string({ required_error: 'Paramètre to obligatoire (date ISO)' })
+      .datetime({ offset: true, message: 'Paramètre to invalide (date ISO)' }),
+  })
+  .refine((q) => Date.parse(q.to) > Date.parse(q.from), {
+    message: 'to doit être postérieur à from',
+  })
+  .refine((q) => Date.parse(q.to) - Date.parse(q.from) <= MAX_SUMMARY_SPAN_MS, {
+    message: 'Période trop longue (un an maximum)',
+  });
+
 function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Données invalides';
 }
@@ -309,6 +328,21 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
 
   app.get('/api/activities/me', { preHandler: authenticate }, async (req) => {
     const activities = await activityService.getPlayerActivities(req.user.sub);
+    return { activities };
+  });
+
+  // Statistiques par période : les bornes viennent de l'appli, qui connaît le fuseau
+  // horaire du joueur (« semaine en cours » = lundi 00:00 heure locale).
+  app.get('/api/activities/me/summary', { preHandler: authenticate }, async (req, reply) => {
+    const parsed = summaryQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: firstIssue(parsed.error) });
+    }
+    const activities = await activityService.getPlayerActivitySummaries(
+      req.user.sub,
+      new Date(parsed.data.from),
+      new Date(parsed.data.to),
+    );
     return { activities };
   });
 

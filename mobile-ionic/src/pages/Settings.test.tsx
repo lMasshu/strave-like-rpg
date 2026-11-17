@@ -68,6 +68,7 @@ describe("Settings page", () => {
     const methods = screen.getByRole("list", { name: "Moyens de connexion" });
     expect(methods).toHaveTextContent("E-mail et mot de passe");
     expect(methods).toHaveTextContent("Google");
+    expect(account).toHaveTextContent("TODO: gestion photo de profil");
 
     fireEvent.click(screen.getByRole("button", { name: /Se déconnecter/ }));
 

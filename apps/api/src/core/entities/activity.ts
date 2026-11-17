@@ -36,6 +36,9 @@ export interface Activity {
   createdAt: Date;
 }
 
+/** Activité sans tracé ni enregistrement brut : assez léger pour les statistiques d'une année. */
+export type ActivitySummary = Omit<Activity, 'coordinates' | 'recording'>;
+
 export interface CreateActivityInput {
   playerId: string;
   activityType: ActivityType;

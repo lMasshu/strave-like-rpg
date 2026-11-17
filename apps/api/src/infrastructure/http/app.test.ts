@@ -250,6 +250,89 @@ describe('Fastify REST API', () => {
     expect(response.json().error).toMatch(/speed|vitesse|anti-cheat/i);
   });
 
+  describe('GET /api/activities/me/summary (statistiques par période)', () => {
+    const run = (startedAt: string) => ({
+      activityType: 'run',
+      startedAt,
+      endedAt: new Date(Date.parse(startedAt) + 1800_000).toISOString(),
+      durationSeconds: 1800,
+      distanceMeters: 5000,
+      coordinates: [
+        [2.35, 48.85],
+        [2.36, 48.86],
+      ],
+    });
+
+    it('renvoie les sorties de la période, sans tracé ni enregistrement, la plus récente en premier', async () => {
+      const { headers } = await registerPlayer(app);
+      for (const startedAt of [
+        '2026-10-31T23:59:00.000Z', // avant la période
+        '2026-11-03T07:00:00.000Z',
+        '2026-11-16T07:00:00.000Z',
+        '2026-12-01T00:00:00.000Z', // borne de fin exclue
+      ]) {
+        await app.inject({ method: 'POST', url: '/api/activities', headers, payload: run(startedAt) });
+      }
+      const other = await registerPlayer(app);
+      await app.inject({
+        method: 'POST',
+        url: '/api/activities',
+        headers: other.headers,
+        payload: run('2026-11-05T07:00:00.000Z'),
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/activities/me/summary?from=2026-11-01T00:00:00.000Z&to=2026-12-01T00:00:00.000Z',
+        headers,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const { activities } = response.json();
+      expect(activities.map((a: { startedAt: string }) => a.startedAt)).toEqual([
+        '2026-11-16T07:00:00.000Z',
+        '2026-11-03T07:00:00.000Z',
+      ]);
+      expect(activities[0]).not.toHaveProperty('coordinates');
+      expect(activities[0]).not.toHaveProperty('recording');
+      expect(activities[0]).toMatchObject({ distanceMeters: 5000, durationSeconds: 1800 });
+    });
+
+    it('accepte un décalage horaire (minuit heure de Paris)', async () => {
+      const { headers } = await registerPlayer(app);
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/activities/me/summary?from=${encodeURIComponent('2026-11-16T00:00:00+01:00')}&to=${encodeURIComponent('2026-11-23T00:00:00+01:00')}`,
+        headers,
+      });
+      expect(response.statusCode).toBe(200);
+    });
+
+    it.each([
+      ['', /from/],
+      ['?from=hier&to=2026-12-01T00:00:00.000Z', /from invalide/],
+      ['?from=2026-12-01T00:00:00.000Z&to=2026-11-01T00:00:00.000Z', /postérieur/],
+      ['?from=2024-01-01T00:00:00.000Z&to=2026-01-01T00:00:00.000Z', /trop longue/],
+    ])('refuse des bornes invalides (%s)', async (query, message) => {
+      const { headers } = await registerPlayer(app);
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/activities/me/summary${query}`,
+        headers,
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toMatch(message);
+    });
+
+    it('exige une session', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/activities/me/summary?from=2026-11-01T00:00:00.000Z&to=2026-12-01T00:00:00.000Z',
+      });
+      expect(response.statusCode).toBe(401);
+    });
+  });
+
   describe('import de séances de montre', () => {
     const watchRun = {
       activityType: 'run',

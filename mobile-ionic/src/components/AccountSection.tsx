@@ -6,6 +6,7 @@ import {
   mailOutline,
 } from "ionicons/icons";
 import type { PlayerProfileDto } from "../services/apiClient";
+import TodoPlaceholder from "./TodoPlaceholder";
 import "./AccountSection.css";
 
 export interface AccountSectionProps {
@@ -42,6 +43,8 @@ const AccountSection: React.FC<AccountSectionProps> = ({
             )}
           </div>
         </div>
+
+        <TodoPlaceholder>TODO: gestion photo de profil</TodoPlaceholder>
 
         {player && (
           <ul className="account-methods" aria-label="Moyens de connexion">

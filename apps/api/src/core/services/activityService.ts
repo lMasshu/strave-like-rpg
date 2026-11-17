@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { validateRecording } from './recordingValidation.js';
-import type { Activity, CreateActivityInput } from '../entities/activity.js';
+import type {
+  Activity,
+  ActivitySummary,
+  CreateActivityInput,
+} from '../entities/activity.js';
+
+/** Garde-fou : bien au-delà d'une année d'entraînement quotidien biquotidien. */
+export const MAX_SUMMARIES_PER_PERIOD = 2000;
 import {
   DuplicateActivityError,
   type IActivityRepository,
@@ -140,6 +147,20 @@ export class ActivityService {
    */
   async getPlayerActivities(playerId: string, limit = 20): Promise<Activity[]> {
     return this.activityRepo.findByPlayerId(playerId, limit);
+  }
+
+  /** Résumés des activités commencées dans [from, to[ (statistiques par période). */
+  async getPlayerActivitySummaries(
+    playerId: string,
+    from: Date,
+    to: Date,
+  ): Promise<ActivitySummary[]> {
+    return this.activityRepo.findSummariesBetween(
+      playerId,
+      from,
+      to,
+      MAX_SUMMARIES_PER_PERIOD,
+    );
   }
 
   /**

@@ -1,6 +1,7 @@
 import type { Pool } from 'pg';
 import type {
   Activity,
+  ActivitySummary,
   ActivityType,
   CoordinatePair,
   ExternalActivityRef,
@@ -133,6 +134,31 @@ export class PgActivityRepository implements IActivityRepository {
       [playerId, limit],
     );
     return rows.map(toActivity);
+  }
+
+  async findSummariesBetween(
+    playerId: string,
+    from: Date,
+    to: Date,
+    limit: number,
+  ): Promise<ActivitySummary[]> {
+    if (!isUuid(playerId)) return [];
+    // Ni tracé ni enregistrement : ce sont les colonnes lourdes, inutiles aux totaux.
+    const { rows } = await this.pool.query<ActivityRow>(
+      `SELECT id, player_id, activity_type, started_at, ended_at, distance_meters,
+              duration_seconds, elevation_gain_meters, NULL AS track, NULL AS recording,
+              external_source, external_id, external_device, created_at
+         FROM activities
+        WHERE player_id = $1 AND started_at >= $2 AND started_at < $3
+        ORDER BY started_at DESC, created_at DESC
+        LIMIT $4`,
+      [playerId, from, to, limit],
+    );
+    return rows.map((row) => {
+      const { coordinates: _coordinates, recording: _recording, ...summary } =
+        toActivity(row);
+      return summary;
+    });
   }
 
   async findByExternalRef(

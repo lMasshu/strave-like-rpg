@@ -1,6 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- 1. Table des joueurs
 CREATE TABLE IF NOT EXISTS players (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(40) NOT NULL UNIQUE,
@@ -9,24 +10,35 @@ CREATE TABLE IF NOT EXISTS players (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 2. Table des Boss de Raid (géolocalisés)
 CREATE TABLE IF NOT EXISTS raids (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(120) NOT NULL,
     max_health BIGINT NOT NULL CHECK (max_health > 0),
     current_health BIGINT NOT NULL CHECK (current_health >= 0 AND current_health <= max_health),
-    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
+    location GEOMETRY(Point, 4326) NOT NULL,
+    radius_meters INTEGER NOT NULL DEFAULT 5000 CHECK (radius_meters > 0),
+    elevation_multiplier NUMERIC(4, 2) NOT NULL DEFAULT 1.50 CHECK (elevation_multiplier >= 0),
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'expired')),
+    expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS raids_location_gist_idx ON raids USING GIST (location);
+CREATE INDEX IF NOT EXISTS raids_status_idx ON raids (status);
+
+-- 3. Table des activités sportives
 CREATE TABLE IF NOT EXISTS activities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    player_id UUID NOT NULL REFERENCES players(id),
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     activity_type VARCHAR(20) NOT NULL CHECK (activity_type IN ('walk', 'run', 'bike', 'hike')),
     started_at TIMESTAMPTZ NOT NULL,
     ended_at TIMESTAMPTZ,
     distance_meters INTEGER NOT NULL DEFAULT 0 CHECK (distance_meters >= 0),
     duration_seconds INTEGER NOT NULL DEFAULT 0 CHECK (duration_seconds >= 0),
+    elevation_gain_meters INTEGER NOT NULL DEFAULT 0 CHECK (elevation_gain_meters >= 0),
     track GEOMETRY(LineString, 4326),
+    recording JSONB,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CHECK (ended_at IS NULL OR ended_at >= started_at)
 );
@@ -35,13 +47,16 @@ CREATE INDEX IF NOT EXISTS activities_player_id_idx ON activities (player_id);
 CREATE INDEX IF NOT EXISTS activities_started_at_idx ON activities (started_at DESC);
 CREATE INDEX IF NOT EXISTS activities_track_gist_idx ON activities USING GIST (track);
 
+-- 4. Historique des dégâts infligés aux boss
 CREATE TABLE IF NOT EXISTS raid_damage_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    raid_id UUID NOT NULL REFERENCES raids(id),
-    player_id UUID NOT NULL REFERENCES players(id),
-    activity_id UUID NOT NULL REFERENCES activities(id),
+    raid_id UUID NOT NULL REFERENCES raids(id) ON DELETE CASCADE,
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    activity_id UUID NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     damage BIGINT NOT NULL CHECK (damage > 0),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (raid_id, activity_id) -- Empêche de comptabiliser deux fois la même course sur un raid
 );
 
 CREATE INDEX IF NOT EXISTS raid_damage_events_raid_id_idx ON raid_damage_events (raid_id);
+CREATE INDEX IF NOT EXISTS raid_damage_events_player_id_idx ON raid_damage_events (player_id);

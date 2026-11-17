@@ -1,0 +1,146 @@
+.watch-link-section {
+  margin-top: 36px;
+}
+
+.watch-link-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.watch-link-card p {
+  margin: 0;
+  color: var(--sq-text-muted);
+  line-height: 1.5;
+}
+
+.watch-link-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.watch-link-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+  color: var(--sq-green-athletic);
+  background: var(--sq-bg-base);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md);
+}
+
+.watch-link-title {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+}
+
+.watch-link-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--sq-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.watch-link-badge.is-linked {
+  color: var(--sq-green-athletic);
+}
+
+.watch-link-card .watch-link-error {
+  color: var(--ion-color-danger);
+}
+
+.watch-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.watch-link-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 700;
+  border-radius: var(--sq-radius-md);
+  cursor: pointer;
+}
+
+.watch-link-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.watch-link-actions button:focus-visible {
+  outline: 3px solid var(--sq-border-highlight);
+  outline-offset: 2px;
+}
+
+.watch-link-primary {
+  color: var(--ion-color-primary-contrast, #0f172a);
+  background: var(--sq-green-athletic);
+  border: none;
+}
+
+.watch-link-secondary {
+  color: var(--sq-text-main);
+  background: transparent;
+  border: 1px solid var(--sq-border);
+}
+
+.watch-link-workouts {
+  margin-top: 20px;
+}
+
+.watch-link-workouts h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.watch-link-workouts ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.watch-link-workouts li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md);
+}
+
+.watch-link-workouts li div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.watch-link-workouts small,
+.watch-link-empty {
+  color: var(--sq-text-muted);
+  font-size: 0.82rem;
+}
+
+.watch-link-workouts li > span {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

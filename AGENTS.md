@@ -11,7 +11,7 @@ Ce document sert de guide de référence pour tout agent autonome ou développeu
 Le projet s'articule autour de trois piliers fondamentaux :
 
 ### A. Le Cœur "Tracking Sportif"
-- **Système de comptes & profils** : Inscription, authentification sécurisée, niveau du joueur (XP), inventaire de badges, statistiques globales et historique d'activités.
+- **Système de comptes & profils** : Inscription et connexion sécurisées (norme CNIL/ANSSI), niveau du joueur (XP), inventaire de badges, statistiques périodiques (semaine, mois, année), graphique de distance par sport et historique d'activités.
 - **Enregistrement en temps réel** : Capture et télémétrie GPS (lat/lng, vitesse, allure, altitude, distance cumulée, chronomètre actif/pause).
 - **Dimension sociale** : Sauvegarde et publication des tracés. Ces parcours publics alimentent un catalogue d'« idées de tracés » à proximité pour la communauté (recommandations, kudos, abonnements).
 
@@ -35,28 +35,38 @@ Le dépôt est structuré en monorepo :
 
 ```text
 strave-like-rpg/
-├── mobile-ionic/           # Application mobile front-end (Ionic React)
+├── mobile-ionic/           # Application mobile front-end (Ionic React 9 + Vite 8)
 │   ├── src/
-│   │   ├── components/     # Composants UI (QuestGeneratorModal, QuestRunHud, GeolocationDebugConsole...)
-│   │   ├── hooks/          # Hooks React (useGeolocationTracker, useQuestRun...)
-│   │   ├── services/       # Services métier (geo, questGenerator, mapboxDirections, mapboxGeocoding...)
-│   │   ├── pages/          # Écrans (Home, Map, Profile, FriendSearch, Notifications)
-│   │   └── data/           # Types et données mockées/démo
+│   │   ├── auth/           # Contexte d'authentification (AuthProvider, authForm, sessionStorage)
+│   │   ├── components/     # Composants UI (ProfileTabs, ProfileStatsPanel, ErrorBoundary, QuestRunHud...)
+│   │   ├── hooks/          # Hooks React (useGeolocationTracker, useQuestRun, useWatchLink...)
+│   │   ├── services/       # Services métier (apiClient, geo, questGenerator, watchSync, playerLevel...)
+│   │   ├── pages/          # Écrans (AuthPage, Home, Map, Profile, Settings, Notifications)
+│   │   └── data/           # Types et données partagées
 │   └── vite.config.ts      # Configuration Vite & Vitest
-├── apps/                   # Services backend (API, worker de télémétrie, cron de raids)
+├── apps/
+│   └── api/                # Backend REST API Fastify 5 + TypeScript
+│       ├── src/
+│       │   ├── core/       # Entités métier (Player, Activity), services (authService, activityService)
+│       │   ├── infrastructure/ # Dépôts PostgreSQL natifs, vérificateur Auth0, routes HTTP Fastify
+│       │   └── index.ts    # Point d'entrée du serveur API (port 3000)
+│       └── .env.example    # Configuration d'environnement backend
 ├── database/               # Schémas relationnels et extensions spatiales
-│   └── init.sql            # Initialisation PostGIS, tables players, raids, activities, raid_damage_events
-├── infrastructure/         # Définition des environnements de dev et production
-│   └── docker-compose.yml  # Services conteneurisés PostgreSQL/PostGIS et Redis
+│   ├── init.sql            # Initialisation PostGIS (players, raids, activities, raid_damage_events)
+│   ├── seed.sql            # Données de démonstration et comptes de test
+│   └── migrations/         # Migrations incrémentales (ex: 001_activities_external_device.sql)
+├── infrastructure/         # Définition des environnements conteneurisés
+│   └── docker-compose.yml  # Services PostgreSQL 16 (PostGIS 3.4) et Redis 7
 ├── packages/               # Contrats d'interfaces partagés (types DTO, contrats d'API)
-└── .github/workflows/      # Intégration continue (ESLint, Prettier, Vitest, build Vite)
+└── .github/workflows/      # Intégration continue (ESLint, Prettier, Vitest, build Vite & API)
 ```
 
 ### Stack Technique en Place :
-- **Mobile** : React 19, Ionic React 9, TypeScript 5.9, Vite 8, Mapbox GL 3.32, Capacitor 8 (Geolocation, Haptics, App, Status-bar).
-- **Base de Données** : PostgreSQL 16 avec PostGIS 3.4 et extension `pgcrypto`.
+- **Mobile** : React 19, Ionic React 9, TypeScript 5.8, Vite 8, Mapbox GL 3.32, Capacitor 8 (Geolocation, Haptics, App, Status-bar, Health Connect).
+- **Backend API** : Node.js 22+, Fastify 5, Zod 3, Jose (JWKS Auth0), @fastify/jwt, @fastify/rate-limit, pg 8.
+- **Base de Données** : PostgreSQL 16 avec extensions PostGIS 3.4, `citext` et `pgcrypto`.
 - **Cache & Concurrence** : Redis 7 (Alpine).
-- **Qualité & Tests** : ESLint 9, Prettier 3, Vitest 4, Cypress 13.
+- **Qualité & Tests** : ESLint 9, Prettier 3, Vitest 3 & 4 (460+ tests unitaires automatisés).
 
 ---
 
@@ -64,74 +74,92 @@ strave-like-rpg/
 
 ### 1. Pôle Développement (Dev) - Frontend & Logique Métier
 
-#### Frontend / Mobile (`mobile-ionic/`) :
-- **Précision Cartographique & GPS** :
-  - Utiliser Mapbox GL pour le rendu vectoriel des cartes, des tracés actifs (`LineString`) et des POI.
-  - S'appuyer sur le hook `useGeolocationTracker` pour la gestion des positions, de la précision (`accuracy`), du filtrage des sauts GPS anormaux et de la console debug.
-  - Gérer rigoureusement les états de cycle de vie de l'application (mise en arrière-plan, reprise) via Capacitor.
-- **Expérience Utilisateur & Game Design** :
-  - Assurer des retours utilisateur immédiats (HUD de quête avec chrono, distance restante, barre de complétion).
-  - Fournir des alertes haptiques (`@capacitor/haptics`) lors des jalons de quête ou validation d'objectifs.
-  - Respecter la charte graphique sobre (vert nature athlétique, contraste accessible, mode sombre natif Ionic).
+#### Authentification & Sécurité (Règles Critiques) :
+- **Norme des mots de passe (CNIL / ANSSI / OWASP)** :
+  - **12 caractères minimum** exigés à l'inscription.
+  - Au moins 1 lettre majuscule, 1 lettre minuscule, 1 chiffre et 1 caractère spécial (`[^A-Za-z0-9]`).
+  - Validation stricte des deux côtés : schéma Zod `registerSchema` dans `apps/api` et validateur `evaluatePassword()` dans `mobile-ionic`.
+  - **Indicateur visuel dynamique** : sous le champ mot de passe, jauge de force dynamique (Très faible / Moyen / Solide / Conforme) et checklist interactive réactive à la frappe.
+- **Sessions & Tokens signés** :
+  - Signature obligatoire par jeton JWT signé avec `JWT_SECRET` (32 caractères minimum requis).
+  - Interdiction totale des faux en-têtes non vérifiés (ex. ancien header `x-player-id`).
+- **Connexion Google via Auth0** :
+  - Vérification cryptographique de l'ID token côté serveur via le JWKS du tenant Auth0 (`Auth0IdentityVerifier` avec `jose`). Aucune confiance aveugle dans le payload client.
+- **Hachage des mots de passe** :
+  - Utilisation de `scrypt` avec sel unique aléatoire et paramètres calibrés (`N=32768, r=8, p=1`).
 
-#### Backend & Logique Métier (`apps/`) :
-- **Algorithme de Quêtes & POI** :
-  - Empêcher tout positionnement de POI sur des zones dangereuses ou inaccessibles (autoroutes, cours d'eau profonds, propriétés privées) en exploitant les couches OSM / Mapbox Geocoding.
-  - Générer des itinéraires cohérents avec estimation de durée réaliste selon l'allure cible.
-- **Moteur d'Effort & Calcul de Dégâts de Raid** :
-  - Transformer les métriques d'activité (vitesse moyenne, dénivelé positif, distance, régularité) en valeur de dégâts bruts.
-  - Appliquer les multiplicateurs et résistances associés au type de boss.
-- **Gestion des Raids** :
-  - Orchestrer le cycle de vie des raids (planification, activation, gel à expiration, attribution des récompenses).
+#### Frontend / Mobile (`mobile-ionic/`) :
+- **Maître de Guilde (Coach IA & Suivi de progression)** :
+  - Modal immersif `<GuildMasterModal>` accessible depuis l'Accueil (`Home.tsx`) et les Paramètres (`Settings.tsx`).
+  - Section de configuration `<CoachSettingsSection>` avec bascule d'activation (opt-in) et sélection de l'objectif sportif (`casual`, `active`, `5k`, `10k`, `half-marathon`, `marathon`).
+  - Gestion hors-ligne et résilience : si Ollama est indisponible, l'application reste fluide et propose un message explicatif sans bloquer l'expérience sportive.
+  - **Support Mode Sombre Bimodal** : isolation stricte des palettes (`lime-frost` ne doit pas forcer de fond clair) et règles sombres dédiées (`[data-theme="dark"]`, `.ion-palette-dark`) pour éliminer tout flash blanc ou carte blanche résiduelle.
+- **Isolation des Formulaires (Anti-conflit Autofill)** :
+  - Utiliser systématiquement une clé React propre au mode (`key={mode}` sur `<form>`, et `key={isRegister ? "reg-pwd" : "login-pwd"}` sur l'input) pour forcer le démontage/remontage DOM propre.
+  - En mode Connexion, `autoComplete="current-password"` et `name="password"` pour que le navigateur propose les identifiants enregistrés sans suggérer de mot de passe généré.
+- **Résilience UI & Bouclier Anti-Vibecode** :
+  - Envelopper les écrans majeurs dans `<ErrorBoundary>` pour prévenir les écrans blancs en cas d'erreur de rendu.
+  - Respecter la charte graphique sobre (vert athlétique Stride Quest `#65a30d`, pas de dégradés violets génériques, pas de glassmorphism excessif détruisant le contraste WCAG AA).
+  - Gérer systématiquement les 4 états de vie : chargement avec skeleton animé, succès hiérarchisé, état vide accueillant, état d'erreur avec bouton de réessai.
+- **Montres Connectées (`@capgo/capacitor-health`)** :
+  - Liaison en lecture seule Health Connect / Apple Santé.
+  - Synchronisation automatique et dédoublonnée des séances de montre (`watchSync.ts`).
+
+#### Backend & Logique Métier (`apps/api`) :
+- **Architecture & Ports/Adapters** :
+  - Séparation stricte entre le Core métier (`entities`, `services`, interfaces de `ports`) et l'Infrastructure (`repositories/postgres`, `http/app.ts`).
+  - Dépôts PostgreSQL natifs avec `pg.Pool`. En l'absence de `DATABASE_URL`, repli transparent sur les dépôts en mémoire pour les tests unitaires.
+- **Maître de Guilde (Service LLM Local & Souverain)** :
+  - Intégration d'Ollama (`llama3.2:3b` par défaut pour une latence CPU ultra-faible ~10s, ou `mistral:7b`) via `OllamaClient` avec timeout calibré (120s), température resserrée (`0.4`), pénalité de répétition (`repeat_penalty: 1.25`) et repli heuristique autonome.
+  - **Gabarit Strict Anti-Boucle (Few-Shot Structure)** : interdiction formelle des listings de micro-semaines ('Semaine 1-2', etc.) qui font bégayer les modèles 3B. Structuration obligatoire en 3 phases mensuelles nettes + semaine type (Mardi, Jeudi, Dimanche) avec ancrage immuable sur la distance cible réelle (Semi-marathon = 21,1 km).
+  - **Ancrage Temporel Dynamique** : injection de la date du jour réelle dans le prompt système pour garantir la justesse des calculs d'échéances et de calendrier d'entraînement (ex: délai avant une course cible).
+  - **Évaluation Paresseuse (Lazy Evaluation)** : les bilans hebdomadaires sont calculés à la demande lors de la première consultation de la semaine et mis en cache dans `coach_weekly_reports` (zéro appel LLM inutile).
+  - **Sobriété de Stockage & Rétention Stricte** : l'historique de discussion est automatiquement purgé au-delà des 30 derniers messages (`purgeOldMessages(playerId, 30)`), garantissant un coût de stockage minime (~15 Ko max par joueur).
+- **Anti-Triche & Validation GPS** :
+  - Vérification de vélocité maximale (35 km/h à pied, 90 km/h à vélo) et détection des téléportations instantanées.
 
 ---
 
 ### 2. Pôle Base de Données (BD) - Données Spatiales & Concurrence
 
-#### Modélisation Spatiale & PostGIS :
-- Les tracés sont stockés sous forme géométrique projetée `GEOMETRY(LineString, 4326)`.
-- Indexer systématiquement les colonnes géométriques avec des index GiST (`CREATE INDEX ... USING GIST (track);`).
-- Privilégier les fonctions natives PostGIS pour les calculs de distance et de proximité :
-  - `ST_DWithin(geog_point, geog_zone, radius_meters)` pour tester la présence du joueur dans le rayon d'un POI ou dans la zone d'influence d'un boss.
-  - `ST_Length(geography(track))` pour calculer la distance exacte parcourue.
-  - `ST_Distance` pour la recherche optimisée des tracés publics environnants.
-
-#### Résolution de la Concurrence & Découpage Atomique :
-- **Problème de Race Condition lors des Raids Mondiaux** :
-  - Plusieurs milliers de sportifs peuvent soustraire des HP au même boss simultanément.
-  - **Interdiction formelle** de faire un `SELECT current_health` suivi d'un `UPDATE` non verrouillé en application.
-  - Utiliser des opérations atomiques directes côté base de données :
+#### Modélisation Spatiale & Schéma PostgreSQL :
+- **Table `players`** :
+  - `email CITEXT NOT NULL UNIQUE` (insensible à la casse natif PostgreSQL).
+  - `password_hash TEXT` (hash scrypt, `NULL` si compte Google pur).
+  - `auth0_sub VARCHAR(255) UNIQUE`.
+- **Table `activities`** :
+  - Tracé projeté `GEOMETRY(LineString, 4326)` avec index GiST (`CREATE INDEX ... USING GIST (track);`).
+  - Dédoublonnage montre connectée : contrainte unique `activities_external_ref_uniq` sur `(player_id, external_source, external_id)`.
+- **Table `raids` & Dégâts Atomiques** :
+  - Calcul de distance spatiale native PostGIS (`ST_DWithin`, `ST_Length(geography(track))`).
+  - **Interdiction formelle** d'un `SELECT` suivi d'un `UPDATE` non verrouillé pour les PV du boss :
     ```sql
     UPDATE raids
     SET current_health = GREATEST(0, current_health - $1)
     WHERE id = $2 AND status = 'active'
     RETURNING current_health, status;
     ```
-  - En cas de forte charge, déporter le décompte temps réel dans Redis (`DECRBY raid:<id>:hp <damage>`) et synchroniser la table PostgreSQL par batchs réguliers.
+- **Tables `coach_weekly_reports` & `coach_messages`** :
+  - Unicité du bilan par joueur et semaine : `UNIQUE (player_id, year, week_number)`.
+  - Index antéchronologique sur `coach_messages (player_id, created_at DESC)` pour lecture et purge rapide des 30 messages.
+
+#### Gestion des Migrations & Seed :
+- Les nouvelles tables et colonnes doivent être ajoutées dans `database/init.sql` pour les nouvelles bases, et sous forme de script incrémental dans `database/migrations/` (ex. `002_coach_guild_master.sql`) pour les bases existantes.
+- Ne jamais commiter de données de production dans `database/seed.sql`.
 
 ---
 
-### 3. Pôle Réseau & Système (Infra) - Télémétrie, Anti-Triche & Scalabilité
+### 3. Pôle Réseau & Système (Infra) - Télémétrie, Rate Limiting & Scalabilité
 
-#### Ingestion de Télémétrie & Flux GPS :
-- Prévoir une ingestion asynchrone des coordonnées GPS pour éviter l'engorgement du serveur HTTP classique lors des sorties de groupe.
-- Mettre en place un rate limiting équilibré (1 ping toutes les 3 à 5 secondes par joueur actif).
-
-#### Sécurité & Anti-Triche (Anti-Spoofing GPS) :
-- Les données envoyées par le client mobile **ne doivent jamais être considérées comme fiables par défaut**.
-- Vérifications obligatoires côté serveur lors de la soumission d'une activité :
-  - **Vitesse maximale plausible** : calcul de vélocité entre deux points successifs (`distance / delta_t`). Tout trajet pédestre dépassant 35 km/h ou cycliste dépassant 90 km/h doit être flaggé.
-  - **Cohérence d'accélération** : détection des téléportations instantanées (spoofer de position GPS).
-  - **Consistance de l'effort** : recoupement entre la distance calculée via les coordonnées brutes et la durée réelle de l'enregistrement.
-  - Refus d'application des dégâts de raid si l'activité échoue aux tests de légitimité.
-
-#### Caching & Performance (Redis) :
-- Mettre en cache les données hautement sollicitées en lecture : fiche signalétique des Boss actifs, liste des tracés publics populaires d'un secteur, états de sessions.
-- Éviter toute surcharge inutile de la base PostGIS pour les lectures répétées.
-
-#### CI/CD & Déploiement :
-- Tout code doit être testable en environnement conteneurisé.
-- La CI GitHub Actions (`.github/workflows/ci.yml`) est la référence absolue de non-régression.
+- **Rate Limiting** :
+  - Protection des routes d'authentification (`/api/auth/login`, `/api/auth/register`) et de dialogue IA (`/api/coach/messages`) via `@fastify/rate-limit`.
+- **Variables d'Environnement** :
+  - Backend (`apps/api/.env`) : `DATABASE_URL`, `JWT_SECRET`, `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `OLLAMA_URL`, `OLLAMA_MODEL`, `PORT`, `HOST`.
+  - Frontend (`mobile-ionic/.env`) : `VITE_API_URL`, `VITE_MAPBOX_TOKEN`, `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`.
+- **Conteneurs Docker** :
+  - PostgreSQL / PostGIS 16 (port hôte 5432).
+  - Redis 7 Alpine (port hôte 6379).
+  - Ollama (port hôte 11434, volume `ollama_data`).
 
 ---
 
@@ -139,27 +167,21 @@ strave-like-rpg/
 
 Toute contribution de code par un agent doit scrupuleusement respecter les règles suivantes :
 
-1. **TypeScript Strict** :
-   - Typage explicite des paramètres, retours de fonctions et structures de données.
-   - Aucun `any` implicite. Modéliser les interfaces dans `src/data/` ou dans un package partagé.
+1. **Documentation Vivante (`AGENTS.md`)** :
+   - Tout agent modifiant une architecture, ajoutant une commande essentielle ou instaurant un nouveau standard (sécurité, validation, schéma BD) doit **proactivement mettre à jour ce document `AGENTS.md`** dans sa livraison.
 
-2. **Tests Automatisés Systématiques** :
-   - Tout nouveau service, hook complexe ou calcul géométrique **doit** s'accompagner d'un fichier de test unitaire Vitest (`*.test.ts` ou `*.test.tsx`).
-   - S'assurer que la couverture des cas limites (absence de signal GPS, coordonnées invalides, temps imparti écoulé) est testée.
+2. **TypeScript Strict & Typage aux Frontières** :
+   - Typage explicite des paramètres, retours de fonctions et structures de données. Aucun `any` implicite.
+   - Validation systématique à l'exécution avec des schémas Zod aux frontières (API REST, formulaires).
 
-3. **Style & Formatage du Code** :
-   - Formater avec Prettier avant chaque validation (`npm --prefix mobile-ionic run format`).
-   - Corriger tout avertissement ESLint (`npm --prefix mobile-ionic run lint`).
+3. **Tests Automatisés Systématiques** :
+   - Tout nouveau service, endpoint ou composant sensible **doit** s'accompagner d'un fichier de test unitaire Vitest (`*.test.ts` ou `*.test.tsx`).
+   - Le build et l'intégralité des tests doivent passer au vert avant de considérer une tâche terminée.
 
-4. **Conventions de Commit (Conventional Commits en Français)** :
-   - Format : `<type>(<scope>): <description concise en minuscules>`
-   - Types valides : `feat`, `fix`, `style`, `refactor`, `test`, `docs`, `chore`, `perf`.
-   - Scopes habituels : `gps`, `carte`, `generator`, `poi`, `ui`, `theme`, `lint`, `raid`, `db`, `infra`.
-   - Exemple : `feat(raid): calcul atomique des degats et gestion de l'expiration`.
-
-5. **Sécurité & Variables d'Environnement** :
-   - Ne jamais commiter de secrets, tokens Mapbox ou identifiants de base de données dans le code source.
-   - Utiliser les fichiers d'environnement (`.env`) prévus à cet effet.
+4. **Style, Formatage & Conventions Git** :
+   - Prettier (`npm --prefix mobile-ionic run format`) et ESLint (`npm run lint`).
+   - Commits : Conventional Commits en français : `<type>(<scope>): <description concise en minuscules>`.
+   - Branches : GitFlow (`feature/...`, `fix/...`). Ne jamais commiter de secrets (`.env`).
 
 ---
 
@@ -167,11 +189,16 @@ Toute contribution de code par un agent doit scrupuleusement respecter les règl
 
 | Action | Commande |
 | :--- | :--- |
-| **Démarrage Dev Mobile** | `npm run dev` *(ou `npm --prefix mobile-ionic run dev`)* |
-| **Lancement Vitest (Unique)** | `npm run test` *(ou `npm --prefix mobile-ionic run test.unit -- --run`)* |
-| **Linter ESLint** | `npm run lint` *(ou `npm --prefix mobile-ionic run lint`)* |
-| **Vérification Format Prettier** | `npm --prefix mobile-ionic run format:check` |
-| **Application Format Prettier** | `npm --prefix mobile-ionic run format` |
-| **Compilation TypeScript & Vite** | `npm run build` *(ou `npm --prefix mobile-ionic run build`)* |
 | **Démarrage Infrastructure (Docker)** | `docker compose -f infrastructure/docker-compose.yml up -d` |
+| **Démarrage Backend API (Port 3000)** | `npm run api:dev` *(ou `npm --prefix apps/api run dev`)* |
+| **Démarrage Frontend Mobile (Port 5173)** | `npm run dev` *(ou `npm --prefix mobile-ionic run dev`)* |
+| **Tests Unitaires Complets (Mono-repo)** | `npm run test` |
+| **Tests Unitaires Frontend (Vitest)** | `npm --prefix mobile-ionic run test.unit -- --run` |
+| **Tests Unitaires Backend (Vitest)** | `npm run api:test` *(ou `npm --prefix apps/api run test`)* |
+| **Compilation TypeScript Backend** | `npm run api:build` *(ou `npm --prefix apps/api run build`)* |
+| **Compilation TypeScript & Vite Frontend** | `npm run build` *(ou `npm --prefix mobile-ionic run build`)* |
+| **Linter ESLint** | `npm run lint` *(ou `npm --prefix mobile-ionic run lint`)* |
+| **Formatage Prettier** | `npm --prefix mobile-ionic run format` |
+| **Initialisation BDD PostGIS (PowerShell)** | `Get-Content database/init.sql \| docker exec -i infrastructure-postgres-1 psql -U stride -d stride_quest` |
+| **Chargement Jeu de Test / Seed (PowerShell)**| `Get-Content database/seed.sql \| docker exec -i infrastructure-postgres-1 psql -U stride -d stride_quest` |
 | **Vérification Workflow Complet** | Utiliser le skill `@commit-push` |

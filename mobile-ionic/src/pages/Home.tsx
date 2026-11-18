@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { IonContent, IonIcon, IonPage } from "@ionic/react";
 import { useNavigate } from "react-router-dom";
-import { playCircle } from "ionicons/icons";
+import { chatbubbleEllipsesOutline, playCircle } from "ionicons/icons";
 import TopBar from "../components/TopBar";
 import QuestTracePreview from "../components/QuestTracePreview";
+import GuildMasterModal from "../components/GuildMasterModal";
 import {
   DEMO_ACTIVE_RAID,
   DEMO_USER_ACTIVITIES,
@@ -22,6 +23,7 @@ function formatDuration(minutes: number): string {
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const [isCoachOpen, setIsCoachOpen] = useState(false);
 
   const handleStartWorkout = () => {
     navigate("/enregistrer", { state: { autoStart: true } });
@@ -105,6 +107,41 @@ const Home: React.FC = () => {
             </div>
           </section>
 
+          {/* Maître de Guilde (Coach IA) */}
+          <section
+            className="sq-card sq-card-interactive sq-home-coach-card"
+            aria-label="Maître de Guilde"
+            onClick={() => setIsCoachOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsCoachOpen(true);
+              }
+            }}
+          >
+            <div className="sq-home-coach-content">
+              <span className="sq-home-coach-avatar" aria-hidden="true">
+                🧙‍♂️
+              </span>
+              <div className="sq-home-coach-text">
+                <div className="sq-home-coach-heading-line">
+                  <h2 className="sq-home-coach-title">Maître de Guilde</h2>
+                  <span className="sq-home-coach-pill">Coach IA</span>
+                </div>
+                <p className="sq-home-coach-desc">
+                  Bilan de progression hebdomadaire & salon de discussion
+                </p>
+              </div>
+              <IonIcon
+                icon={chatbubbleEllipsesOutline}
+                className="sq-home-coach-action-icon"
+                aria-hidden="true"
+              />
+            </div>
+          </section>
+
           {/* Dernière sortie (Maquette Page 1) */}
           {lastActivity && (
             <section
@@ -177,6 +214,11 @@ const Home: React.FC = () => {
           </section>
         </main>
       </IonContent>
+
+      <GuildMasterModal
+        isOpen={isCoachOpen}
+        onClose={() => setIsCoachOpen(false)}
+      />
     </IonPage>
   );
 };

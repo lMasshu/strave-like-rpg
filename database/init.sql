@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS players (
     auth0_sub VARCHAR(255) UNIQUE,
     level INTEGER NOT NULL DEFAULT 1 CHECK (level > 0),
     experience INTEGER NOT NULL DEFAULT 0 CHECK (experience >= 0),
+    coach_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    coach_goal VARCHAR(30) NOT NULL DEFAULT 'casual' CHECK (coach_goal IN ('casual', 'active', 'marathon', 'half-marathon', '10k', '5k')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- Un compte doit toujours avoir au moins un moyen de connexion
     CHECK (password_hash IS NOT NULL OR auth0_sub IS NOT NULL)
@@ -79,3 +81,31 @@ CREATE TABLE IF NOT EXISTS raid_damage_events (
 
 CREATE INDEX IF NOT EXISTS raid_damage_events_raid_id_idx ON raid_damage_events (raid_id);
 CREATE INDEX IF NOT EXISTS raid_damage_events_player_id_idx ON raid_damage_events (player_id);
+
+
+-- 5. Bilans hebdomadaires du Maître de Guilde (Coach IA)
+CREATE TABLE IF NOT EXISTS coach_weekly_reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    year INT NOT NULL CHECK (year >= 2026),
+    week_number INT NOT NULL CHECK (week_number >= 1 AND week_number <= 53),
+    summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    report_text TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (player_id, year, week_number)
+);
+
+CREATE INDEX IF NOT EXISTS coach_weekly_reports_player_idx
+    ON coach_weekly_reports (player_id, year DESC, week_number DESC);
+
+-- 6. Historique de conversation avec le Maître de Guilde
+CREATE TABLE IF NOT EXISTS coach_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    role VARCHAR(10) NOT NULL CHECK (role IN ('user', 'assistant')),
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS coach_messages_player_idx
+    ON coach_messages (player_id, created_at DESC);

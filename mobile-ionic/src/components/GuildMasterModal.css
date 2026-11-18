@@ -1,0 +1,540 @@
+/* ==========================================================================
+   Modale Maître de Guilde - Adaptative Clair / Sombre / Palettes Stride Quest
+   ========================================================================== */
+
+.guild-master-modal {
+  --width: 100%;
+  --max-width: 600px;
+  --height: 94%;
+  --border-radius: 20px 20px 0 0;
+  --background: var(--sq-surface-card);
+  --color: var(--sq-text-main);
+}
+
+.guild-master-modal::part(content) {
+  border-radius: 20px 20px 0 0;
+  background: var(--sq-surface-card);
+  color: var(--sq-text-main);
+  border-top: 1px solid var(--sq-border);
+  box-shadow: var(--sq-shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.guild-master-modal ion-header {
+  background: var(--sq-surface-card);
+}
+
+.guild-master-modal ion-toolbar {
+  --background: var(--sq-surface-card);
+  --color: var(--sq-text-main);
+  --border-color: var(--sq-border);
+}
+
+.guild-master-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guild-master-avatar {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.guild-master-subtitle {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--sq-text-muted);
+  font-weight: 500;
+  margin-top: -2px;
+}
+
+/* Onglets Segment */
+.guild-master-segment-bar {
+  padding: 0 16px 10px;
+  background: var(--sq-surface-card);
+  border-bottom: 1px solid var(--sq-border);
+}
+
+.guild-master-segment-bar ion-segment {
+  --background: var(--sq-surface-card-subtle);
+  border-radius: var(--sq-radius-md, 12px);
+  padding: 3px;
+}
+
+.guild-master-segment-bar ion-segment-button {
+  --color: var(--sq-text-muted);
+  --color-checked: var(--sq-color-primary);
+  --indicator-color: var(--sq-surface-card);
+  --indicator-box-shadow: var(--sq-shadow-sm);
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+  border-radius: var(--sq-radius-sm, 8px);
+  transition: color 0.15s ease;
+}
+
+.guild-master-content {
+  --background: var(--sq-bg-base);
+  --color: var(--sq-text-main);
+}
+
+.guild-master-tab-pane {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Cartes d'états (désactivé, erreur, vide) */
+.coach-disabled-card,
+.coach-error-card,
+.coach-empty-card {
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg, 16px);
+  padding: 24px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  box-shadow: var(--sq-shadow-sm);
+  color: var(--sq-text-main);
+}
+
+.coach-disabled-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sq-color-primary) 15%, transparent);
+  color: var(--sq-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+
+.coach-disabled-card h3,
+.coach-error-card h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.coach-disabled-card p,
+.coach-error-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sq-text-muted);
+  max-width: 380px;
+  line-height: 1.45;
+}
+
+.coach-settings-btn {
+  margin-top: 8px;
+  --background: var(--sq-color-primary);
+  --color: var(--sq-primary-fg, #000000);
+  font-weight: 700;
+}
+
+.coach-retry-btn {
+  --color: var(--sq-color-primary);
+  --border-color: var(--sq-color-primary);
+}
+
+.coach-loading-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 12px;
+  color: var(--sq-text-muted);
+  font-size: 0.9rem;
+}
+
+/* Bilan Hebdo */
+.coach-report-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.coach-report-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.coach-report-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--sq-radius-full, 9999px);
+  background: color-mix(in srgb, var(--sq-color-primary) 18%, transparent);
+  color: var(--sq-color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.coach-refresh-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--sq-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s;
+}
+
+.coach-refresh-btn:hover {
+  color: var(--sq-color-primary);
+}
+
+/* Grille des métriques */
+.coach-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.coach-metric-card {
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md, 12px);
+  padding: 10px 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.coach-metric-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--sq-text-main);
+  font-family: var(--sq-font-mono, monospace);
+}
+
+.coach-metric-val small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sq-text-muted);
+}
+
+.coach-metric-label {
+  font-size: 0.72rem;
+  color: var(--sq-text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Parchemin de conseils */
+.coach-parchment-card {
+  background: var(--sq-surface-card);
+  border: 1.5px solid var(--sq-border);
+  border-radius: var(--sq-radius-lg, 16px);
+  padding: 18px;
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.coach-parchment-header {
+  border-bottom: 1px dashed var(--sq-border-subtle);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.coach-parchment-tag {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--sq-color-primary);
+  text-transform: uppercase;
+}
+
+.coach-parchment-body p {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  color: var(--sq-text-main);
+  line-height: 1.6;
+}
+
+.coach-parchment-body p:last-child {
+  margin-bottom: 0;
+}
+
+.coach-chat-invite {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.coach-chat-invite p {
+  font-size: 0.85rem;
+  color: var(--sq-text-muted);
+  margin-bottom: 6px;
+}
+
+/* Salon de discussion */
+.guild-master-chat-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.coach-chat-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coach-chat-welcome {
+  text-align: center;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.coach-welcome-avatar {
+  font-size: 2.5rem;
+}
+
+.coach-chat-welcome h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sq-text-main);
+}
+
+.coach-chat-welcome p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sq-text-muted);
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+.coach-chat-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.coach-chat-row.is-user {
+  justify-content: flex-end;
+}
+
+.coach-bubble-avatar {
+  font-size: 1.3rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.coach-chat-bubble {
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: var(--sq-radius-lg, 16px);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.coach-chat-row.is-assistant .coach-chat-bubble {
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+  border-bottom-left-radius: 4px;
+  color: var(--sq-text-main);
+  box-shadow: var(--sq-shadow-sm);
+}
+
+.coach-chat-row.is-user .coach-chat-bubble {
+  background: var(--sq-color-primary);
+  color: var(--sq-primary-fg, #000000);
+  font-weight: 600;
+  border-bottom-right-radius: 4px;
+}
+
+.coach-bubble-text p {
+  margin: 0 0 8px;
+}
+
+.coach-bubble-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* Typing indicator */
+.coach-typing-bubble {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.coach-typing-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--sq-color-primary);
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.coach-typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.coach-typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.coach-chat-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--ion-color-danger, #ef4444) 15%, transparent);
+  color: var(--ion-color-danger, #ef4444);
+  border-radius: var(--sq-radius-sm, 8px);
+  font-size: 0.82rem;
+}
+
+/* Suggestions rapides */
+.coach-quick-prompts-bar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 16px;
+  background: var(--sq-surface-card);
+  border-top: 1px solid var(--sq-border);
+  scrollbar-width: none;
+}
+
+.coach-quick-prompts-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.coach-prompt-pill {
+  white-space: nowrap;
+  background: var(--sq-surface-card-subtle);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-full, 9999px);
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: var(--sq-text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.coach-prompt-pill:hover {
+  border-color: var(--sq-color-primary);
+  background: color-mix(in srgb, var(--sq-color-primary) 10%, var(--sq-surface-card-subtle));
+}
+
+/* Saisie de message */
+.coach-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--sq-surface-card);
+  border-top: 1px solid var(--sq-border);
+}
+
+.coach-input-field {
+  flex: 1;
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-full, 9999px);
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  outline: none;
+  background: var(--sq-surface-card-subtle);
+  color: var(--sq-text-main);
+}
+
+.coach-input-field:focus {
+  border-color: var(--sq-color-primary);
+}
+
+.coach-send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--sq-color-primary);
+  color: var(--sq-primary-fg, #000000);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.coach-send-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Adaptation Sombre Renforcée Modale & Cartes Intérieures
+   ========================================================================== */
+[data-theme="dark"] .guild-master-content,
+.ion-palette-dark .guild-master-content {
+  --background: var(--sq-bg-base, #020617);
+  --color: var(--sq-text-main, #f8fafc);
+}
+
+[data-theme="dark"] .coach-disabled-card,
+[data-theme="dark"] .coach-error-card,
+[data-theme="dark"] .coach-empty-card,
+[data-theme="dark"] .coach-metric-card,
+[data-theme="dark"] .coach-parchment-card,
+.ion-palette-dark .coach-disabled-card,
+.ion-palette-dark .coach-error-card,
+.ion-palette-dark .coach-empty-card,
+.ion-palette-dark .coach-metric-card,
+.ion-palette-dark .coach-parchment-card {
+  background: var(--sq-surface-card, #0f172a);
+  border-color: var(--sq-border, #1e293b);
+  color: var(--sq-text-main, #f8fafc);
+}
+
+[data-theme="dark"] .coach-chat-row.is-assistant .coach-chat-bubble,
+.ion-palette-dark .coach-chat-row.is-assistant .coach-chat-bubble {
+  background: var(--sq-surface-card, #0f172a);
+  border-color: var(--sq-border, #1e293b);
+  color: var(--sq-text-main, #f8fafc);
+}
+
+[data-theme="dark"] .coach-quick-prompts-bar,
+[data-theme="dark"] .coach-input-bar,
+.ion-palette-dark .coach-quick-prompts-bar,
+.ion-palette-dark .coach-input-bar {
+  background: var(--sq-surface-card, #0f172a);
+  border-color: var(--sq-border, #1e293b);
+}
+
+[data-theme="dark"] .coach-prompt-pill,
+[data-theme="dark"] .coach-input-field,
+.ion-palette-dark .coach-prompt-pill,
+.ion-palette-dark .coach-input-field {
+  background: var(--sq-surface-card-subtle, #1e293b);
+  border-color: var(--sq-border, #1e293b);
+  color: var(--sq-text-main, #f8fafc);
+}

@@ -10,6 +10,7 @@ import {
 } from "@ionic/react";
 import { checkmarkCircle } from "ionicons/icons";
 import AccountSection from "../components/AccountSection";
+import CoachSettingsSection from "../components/CoachSettingsSection";
 import WatchLinkSection from "../components/WatchLinkSection";
 import { useAuth } from "../auth/authContext";
 import { ColorPalette, useThemeMode } from "../hooks/useThemeMode";
@@ -70,6 +71,9 @@ const Settings: React.FC = () => {
 
           {/* La déconnexion efface la session : l'appli affiche alors la page de connexion. */}
           <AccountSection player={player} onLogout={logout} />
+
+          {/* Configuration du Maître de Guilde (Coach IA) */}
+          <CoachSettingsSection />
 
           <section aria-labelledby="palette-heading">
             <div className="settings-section-heading">

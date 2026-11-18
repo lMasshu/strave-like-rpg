@@ -25,9 +25,17 @@ import {
 import { InMemoryActivityRepository } from '../repositories/inMemory/inMemoryActivityRepo.js';
 import { InMemoryPlayerRepository } from '../repositories/inMemory/inMemoryPlayerRepo.js';
 import { InMemoryEventPublisher } from '../events/inMemoryEventPublisher.js';
+import { InMemoryCoachRepository } from '../repositories/inMemory/inMemoryCoachRepo.js';
+import { CoachService } from '../../core/services/coachService.js';
+import {
+  OllamaClient,
+  OllamaUnavailableError,
+  type IOllamaClient,
+} from '../../core/services/ollamaClient.js';
 import type { IActivityRepository } from '../../core/ports/activityRepository.js';
 import type { IPlayerRepository } from '../../core/ports/playerRepository.js';
 import type { IEventPublisher } from '../../core/ports/eventPublisher.js';
+import type { ICoachRepository } from '../../core/ports/coachRepository.js';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -41,6 +49,8 @@ export interface AppDependencies {
   jwtSecret: string;
   activityRepo?: IActivityRepository;
   playerRepo?: IPlayerRepository;
+  coachRepo?: ICoachRepository;
+  llmClient?: IOllamaClient;
   eventPublisher?: IEventPublisher;
   /** Vérificateur Auth0 pour « Continuer avec Google » ; absent = connexion Google désactivée. */
   googleVerifier?: IGoogleIdentityVerifier | null;
@@ -72,6 +82,8 @@ const createActivitySchema = z.object({
     .optional(),
 });
 
+export const MIN_PASSWORD_LENGTH = 12;
+
 const emailSchema = z
   .string({ required_error: "L'e-mail est obligatoire" })
   .trim()
@@ -82,8 +94,12 @@ const registerSchema = z.object({
   email: emailSchema,
   password: z
     .string({ required_error: 'Le mot de passe est obligatoire' })
-    .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+    .min(MIN_PASSWORD_LENGTH, `Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères`)
     .max(128, 'Le mot de passe est trop long (128 caractères maximum)')
+    .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une lettre majuscule')
+    .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une lettre minuscule')
+    .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
+    .regex(/[^A-Za-z0-9]/, 'Le mot de passe doit contenir au moins un caractère spécial')
     .refine((value) => value.trim().length > 0, 'Le mot de passe ne peut pas être vide'),
   username: z
     .string({ required_error: 'Le pseudo est obligatoire' })
@@ -121,6 +137,21 @@ const summaryQuerySchema = z
     message: 'Période trop longue (un an maximum)',
   });
 
+const coachSettingsSchema = z.object({
+  coachEnabled: z.boolean().optional(),
+  coachGoal: z
+    .enum(['casual', 'active', '5k', '10k', 'half-marathon', 'marathon'])
+    .optional(),
+});
+
+const coachMessageSchema = z.object({
+  message: z
+    .string({ required_error: 'Le message est obligatoire' })
+    .trim()
+    .min(1, 'Le message ne peut pas être vide')
+    .max(2000, 'Message trop long (2000 caractères maximum)'),
+});
+
 function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Données invalides';
 }
@@ -156,6 +187,14 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     antiCheat,
   );
   const authService = new AuthService(playerRepo);
+  const coachRepo = deps.coachRepo ?? new InMemoryCoachRepository();
+  const llmClient = deps.llmClient ?? new OllamaClient();
+  const coachService = new CoachService(
+    coachRepo,
+    playerRepo,
+    activityRepo,
+    llmClient,
+  );
 
   const authRateLimit = {
     rateLimit: { max: deps.authRateLimitPerMinute ?? 10, timeWindow: '1 minute' },
@@ -355,6 +394,64 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     }
     return activity;
   });
+
+  // 5. Maître de Guilde (Coach IA)
+  app.get('/api/coach/settings', { preHandler: authenticate }, async (req) => {
+    return coachService.getSettings(req.user.sub);
+  });
+
+  app.put('/api/coach/settings', { preHandler: authenticate }, async (req, reply) => {
+    const parsed = coachSettingsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: firstIssue(parsed.error) });
+    }
+    const settings = await coachService.updateSettings(req.user.sub, parsed.data);
+    return settings;
+  });
+
+  app.get('/api/coach/weekly-report', { preHandler: authenticate }, async (req, reply) => {
+    try {
+      return await coachService.getWeeklyReport(req.user.sub);
+    } catch (err: unknown) {
+      if (err instanceof OllamaUnavailableError) {
+        return reply.status(503).send({ error: err.message, serviceUnavailable: true });
+      }
+      const message =
+        err instanceof Error ? err.message : 'Erreur de génération du rapport';
+      return reply.status(500).send({ error: message });
+    }
+  });
+
+  app.get('/api/coach/messages', { preHandler: authenticate }, async (req) => {
+    const messages = await coachService.getRecentMessages(req.user.sub);
+    return { messages };
+  });
+
+  app.post(
+    '/api/coach/messages',
+    { preHandler: authenticate, config: authRateLimit },
+    async (req, reply) => {
+      const parsed = coachMessageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: firstIssue(parsed.error) });
+      }
+
+      try {
+        const message = await coachService.handleChatMessage(
+          req.user.sub,
+          parsed.data.message,
+        );
+        return reply.status(201).send({ message });
+      } catch (err: unknown) {
+        if (err instanceof OllamaUnavailableError) {
+          return reply.status(503).send({ error: err.message, serviceUnavailable: true });
+        }
+        const text =
+          err instanceof Error ? err.message : 'Erreur du serveur de conversation';
+        return reply.status(500).send({ error: text });
+      }
+    },
+  );
 
   return app;
 }

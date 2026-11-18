@@ -16,6 +16,8 @@ describe('ActivityService', () => {
     auth0Sub: null,
     level: 1,
     experience: 800,
+    coachEnabled: false,
+    coachGoal: 'casual',
     createdAt: new Date('2026-01-01'),
   };
 
@@ -53,6 +55,14 @@ describe('ActivityService', () => {
       addExperience: vi.fn(async (_id, xpDelta) => {
         const experience = player.experience + xpDelta;
         player = { ...player, experience, level: calculateLevel(experience).level };
+        return player;
+      }),
+      updateCoachSettings: vi.fn(async (_id, settings) => {
+        player = {
+          ...player,
+          coachEnabled: settings.coachEnabled ?? player.coachEnabled,
+          coachGoal: settings.coachGoal ?? player.coachGoal,
+        };
         return player;
       }),
     };

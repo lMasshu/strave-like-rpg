@@ -103,23 +103,43 @@ describe("AuthPage", () => {
     fill("Mot de passe", "court");
     fill("Confirmer le mot de passe", "court");
     fireEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/au moins 8/);
+    expect(screen.getByRole("alert")).toHaveTextContent(/au moins 12/);
 
-    fill("Mot de passe", "trail-running-42");
-    fill("Confirmer le mot de passe", "trail-running-43");
+    fill("Mot de passe", "Trail-running-42!");
+    fill("Confirmer le mot de passe", "Trail-running-43!");
     fireEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
     expect(screen.getByRole("alert")).toHaveTextContent(/ne correspondent pas/);
     expect(auth.register).not.toHaveBeenCalled();
 
-    fill("Confirmer le mot de passe", "trail-running-42");
+    fill("Confirmer le mot de passe", "Trail-running-42!");
     fireEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
 
     await waitFor(() =>
       expect(auth.register).toHaveBeenCalledWith({
         username: "Lea_Trail",
         email: "lea@example.com",
-        password: "trail-running-42",
+        password: "Trail-running-42!",
       }),
+    );
+  });
+
+  it("affiche la jauge et la checklist dynamique de mot de passe en mode inscription", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("tab", { name: "Inscription" }));
+
+    expect(
+      screen.getByText(/au moins 12 caractères avec majuscule/i),
+    ).toBeInTheDocument();
+
+    fill("Mot de passe", "AlexisPv!!!2");
+
+    expect(
+      screen.getByText("Norme de sécurité (CNIL / ANSSI)"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Conforme")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "5",
     );
   });
 

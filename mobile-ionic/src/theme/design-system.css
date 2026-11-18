@@ -7,8 +7,7 @@
    Tokens Thème Clair (Défaut & Explicite [data-theme="light"]) - Lime Frost
    ========================================================================== */
 :root,
-[data-theme="light"],
-[data-palette="lime-frost"] {
+[data-theme="light"] {
   /* Surfaces & Fonds Givrés */
   --sq-bg-base: #fbfcf8;
   --sq-surface-card: #ffffff;
@@ -83,7 +82,8 @@
 /* ==========================================================================
    Tokens Thème Sombre (Explicite [data-theme="dark"] et media query) - Lime Frost Dark
    ========================================================================== */
-[data-theme="dark"] {
+[data-theme="dark"],
+[data-theme="dark"][data-palette="lime-frost"] {
   /* Surfaces & Fonds Nuit Noire & Ardoise */
   --sq-bg-base: #020617;
   --sq-surface-card: #0f172a;

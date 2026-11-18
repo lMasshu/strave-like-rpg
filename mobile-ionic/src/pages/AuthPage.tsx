@@ -6,6 +6,7 @@ import {
   AuthFormValues as FormValues,
   AuthMode as Mode,
   MIN_PASSWORD_LENGTH,
+  evaluatePassword,
   validateAuthForm,
 } from "../auth/authForm";
 import "./AuthPage.css";
@@ -45,6 +46,7 @@ const AuthPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const isRegister = mode === "register";
+  const passwordEval = evaluatePassword(values.password);
 
   const update =
     (field: keyof FormValues) => (event: { target: { value: string } }) =>
@@ -136,7 +138,12 @@ const AuthPage: React.FC = () => {
               {isRegister ? "Créer un compte" : "Se connecter"}
             </h2>
 
-            <form className="sq-auth-form" onSubmit={handleSubmit} noValidate>
+            <form
+              className="sq-auth-form"
+              key={mode}
+              onSubmit={handleSubmit}
+              noValidate
+            >
               {isRegister && (
                 <label className="sq-auth-field">
                   <span>Pseudo</span>
@@ -167,12 +174,17 @@ const AuthPage: React.FC = () => {
               </label>
 
               <div className="sq-auth-field">
-                <label htmlFor="auth-password">Mot de passe</label>
+                <label
+                  htmlFor={isRegister ? "register-password" : "login-password"}
+                >
+                  Mot de passe
+                </label>
                 <div className="sq-auth-password">
                   <input
-                    id="auth-password"
+                    key={isRegister ? "reg-pwd" : "login-pwd"}
+                    id={isRegister ? "register-password" : "login-password"}
                     type={showPassword ? "text" : "password"}
-                    name="password"
+                    name={isRegister ? "new-password" : "password"}
                     aria-describedby={
                       isRegister ? "auth-password-hint" : undefined
                     }
@@ -200,9 +212,58 @@ const AuthPage: React.FC = () => {
                     />
                   </button>
                 </div>
-                {isRegister && (
+                {isRegister && values.password.length > 0 && (
+                  <div
+                    className="sq-password-strength-container"
+                    aria-live="polite"
+                  >
+                    <div className="sq-password-meter-header">
+                      <span className="sq-password-meter-title">
+                        Norme de sécurité (CNIL / ANSSI)
+                      </span>
+                      <span
+                        className={`sq-password-meter-badge sq-strength-${passwordEval.colorClass}`}
+                      >
+                        {passwordEval.label}
+                      </span>
+                    </div>
+                    <div
+                      className="sq-password-meter-track"
+                      role="progressbar"
+                      aria-valuenow={passwordEval.score}
+                      aria-valuemin={0}
+                      aria-valuemax={passwordEval.maxScore}
+                      aria-label="Force du mot de passe"
+                    >
+                      <div
+                        className={`sq-password-meter-fill sq-strength-${passwordEval.colorClass}`}
+                        style={{
+                          width: `${(passwordEval.score / passwordEval.maxScore) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <ul className="sq-password-checklist">
+                      {passwordEval.criteria.map((c) => (
+                        <li
+                          key={c.id}
+                          className={`sq-password-check-item ${c.met ? "met" : "unmet"}`}
+                        >
+                          <span
+                            className="sq-password-check-icon"
+                            aria-hidden="true"
+                          >
+                            {c.met ? "✓" : "○"}
+                          </span>
+                          <span>{c.label}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {isRegister && values.password.length === 0 && (
                   <small id="auth-password-hint">
-                    Au moins {MIN_PASSWORD_LENGTH} caractères.
+                    Au moins {MIN_PASSWORD_LENGTH} caractères avec majuscule,
+                    minuscule, chiffre et symbole.
                   </small>
                 )}
               </div>

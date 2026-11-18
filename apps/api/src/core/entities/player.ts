@@ -1,3 +1,11 @@
+export type CoachGoal =
+  | 'casual'
+  | 'active'
+  | '5k'
+  | '10k'
+  | 'half-marathon'
+  | 'marathon';
+
 /** Joueur = compte utilisateur. Contient des données sensibles : ne jamais le renvoyer tel quel. */
 export interface Player {
   id: string;
@@ -10,11 +18,19 @@ export interface Player {
   auth0Sub: string | null;
   level: number;
   experience: number;
+  coachEnabled: boolean;
+  coachGoal: CoachGoal;
   createdAt: Date;
 }
 
 /** Données nécessaires à la création d'un compte (l'identifiant est généré par le dépôt). */
-export type NewPlayer = Omit<Player, 'id' | 'level' | 'experience' | 'createdAt'>;
+export type NewPlayer = Omit<
+  Player,
+  'id' | 'level' | 'experience' | 'createdAt' | 'coachEnabled' | 'coachGoal'
+> & {
+  coachEnabled?: boolean;
+  coachGoal?: CoachGoal;
+};
 
 /** Vue renvoyée au propriétaire du compte. */
 export interface PlayerProfile {
@@ -23,6 +39,8 @@ export interface PlayerProfile {
   email: string;
   level: number;
   experience: number;
+  coachEnabled: boolean;
+  coachGoal: CoachGoal;
   createdAt: Date;
   /** Moyens de connexion disponibles, pour l'écran Paramètres. */
   hasPassword: boolean;
@@ -45,6 +63,8 @@ export function toPlayerProfile(player: Player): PlayerProfile {
     email: player.email,
     level: player.level,
     experience: player.experience,
+    coachEnabled: player.coachEnabled ?? false,
+    coachGoal: player.coachGoal ?? 'casual',
     createdAt: player.createdAt,
     hasPassword: player.passwordHash !== null,
     googleLinked: player.auth0Sub !== null,

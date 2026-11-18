@@ -395,7 +395,9 @@
 }
 
 @keyframes typingBounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
   }
   40% {
@@ -408,7 +410,11 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: color-mix(in srgb, var(--ion-color-danger, #ef4444) 15%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--ion-color-danger, #ef4444) 15%,
+    transparent
+  );
   color: var(--ion-color-danger, #ef4444);
   border-radius: var(--sq-radius-sm, 8px);
   font-size: 0.82rem;
@@ -443,7 +449,11 @@
 
 .coach-prompt-pill:hover {
   border-color: var(--sq-color-primary);
-  background: color-mix(in srgb, var(--sq-color-primary) 10%, var(--sq-surface-card-subtle));
+  background: color-mix(
+    in srgb,
+    var(--sq-color-primary) 10%,
+    var(--sq-surface-card-subtle)
+  );
 }
 
 /* Saisie de message */

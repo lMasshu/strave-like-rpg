@@ -17,7 +17,11 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: var(--sq-radius-full, 9999px);
-  background-color: color-mix(in srgb, var(--sq-color-primary) 18%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--sq-color-primary) 18%,
+    transparent
+  );
   color: var(--sq-color-primary);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -33,7 +37,9 @@
   gap: 16px;
   box-shadow: var(--sq-shadow-sm);
   color: var(--sq-text-main);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .coach-loading-card {
@@ -131,12 +137,20 @@
 }
 
 .coach-goal-card:hover {
-  border-color: color-mix(in srgb, var(--sq-color-primary) 50%, var(--sq-border));
+  border-color: color-mix(
+    in srgb,
+    var(--sq-color-primary) 50%,
+    var(--sq-border)
+  );
 }
 
 .coach-goal-card.is-selected {
   border-color: var(--sq-color-primary);
-  background: color-mix(in srgb, var(--sq-color-primary) 12%, var(--sq-surface-card));
+  background: color-mix(
+    in srgb,
+    var(--sq-color-primary) 12%,
+    var(--sq-surface-card)
+  );
   box-shadow: 0 0 0 1px var(--sq-color-primary);
 }
 
@@ -207,7 +221,11 @@
 .coach-error-banner {
   padding: 8px 12px;
   border-radius: var(--sq-radius-sm, 8px);
-  background: color-mix(in srgb, var(--ion-color-danger, #ef4444) 15%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--ion-color-danger, #ef4444) 15%,
+    transparent
+  );
   color: var(--ion-color-danger, #ef4444);
   font-size: 0.85rem;
 }
@@ -230,13 +248,21 @@
 
 [data-theme="dark"] .coach-goal-card:hover,
 .ion-palette-dark .coach-goal-card:hover {
-  border-color: color-mix(in srgb, var(--sq-color-primary) 50%, var(--sq-border, #1e293b));
+  border-color: color-mix(
+    in srgb,
+    var(--sq-color-primary) 50%,
+    var(--sq-border, #1e293b)
+  );
 }
 
 [data-theme="dark"] .coach-goal-card.is-selected,
 .ion-palette-dark .coach-goal-card.is-selected {
   border-color: var(--sq-color-primary);
-  background: color-mix(in srgb, var(--sq-color-primary) 15%, var(--sq-surface-card, #0f172a));
+  background: color-mix(
+    in srgb,
+    var(--sq-color-primary) 15%,
+    var(--sq-surface-card, #0f172a)
+  );
   box-shadow: 0 0 0 1px var(--sq-color-primary);
 }
 

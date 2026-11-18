@@ -6,6 +6,7 @@ import { Auth0IdentityVerifier } from './infrastructure/auth/auth0IdentityVerifi
 import { PgActivityRepository } from './infrastructure/repositories/postgres/pgActivityRepo.js';
 import { PgPlayerRepository } from './infrastructure/repositories/postgres/pgPlayerRepo.js';
 import { PgCoachRepository } from './infrastructure/repositories/postgres/pgCoachRepo.js';
+import { PgSocialRepository } from './infrastructure/repositories/postgres/pgSocialRepo.js';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -23,7 +24,7 @@ function jwtSecret(): string {
 }
 
 async function storage(): Promise<
-  Pick<AppDependencies, 'playerRepo' | 'activityRepo' | 'coachRepo'> & {
+  Pick<AppDependencies, 'playerRepo' | 'activityRepo' | 'coachRepo' | 'socialRepo'> & {
     close?: () => Promise<void>;
   }
 > {
@@ -41,6 +42,7 @@ async function storage(): Promise<
     playerRepo: new PgPlayerRepository(pool),
     activityRepo: new PgActivityRepository(pool),
     coachRepo: new PgCoachRepository(pool),
+    socialRepo: new PgSocialRepository(pool),
     close: () => pool.end(),
   };
 }

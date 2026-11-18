@@ -157,6 +157,47 @@ export interface ActivityDto {
 /** Activité sans tracé ni enregistrement brut, pour les statistiques par période. */
 export type ActivitySummaryDto = Omit<ActivityDto, "coordinates" | "recording">;
 
+/** Profil public d'un autre joueur (jamais d'e-mail). */
+export interface PublicPlayerDto {
+  id: string;
+  username: string;
+  level: number;
+  experience: number;
+  createdAt: string;
+}
+
+/** Joueur trouvé par la recherche : on sait si on le suit déjà. */
+export interface SearchedPlayerDto extends PublicPlayerDto {
+  following: boolean;
+}
+
+/** Joueur suggéré : actif dans ma zone principale ou dans celle de ma dernière sortie. */
+export interface SuggestedPlayerDto extends PublicPlayerDto {
+  reason: "main-zone" | "last-zone";
+  /** Nombre de ses sorties commencées dans la zone. */
+  activityCount: number;
+}
+
+/** Sortie d'un ami (sans tracé GPS). */
+export interface FriendActivityDto {
+  id: string;
+  player: PublicPlayerDto;
+  activityType: "walk" | "run" | "bike" | "hike";
+  startedAt: string;
+  durationSeconds: number;
+  distanceMeters: number;
+  elevationGainMeters: number;
+}
+
+/** Ligne du classement de la guilde (moi + les joueurs que je suis). */
+export interface LeaderboardEntryDto extends PublicPlayerDto {
+  distanceMeters: number;
+  activityCount: number;
+  /** 1 = premier ; à distance égale, même rang. */
+  rank: number;
+  isMe: boolean;
+}
+
 /**
  * Diagnostic de l'API REST.
  */
@@ -333,6 +374,81 @@ export class ApiClient {
     });
     const data = (await res.json()) as { message: CoachMessageDto };
     return data.message;
+  }
+
+  /**
+   * Joueurs inscrits (sauf moi) dont le pseudo contient `query` ; tous si vide.
+   * L'API en renvoie 20 par défaut, 50 au plus.
+   */
+  async searchPlayers(
+    query = "",
+    limit?: number,
+  ): Promise<SearchedPlayerDto[]> {
+    const params = new URLSearchParams({ q: query.trim() });
+    if (limit !== undefined) params.set("limit", String(limit));
+    const res = await this.authorizedFetch(`/api/players?${params}`, {
+      method: "GET",
+    });
+    const data = (await res.json()) as { players?: SearchedPlayerDto[] };
+    return data.players || [];
+  }
+
+  /** Joueurs que je suis. */
+  async getFriends(): Promise<PublicPlayerDto[]> {
+    const res = await this.authorizedFetch("/api/friends", { method: "GET" });
+    const data = (await res.json()) as { friends?: PublicPlayerDto[] };
+    return data.friends || [];
+  }
+
+  /** Jusqu'à 10 joueurs actifs là où je cours. */
+  async getFriendSuggestions(): Promise<SuggestedPlayerDto[]> {
+    const res = await this.authorizedFetch("/api/friends/suggestions", {
+      method: "GET",
+    });
+    const data = (await res.json()) as { suggestions?: SuggestedPlayerDto[] };
+    return data.suggestions || [];
+  }
+
+  /** Classement par distance entre moi et mes amis, sorties commencées dans [from, to[. */
+  async getFriendsLeaderboard(
+    from: Date,
+    to: Date,
+  ): Promise<LeaderboardEntryDto[]> {
+    const params = new URLSearchParams({
+      from: from.toISOString(),
+      to: to.toISOString(),
+    });
+    const res = await this.authorizedFetch(
+      `/api/friends/leaderboard?${params}`,
+      { method: "GET" },
+    );
+    const data = (await res.json()) as { leaderboard?: LeaderboardEntryDto[] };
+    return data.leaderboard || [];
+  }
+
+  /** Sorties des joueurs que je suis, la plus récente en premier (20 par défaut, 50 au plus). */
+  async getFriendsActivities(limit?: number): Promise<FriendActivityDto[]> {
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.set("limit", String(limit));
+    const query = params.toString();
+    const res = await this.authorizedFetch(
+      `/api/friends/activities${query ? `?${query}` : ""}`,
+      { method: "GET" },
+    );
+    const data = (await res.json()) as { activities?: FriendActivityDto[] };
+    return data.activities || [];
+  }
+
+  async followPlayer(playerId: string): Promise<void> {
+    await this.authorizedFetch(`/api/friends/${encodeURIComponent(playerId)}`, {
+      method: "PUT",
+    });
+  }
+
+  async unfollowPlayer(playerId: string): Promise<void> {
+    await this.authorizedFetch(`/api/friends/${encodeURIComponent(playerId)}`, {
+      method: "DELETE",
+    });
   }
 
   private async authRequest(path: string, body: unknown): Promise<AuthSession> {

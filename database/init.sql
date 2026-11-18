@@ -109,3 +109,15 @@ CREATE TABLE IF NOT EXISTS coach_messages (
 
 CREATE INDEX IF NOT EXISTS coach_messages_player_idx
     ON coach_messages (player_id, created_at DESC);
+
+-- 7. Liste d'amis : un joueur en suit un autre (relation à sens unique, comme « Suivre »)
+CREATE TABLE IF NOT EXISTS follows (
+    follower_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    followed_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (follower_id, followed_id),
+    CHECK (follower_id <> followed_id)
+);
+
+-- « Qui me suit ? » (la clé primaire couvre déjà « qui je suis »)
+CREATE INDEX IF NOT EXISTS follows_followed_id_idx ON follows (followed_id);

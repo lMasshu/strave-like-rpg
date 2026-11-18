@@ -24,6 +24,7 @@ import {
 } from '../../core/entities/player.js';
 import { InMemoryActivityRepository } from '../repositories/inMemory/inMemoryActivityRepo.js';
 import { InMemoryPlayerRepository } from '../repositories/inMemory/inMemoryPlayerRepo.js';
+import { InMemorySocialRepository } from '../repositories/inMemory/inMemorySocialRepo.js';
 import { InMemoryEventPublisher } from '../events/inMemoryEventPublisher.js';
 import { InMemoryCoachRepository } from '../repositories/inMemory/inMemoryCoachRepo.js';
 import { CoachService } from '../../core/services/coachService.js';
@@ -32,6 +33,16 @@ import {
   OllamaUnavailableError,
   type IOllamaClient,
 } from '../../core/services/ollamaClient.js';
+import {
+  CannotFollowSelfError,
+  FEED_DEFAULT_LIMIT,
+  FEED_MAX_LIMIT,
+  PlayerNotFoundError,
+  SEARCH_DEFAULT_LIMIT,
+  SEARCH_MAX_LIMIT,
+  SocialService,
+} from '../../core/services/socialService.js';
+import type { ISocialRepository } from '../../core/ports/socialRepository.js';
 import type { IActivityRepository } from '../../core/ports/activityRepository.js';
 import type { IPlayerRepository } from '../../core/ports/playerRepository.js';
 import type { IEventPublisher } from '../../core/ports/eventPublisher.js';
@@ -52,6 +63,8 @@ export interface AppDependencies {
   coachRepo?: ICoachRepository;
   llmClient?: IOllamaClient;
   eventPublisher?: IEventPublisher;
+  /** Amis et suggestions ; obligatoire avec des dépôts autres qu'en mémoire. */
+  socialRepo?: ISocialRepository;
   /** Vérificateur Auth0 pour « Continuer avec Google » ; absent = connexion Google désactivée. */
   googleVerifier?: IGoogleIdentityVerifier | null;
   /** Tentatives d'authentification autorisées par minute et par adresse IP. */
@@ -152,6 +165,27 @@ const coachMessageSchema = z.object({
     .max(2000, 'Message trop long (2000 caractères maximum)'),
 });
 
+const playerSearchSchema = z.object({
+  q: z.string().max(40, 'Recherche trop longue (40 caractères maximum)').optional().default(''),
+  limit: z.coerce
+    .number()
+    .int('limit doit être un entier')
+    .min(1, 'limit doit être au moins 1')
+    .max(SEARCH_MAX_LIMIT, `limit vaut au plus ${SEARCH_MAX_LIMIT}`)
+    .optional()
+    .default(SEARCH_DEFAULT_LIMIT),
+});
+
+const feedQuerySchema = z.object({
+  limit: z.coerce
+    .number()
+    .int('limit doit être un entier')
+    .min(1, 'limit doit être au moins 1')
+    .max(FEED_MAX_LIMIT, `limit vaut au plus ${FEED_MAX_LIMIT}`)
+    .optional()
+    .default(FEED_DEFAULT_LIMIT),
+});
+
 function firstIssue(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Données invalides';
 }
@@ -195,6 +229,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     activityRepo,
     llmClient,
   );
+  const socialService = new SocialService(defaultSocialRepo(deps, playerRepo, activityRepo), playerRepo);
 
   const authRateLimit = {
     rateLimit: { max: deps.authRateLimitPerMinute ?? 10, timeWindow: '1 minute' },
@@ -311,6 +346,85 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       return reply.status(404).send({ error: 'Player not found' });
     }
     return toPublicPlayer(player);
+  });
+
+  // 3 bis. Amis (le joueur est toujours celui du jeton)
+  app.get('/api/players', { preHandler: authenticate }, async (req, reply) => {
+    const parsed = playerSearchSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: firstIssue(parsed.error) });
+    }
+    const { q, limit } = parsed.data;
+    return { players: await socialService.search(req.user.sub, q, limit) };
+  });
+
+  app.get('/api/friends', { preHandler: authenticate }, async (req) => {
+    return { friends: await socialService.friends(req.user.sub) };
+  });
+
+  // Fil des sorties des joueurs que je suis, la plus récente en premier (sans tracé GPS).
+  app.get('/api/friends/activities', { preHandler: authenticate }, async (req, reply) => {
+    const parsed = feedQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: firstIssue(parsed.error) });
+    }
+    return { activities: await socialService.friendsFeed(req.user.sub, parsed.data.limit) };
+  });
+
+  // Classement de la guilde : moi + les joueurs que je suis, sur la période envoyée par l'appli
+  // (« semaine en cours » dépend du fuseau du téléphone).
+  app.get('/api/friends/leaderboard', { preHandler: authenticate }, async (req, reply) => {
+    const parsed = summaryQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: firstIssue(parsed.error) });
+    }
+    const entries = await socialService.leaderboard(
+      req.user.sub,
+      new Date(parsed.data.from),
+      new Date(parsed.data.to),
+    );
+    return {
+      leaderboard: entries.map(({ player, distanceMeters, activityCount, rank, isMe }) => ({
+        ...player,
+        distanceMeters,
+        activityCount,
+        rank,
+        isMe,
+      })),
+    };
+  });
+
+  app.get('/api/friends/suggestions', { preHandler: authenticate }, async (req) => {
+    const suggestions = await socialService.suggestions(req.user.sub);
+    return {
+      suggestions: suggestions.map(({ player, activityCount, reason }) => ({
+        ...player,
+        activityCount,
+        reason,
+      })),
+    };
+  });
+
+  app.put('/api/friends/:id', { preHandler: authenticate }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    try {
+      await socialService.follow(req.user.sub, id);
+      return reply.status(204).send();
+    } catch (err) {
+      if (err instanceof CannotFollowSelfError) {
+        return reply.status(400).send({ error: err.message });
+      }
+      if (err instanceof PlayerNotFoundError) {
+        return reply.status(404).send({ error: err.message });
+      }
+      throw err;
+    }
+  });
+
+  app.delete('/api/friends/:id', { preHandler: authenticate }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await socialService.unfollow(req.user.sub, id);
+    return reply.status(204).send();
   });
 
   // 4. Activity routes (toujours rattachées au joueur du jeton, jamais à un identifiant envoyé par le client)
@@ -454,4 +568,19 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   );
 
   return app;
+}
+
+function defaultSocialRepo(
+  deps: AppDependencies,
+  playerRepo: IPlayerRepository,
+  activityRepo: IActivityRepository,
+): ISocialRepository {
+  if (deps.socialRepo) return deps.socialRepo;
+  if (
+    playerRepo instanceof InMemoryPlayerRepository &&
+    activityRepo instanceof InMemoryActivityRepository
+  ) {
+    return new InMemorySocialRepository(playerRepo, activityRepo);
+  }
+  throw new Error('socialRepo requis quand les joueurs ou activités ne sont pas en mémoire');
 }

@@ -231,3 +231,144 @@
   box-shadow: var(--sq-shadow-sm);
   cursor: pointer;
 }
+
+/* Indicateur dynamique de force du mot de passe */
+.sq-password-strength-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--sq-bg-base);
+  border: 1px solid var(--sq-border);
+  border-radius: var(--sq-radius-md, 12px);
+  margin-top: 4px;
+}
+
+.sq-password-meter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.sq-password-meter-title {
+  color: var(--sq-text-muted);
+  font-weight: 600;
+}
+
+.sq-password-meter-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sq-password-meter-badge.sq-strength-weak {
+  color: var(--ion-color-danger, #ef4444);
+  background: color-mix(
+    in srgb,
+    var(--ion-color-danger, #ef4444) 15%,
+    transparent
+  );
+}
+
+.sq-password-meter-badge.sq-strength-fair {
+  color: #f59e0b;
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+}
+
+.sq-password-meter-badge.sq-strength-good {
+  color: #84cc16;
+  background: color-mix(in srgb, #84cc16 15%, transparent);
+}
+
+.sq-password-meter-badge.sq-strength-strong {
+  color: var(--sq-green-athletic, #65a30d);
+  background: color-mix(
+    in srgb,
+    var(--sq-green-athletic, #65a30d) 20%,
+    transparent
+  );
+}
+
+.sq-password-meter-track {
+  width: 100%;
+  height: 6px;
+  background: var(--sq-surface-card);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.sq-password-meter-fill {
+  height: 100%;
+  transition:
+    width 0.25s ease,
+    background-color 0.25s ease;
+  border-radius: 9999px;
+}
+
+.sq-password-meter-fill.sq-strength-weak {
+  background: var(--ion-color-danger, #ef4444);
+}
+
+.sq-password-meter-fill.sq-strength-fair {
+  background: #f59e0b;
+}
+
+.sq-password-meter-fill.sq-strength-good {
+  background: #84cc16;
+}
+
+.sq-password-meter-fill.sq-strength-strong {
+  background: var(--sq-green-athletic, #65a30d);
+}
+
+.sq-password-checklist {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sq-password-check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  transition: color 0.15s ease;
+}
+
+.sq-password-check-item.met {
+  color: var(--sq-green-athletic, #65a30d);
+  font-weight: 600;
+}
+
+.sq-password-check-item.unmet {
+  color: var(--sq-text-muted);
+}
+
+.sq-password-check-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.sq-password-check-item.met .sq-password-check-icon {
+  color: #ffffff;
+  background: var(--sq-green-athletic, #65a30d);
+}
+
+.sq-password-check-item.unmet .sq-password-check-icon {
+  color: var(--sq-text-muted);
+  background: var(--sq-surface-card);
+  border: 1px solid var(--sq-border);
+}

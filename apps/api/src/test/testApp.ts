@@ -32,7 +32,7 @@ export async function registerPlayer(
     url: '/api/auth/register',
     payload: {
       email: `runner${counter}@example.com`,
-      password: 'motdepasse-solide',
+      password: 'Motdepasse-solide1!',
       username: `runner_${counter}`,
       ...overrides,
     },

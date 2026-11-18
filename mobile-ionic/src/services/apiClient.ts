@@ -72,6 +72,39 @@ export interface ActivitySaveResult {
   durationSeconds: number;
 }
 
+export type CoachGoal =
+  "casual" | "active" | "5k" | "10k" | "half-marathon" | "marathon";
+
+export interface CoachSettingsDto {
+  coachEnabled: boolean;
+  coachGoal: CoachGoal;
+}
+
+export interface CoachWeeklySummaryDto {
+  totalDistanceMeters: number;
+  totalDurationSeconds: number;
+  activityCount: number;
+  elevationGainMeters: number;
+}
+
+export interface CoachWeeklyReportDto {
+  id: string;
+  playerId: string;
+  year: number;
+  weekNumber: number;
+  summary: CoachWeeklySummaryDto;
+  reportText: string;
+  createdAt: string;
+}
+
+export interface CoachMessageDto {
+  id: string;
+  playerId: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
 /**
  * Profil du joueur connecté (renvoyé uniquement à son propriétaire).
  */
@@ -81,6 +114,8 @@ export interface PlayerProfileDto {
   email: string;
   level: number;
   experience: number;
+  coachEnabled?: boolean;
+  coachGoal?: CoachGoal;
   createdAt: string;
   /** Le compte a un mot de passe (sinon : créé via Google). */
   hasPassword: boolean;
@@ -237,6 +272,67 @@ export class ApiClient {
     );
     const data = (await res.json()) as { activities?: ActivitySummaryDto[] };
     return data.activities || [];
+  }
+
+  /**
+   * Récupère les paramètres du Maître de Guilde (activation et objectif).
+   */
+  async getCoachSettings(): Promise<CoachSettingsDto> {
+    const res = await this.authorizedFetch("/api/coach/settings", {
+      method: "GET",
+    });
+    return res.json();
+  }
+
+  /**
+   * Met à jour les paramètres du Maître de Guilde.
+   */
+  async updateCoachSettings(
+    settings: Partial<CoachSettingsDto>,
+  ): Promise<CoachSettingsDto> {
+    const res = await this.authorizedFetch("/api/coach/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings),
+    });
+    return res.json();
+  }
+
+  /**
+   * Récupère le bilan hebdomadaire actuel généré par le Maître de Guilde.
+   */
+  async getCoachWeeklyReport(): Promise<{
+    report: CoachWeeklyReportDto | null;
+    enabled: boolean;
+  }> {
+    const res = await this.authorizedFetch("/api/coach/weekly-report", {
+      method: "GET",
+    });
+    return res.json();
+  }
+
+  /**
+   * Récupère l'historique récent des messages échangés avec le Maître de Guilde.
+   */
+  async getCoachMessages(): Promise<CoachMessageDto[]> {
+    const res = await this.authorizedFetch("/api/coach/messages", {
+      method: "GET",
+    });
+    const data = (await res.json()) as { messages?: CoachMessageDto[] };
+    return data.messages || [];
+  }
+
+  /**
+   * Envoie un message au Maître de Guilde et reçoit sa réponse en direct.
+   */
+  async sendCoachMessage(message: string): Promise<CoachMessageDto> {
+    const res = await this.authorizedFetch("/api/coach/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    const data = (await res.json()) as { message: CoachMessageDto };
+    return data.message;
   }
 
   private async authRequest(path: string, body: unknown): Promise<AuthSession> {

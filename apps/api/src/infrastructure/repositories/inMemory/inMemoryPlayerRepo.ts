@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { calculateLevel, type NewPlayer, type Player } from '../../../core/entities/player.js';
+import { calculateLevel, type CoachGoal, type NewPlayer, type Player } from '../../../core/entities/player.js';
 import {
   type IPlayerRepository,
   PlayerConflictError,
@@ -37,6 +37,8 @@ export class InMemoryPlayerRepository implements IPlayerRepository {
       id: randomUUID(),
       level: 1,
       experience: 0,
+      coachEnabled: input.coachEnabled ?? false,
+      coachGoal: input.coachGoal ?? 'casual',
       createdAt: new Date(),
     };
     this.players.set(player.id, player);
@@ -52,6 +54,18 @@ export class InMemoryPlayerRepository implements IPlayerRepository {
       const experience = p.experience + xpDelta;
       return { ...p, experience, level: calculateLevel(experience).level };
     });
+  }
+
+  async updateCoachSettings(
+    id: string,
+    settings: { coachEnabled?: boolean; coachGoal?: CoachGoal },
+  ): Promise<Player> {
+    return this.update(id, (p) => ({
+      ...p,
+      coachEnabled:
+        settings.coachEnabled !== undefined ? settings.coachEnabled : p.coachEnabled,
+      coachGoal: settings.coachGoal !== undefined ? settings.coachGoal : p.coachGoal,
+    }));
   }
 
   private find(predicate: (player: Player) => boolean): Player | undefined {

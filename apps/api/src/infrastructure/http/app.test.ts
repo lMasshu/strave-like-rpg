@@ -32,7 +32,7 @@ describe('Fastify REST API', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/auth/register',
-        payload: { email: '  Lea@Example.com ', password: 'trail-running-42', username: 'Lea_Trail' },
+        payload: { email: '  Lea@Example.com ', password: 'Trail-running-42!', username: 'Lea_Trail' },
       });
 
       expect(response.statusCode).toBe(201);
@@ -54,7 +54,7 @@ describe('Fastify REST API', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/auth/register',
-        payload: { email: 'DUP@example.com', password: 'motdepasse-solide', username: 'autre_pseudo' },
+        payload: { email: 'DUP@example.com', password: 'Motdepasse-solide1!', username: 'autre_pseudo' },
       });
       expect(response.statusCode).toBe(409);
       expect(response.json().error).toMatch(/e-mail/);
@@ -65,17 +65,21 @@ describe('Fastify REST API', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/auth/register',
-        payload: { email: 'pseudo2@example.com', password: 'motdepasse-solide', username: 'Pseudo_Unique' },
+        payload: { email: 'pseudo2@example.com', password: 'Motdepasse-solide1!', username: 'Pseudo_Unique' },
       });
       expect(response.statusCode).toBe(409);
       expect(response.json().error).toMatch(/pseudo/);
     });
 
     it.each([
-      [{ email: 'pas-un-email', password: 'motdepasse-solide', username: 'valide' }, /E-mail invalide/],
-      [{ email: 'court@example.com', password: '1234567', username: 'valide' }, /8 caractères/],
-      [{ email: 'court@example.com', password: '        ', username: 'valide' }, /vide/],
-      [{ email: 'court@example.com', password: 'motdepasse-solide', username: 'a b' }, /pseudo/i],
+      [{ email: 'pas-un-email', password: 'Motdepasse-solide1!', username: 'valide' }, /E-mail invalide/],
+      [{ email: 'court@example.com', password: 'Court1!', username: 'valide' }, /12 caractères/],
+      [{ email: 'court@example.com', password: 'sansmajuscule12!', username: 'valide' }, /majuscule/],
+      [{ email: 'court@example.com', password: 'SANSMINUSCULE12!', username: 'valide' }, /minuscule/],
+      [{ email: 'court@example.com', password: 'SansChiffres!!', username: 'valide' }, /chiffre/],
+      [{ email: 'court@example.com', password: 'SansSpecial1234', username: 'valide' }, /spécial/],
+      [{ email: 'court@example.com', password: '        ', username: 'valide' }, /vide|caractères/],
+      [{ email: 'court@example.com', password: 'Motdepasse-solide1!', username: 'a b' }, /pseudo/i],
     ])('valide les champs (%o)', async (payload, message) => {
       const response = await app.inject({ method: 'POST', url: '/api/auth/register', payload });
       expect(response.statusCode).toBe(400);
@@ -85,12 +89,12 @@ describe('Fastify REST API', () => {
 
   describe('connexion', () => {
     it('connecte avec le bon mot de passe, e-mail insensible à la casse', async () => {
-      await registerPlayer(app, { email: 'login@example.com', password: 'bon-mot-de-passe' });
+      await registerPlayer(app, { email: 'login@example.com', password: 'Bon-mot-de-passe1!' });
 
       const response = await app.inject({
         method: 'POST',
         url: '/api/auth/login',
-        payload: { email: 'LOGIN@example.com', password: 'bon-mot-de-passe' },
+        payload: { email: 'LOGIN@example.com', password: 'Bon-mot-de-passe1!' },
       });
 
       expect(response.statusCode).toBe(200);
@@ -103,17 +107,17 @@ describe('Fastify REST API', () => {
     });
 
     it('renvoie le même message pour un mauvais mot de passe et un e-mail inconnu', async () => {
-      await registerPlayer(app, { email: 'secret@example.com', password: 'bon-mot-de-passe' });
+      await registerPlayer(app, { email: 'secret@example.com', password: 'Bon-mot-de-passe1!' });
 
       const wrongPassword = await app.inject({
         method: 'POST',
         url: '/api/auth/login',
-        payload: { email: 'secret@example.com', password: 'mauvais-mot-de-passe' },
+        payload: { email: 'secret@example.com', password: 'Mauvais-mot-de-passe1!' },
       });
       const unknownEmail = await app.inject({
         method: 'POST',
         url: '/api/auth/login',
-        payload: { email: 'inconnu@example.com', password: 'bon-mot-de-passe' },
+        payload: { email: 'inconnu@example.com', password: 'Bon-mot-de-passe1!' },
       });
 
       expect(wrongPassword.statusCode).toBe(401);

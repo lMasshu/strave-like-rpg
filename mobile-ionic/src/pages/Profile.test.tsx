@@ -35,6 +35,7 @@ describe("Profile Page (Adventurer Card)", () => {
   let getActivities: ReturnType<typeof vi.spyOn>;
   let getPlayer: ReturnType<typeof vi.spyOn>;
   let getSummaries: ReturnType<typeof vi.spyOn>;
+  let getFriends: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     importWatchWorkouts.mockReset();
@@ -53,6 +54,7 @@ describe("Profile Page (Adventurer Card)", () => {
     getSummaries = vi
       .spyOn(apiClient, "getActivitySummaries")
       .mockResolvedValue([]);
+    getFriends = vi.spyOn(apiClient, "getFriends").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -133,6 +135,20 @@ describe("Profile Page (Adventurer Card)", () => {
         name: "Progression vers le niveau suivant",
       }),
     ).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it("affiche le nombre d'amis enregistrés en base", async () => {
+    const friend = {
+      id: "f-1",
+      username: "test",
+      level: 8,
+      experience: 7000,
+      createdAt: "2026-11-17T00:00:00.000Z",
+    };
+    getFriends.mockResolvedValue([friend]);
+    renderProfile();
+
+    expect(await screen.findByText("1 compagnon")).toBeInTheDocument();
   });
 
   it("organise le profil en trois onglets sous la fiche, Statistiques par défaut", () => {

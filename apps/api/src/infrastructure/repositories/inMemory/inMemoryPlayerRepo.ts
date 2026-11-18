@@ -68,6 +68,11 @@ export class InMemoryPlayerRepository implements IPlayerRepository {
     }));
   }
 
+  /** Tous les joueurs (copies), pour le dépôt social en mémoire. */
+  all(): Player[] {
+    return Array.from(this.players.values(), (p) => ({ ...p }));
+  }
+
   private find(predicate: (player: Player) => boolean): Player | undefined {
     return Array.from(this.players.values()).find(predicate);
   }

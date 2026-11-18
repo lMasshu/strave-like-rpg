@@ -512,3 +512,201 @@ describe('connexion Google (Auth0)', () => {
     await app.close();
   });
 });
+
+describe('amis', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await buildTestApp();
+  }, 15000);
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('exige une session', async () => {
+    for (const [method, url] of [
+      ['GET', '/api/players'],
+      ['GET', '/api/friends'],
+      ['GET', '/api/friends/suggestions'],
+      ['GET', '/api/friends/leaderboard'],
+      ['GET', '/api/friends/activities'],
+      ['PUT', '/api/friends/x'],
+      ['DELETE', '/api/friends/x'],
+    ] as const) {
+      const response = await app.inject({ method, url });
+      expect(response.statusCode, `${method} ${url}`).toBe(401);
+    }
+  });
+
+  it('cherche les inscrits, suit un joueur puis ne le suit plus', async () => {
+    const moi = await registerPlayer(app, { username: 'amis_moi' });
+    const lea = await registerPlayer(app, { username: 'amis_Lea' });
+
+    const search = await app.inject({
+      method: 'GET',
+      url: '/api/players?q=AMIS_',
+      headers: moi.headers,
+    });
+    expect(search.statusCode).toBe(200);
+    expect(search.json().players).toEqual([
+      expect.objectContaining({ id: lea.playerId, username: 'amis_Lea', following: false }),
+    ]);
+    expect(search.json().players[0]).not.toHaveProperty('email');
+
+    const follow = await app.inject({
+      method: 'PUT',
+      url: `/api/friends/${lea.playerId}`,
+      headers: moi.headers,
+    });
+    expect(follow.statusCode).toBe(204);
+
+    const friends = await app.inject({ method: 'GET', url: '/api/friends', headers: moi.headers });
+    expect(friends.json().friends.map((p: { id: string }) => p.id)).toEqual([lea.playerId]);
+
+    const again = await app.inject({
+      method: 'GET',
+      url: '/api/players?q=amis_lea',
+      headers: moi.headers,
+    });
+    expect(again.json().players[0].following).toBe(true);
+
+    const unfollow = await app.inject({
+      method: 'DELETE',
+      url: `/api/friends/${lea.playerId}`,
+      headers: moi.headers,
+    });
+    expect(unfollow.statusCode).toBe(204);
+    const after = await app.inject({ method: 'GET', url: '/api/friends', headers: moi.headers });
+    expect(after.json().friends).toEqual([]);
+  });
+
+  it('refuse de se suivre soi-même ou un joueur inconnu', async () => {
+    const moi = await registerPlayer(app);
+    const self = await app.inject({
+      method: 'PUT',
+      url: `/api/friends/${moi.playerId}`,
+      headers: moi.headers,
+    });
+    expect(self.statusCode).toBe(400);
+    const unknown = await app.inject({
+      method: 'PUT',
+      url: '/api/friends/00000000-0000-4000-8000-000000000000',
+      headers: moi.headers,
+    });
+    expect(unknown.statusCode).toBe(404);
+  });
+
+  it('borne le nombre de résultats demandé', async () => {
+    const moi = await registerPlayer(app);
+    for (const limit of ['0', '51', 'abc']) {
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/players?limit=${limit}`,
+        headers: moi.headers,
+      });
+      expect(response.statusCode, `limit=${limit}`).toBe(400);
+    }
+    const ok = await app.inject({
+      method: 'GET',
+      url: '/api/players?limit=1',
+      headers: moi.headers,
+    });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().players.length).toBeLessThanOrEqual(1);
+  });
+
+  it('refuse une recherche trop longue', async () => {
+    const moi = await registerPlayer(app);
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/players?q=${'a'.repeat(41)}`,
+      headers: moi.headers,
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('classement de la guilde : moi et mes amis, période obligatoire', async () => {
+    const moi = await registerPlayer(app, { username: 'guilde_moi' });
+    const ami = await registerPlayer(app, { username: 'guilde_ami' });
+    await app.inject({ method: 'PUT', url: `/api/friends/${ami.playerId}`, headers: moi.headers });
+
+    const missing = await app.inject({
+      method: 'GET',
+      url: '/api/friends/leaderboard',
+      headers: moi.headers,
+    });
+    expect(missing.statusCode).toBe(400);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/friends/leaderboard?from=2026-11-16T00:00:00.000Z&to=2026-11-23T00:00:00.000Z',
+      headers: moi.headers,
+    });
+    expect(response.statusCode).toBe(200);
+    const board = response.json().leaderboard;
+    expect(board.map((e: { username: string }) => e.username).sort()).toEqual([
+      'guilde_ami',
+      'guilde_moi',
+    ]);
+    expect(board.find((e: { isMe: boolean }) => e.isMe)).toMatchObject({
+      id: moi.playerId,
+      distanceMeters: 0,
+      rank: 1,
+    });
+    expect(board[0]).not.toHaveProperty('email');
+  });
+
+  it("fil d'activités : sorties de mes amis, sans tracé, limite bornée", async () => {
+    const moi = await registerPlayer(app);
+    const ami = await registerPlayer(app);
+    await app.inject({ method: 'PUT', url: `/api/friends/${ami.playerId}`, headers: moi.headers });
+    const created = await app.inject({
+      method: 'POST',
+      url: '/api/activities',
+      headers: ami.headers,
+      payload: {
+        activityType: 'run',
+        startedAt: '2026-11-17T07:00:00.000Z',
+        endedAt: '2026-11-17T08:00:00.000Z',
+        durationSeconds: 3600,
+        distanceMeters: 10_000,
+      },
+    });
+    expect(created.statusCode).toBe(201);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/friends/activities',
+      headers: moi.headers,
+    });
+    expect(response.statusCode).toBe(200);
+    const [activity] = response.json().activities;
+    expect(activity).toMatchObject({
+      activityType: 'run',
+      distanceMeters: 10_000,
+      startedAt: '2026-11-17T07:00:00.000Z',
+      player: { id: ami.playerId },
+    });
+    expect(activity).not.toHaveProperty('coordinates');
+    expect(activity.player).not.toHaveProperty('email');
+
+    const tooMany = await app.inject({
+      method: 'GET',
+      url: '/api/friends/activities?limit=51',
+      headers: moi.headers,
+    });
+    expect(tooMany.statusCode).toBe(400);
+  });
+
+  it('sans sortie GPS : aucune suggestion', async () => {
+    const moi = await registerPlayer(app);
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/friends/suggestions',
+      headers: moi.headers,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ suggestions: [] });
+  });
+});

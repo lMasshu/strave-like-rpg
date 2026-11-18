@@ -196,6 +196,7 @@ const Profile: React.FC = () => {
     null,
   );
   const [apiPlayer, setApiPlayer] = useState<PlayerProfileDto | null>(null);
+  const [friendsCount, setFriendsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTabId>("stats");
   const [statsPeriod, setStatsPeriod] = useState<StatsPeriod>("week");
@@ -228,10 +229,14 @@ const Profile: React.FC = () => {
           console.warn("Synchronisation de la montre impossible :", syncErr);
         });
       }
-      const [playerData, activitiesData] = await Promise.all([
+      const [playerData, activitiesData, friends] = await Promise.all([
         apiClient.getCurrentPlayer().catch(() => null),
         apiClient.getPlayerActivities().catch(() => null),
+        apiClient.getFriends().catch(() => null),
       ]);
+      if (friends) {
+        setFriendsCount(friends.length);
+      }
       if (playerData) {
         setApiPlayer(playerData);
       }
@@ -294,7 +299,6 @@ const Profile: React.FC = () => {
   const profile = {
     level: progress.level,
     title: getAdventurerTitle(progress.level),
-    friendsCount: DEMO_USER_PROFILE.friendsCount,
   };
 
   const activitiesToDisplay = newestFirst(realActivities).map(
@@ -361,7 +365,9 @@ const Profile: React.FC = () => {
                       className="sq-profile-friends-chip"
                     >
                       <IonIcon slot="start" icon={peopleOutline} />
-                      <span>{profile.friendsCount} compagnons</span>
+                      <span>
+                        {friendsCount} compagnon{friendsCount > 1 ? "s" : ""}
+                      </span>
                     </IonButton>
                   </div>
                 </div>

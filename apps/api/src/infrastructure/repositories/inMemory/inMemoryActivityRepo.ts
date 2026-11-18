@@ -49,6 +49,11 @@ export class InMemoryActivityRepository implements IActivityRepository {
       );
   }
 
+  /** Toutes les activités (copies), pour le dépôt social en mémoire. */
+  all(): Activity[] {
+    return Array.from(this.activities.values(), (a) => structuredClone(a));
+  }
+
   /** Plus récente en premier ; à départ identique, la dernière enregistrée d'abord. */
   private newestFirst(predicate: (activity: Activity) => boolean): Activity[] {
     return Array.from(this.activities.values())

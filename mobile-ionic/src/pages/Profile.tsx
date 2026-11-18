@@ -26,21 +26,19 @@ import {
 } from "ionicons/icons";
 import { useAuth } from "../auth/authContext";
 import TopBar from "../components/TopBar";
-import StatMetric from "../components/StatMetric";
 import RpgBadgeCard from "../components/RpgBadgeCard";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { historyOutline } from "../components/customIcons";
 import ProfileTabs, { ProfileTab } from "../components/ProfileTabs";
 import ProfileStatsPanel from "../components/ProfileStatsPanel";
-import { periodRange, StatsPeriod } from "../services/activityStats";
-import { panelId, tabId } from "../components/profileTabIds";
+import { levelProgress, XP_PER_LEVEL } from "../services/playerLevel";
 import {
-  DEMO_BADGES,
-  DEMO_USER_ACTIVITIES,
-  DEMO_USER_PROFILE,
-  DEMO_WEEKLY_BARS,
-  UserActivity,
-} from "../data/demo";
+  periodRange,
+  practicedSports,
+  StatsPeriod,
+} from "../services/activityStats";
+import { panelId, tabId } from "../components/profileTabIds";
+import { DEMO_BADGES, DEMO_USER_PROFILE, UserActivity } from "../data/demo";
 import {
   ActivityDto,
   ActivitySummaryDto,
@@ -117,10 +115,6 @@ function formatPace(distanceKm: number, durationMinutes: number): string {
     paceSeconds = 0;
   }
   return `${paceMinutes}'${paceSeconds < 10 ? "0" : ""}${paceSeconds}"/km`;
-}
-
-function formatElevation(meters: number): string {
-  return meters.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
 function getAdventurerTitle(level: number): string {
@@ -203,7 +197,6 @@ const Profile: React.FC = () => {
   );
   const [apiPlayer, setApiPlayer] = useState<PlayerProfileDto | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showDemoOnly, setShowDemoOnly] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTabId>("stats");
   const [statsPeriod, setStatsPeriod] = useState<StatsPeriod>("week");
   const [periodActivities, setPeriodActivities] = useState<
@@ -292,62 +285,27 @@ const Profile: React.FC = () => {
   // Pour l'instant, niveau, XP, statistiques et historique restent les valeurs de
   // démo tant qu'aucune vraie sortie n'existe ; seule l'identité vient du compte connecté.
   const accountPlayer = apiPlayer ?? player;
-  const hasRealActivities = Boolean(
-    !showDemoOnly && apiActivities && apiActivities.length > 0,
-  );
+  const hasRealActivities = Boolean(apiActivities && apiActivities.length > 0);
   const realActivities = hasRealActivities ? apiActivities! : [];
-  const level =
-    hasRealActivities && accountPlayer
-      ? accountPlayer.level
-      : DEMO_USER_PROFILE.level;
+  // Niveau et XP viennent toujours du compte connecté (un nouveau compte est niveau 1, 0 XP).
+  const progress = levelProgress(
+    accountPlayer?.experience ?? DEMO_USER_PROFILE.experience,
+  );
+  const profile = {
+    level: progress.level,
+    title: getAdventurerTitle(progress.level),
+    friendsCount: DEMO_USER_PROFILE.friendsCount,
+  };
 
-  const profile = hasRealActivities
-    ? {
-        ...DEMO_USER_PROFILE,
-        level,
-        title: getAdventurerTitle(level),
-        experience: accountPlayer?.experience ?? DEMO_USER_PROFILE.experience,
-        nextLevelExperience: level * 1000,
-        totalKm: Number(
-          (
-            realActivities.reduce((sum, a) => sum + a.distanceMeters, 0) / 1000
-          ).toFixed(1),
-        ),
-        totalElevationMeters: Math.round(
-          realActivities.reduce(
-            (sum, a) => sum + (a.elevationGainMeters || 0),
-            0,
-          ),
-        ),
-        activitiesCount: realActivities.length,
-      }
-    : DEMO_USER_PROFILE;
-
-  const activitiesToDisplay = hasRealActivities
-    ? newestFirst(realActivities).map(formatApiActivityToUserActivity)
-    : DEMO_USER_ACTIVITIES;
+  const activitiesToDisplay = newestFirst(realActivities).map(
+    formatApiActivityToUserActivity,
+  );
 
   const displayName = accountPlayer?.username ?? DEMO_USER_PROFILE.username;
 
   const displayAvatarLetter =
     (displayName && displayName.charAt(0).toUpperCase()) || "A";
 
-  const progressPercent =
-    profile.nextLevelExperience <= 0
-      ? 100
-      : Math.min(
-          100,
-          Math.max(
-            0,
-            Math.round(
-              (profile.experience / profile.nextLevelExperience) * 100,
-            ),
-          ),
-        );
-  const remainingXp = Math.max(
-    0,
-    profile.nextLevelExperience - profile.experience,
-  );
   const unlockedBadgesCount = DEMO_BADGES.filter((b) => b.unlocked).length;
 
   return (
@@ -414,23 +372,25 @@ const Profile: React.FC = () => {
                 <div className="sq-profile-xp-header">
                   <span className="sq-profile-xp-label">Progression XP</span>
                   <span className="sq-profile-xp-val sq-tabular">
-                    {profile.experience} / {profile.nextLevelExperience} XP
+                    {progress.xpInLevel} / {XP_PER_LEVEL} XP
                   </span>
                 </div>
                 <div className="sq-progress">
                   <div
                     className="sq-progress-bar sq-progress-gold"
-                    style={{ width: `${progressPercent}%` }}
+                    style={{ width: `${progress.percent}%` }}
                     role="progressbar"
-                    aria-valuenow={profile.experience}
+                    aria-label="Progression vers le niveau suivant"
+                    aria-valuenow={progress.xpInLevel}
                     aria-valuemin={0}
-                    aria-valuemax={profile.nextLevelExperience}
+                    aria-valuemax={XP_PER_LEVEL}
                   />
                 </div>
                 <div className="sq-profile-xp-sub">
-                  <span>{progressPercent}% complété</span>
+                  <span>{progress.percent}% complété</span>
                   <span>
-                    {remainingXp} XP avant le rang {profile.level + 1}
+                    {progress.xpToNextLevel} XP avant le rang{" "}
+                    {profile.level + 1}
                   </span>
                 </div>
               </div>
@@ -445,7 +405,7 @@ const Profile: React.FC = () => {
             />
 
             {/* Toujours les vraies statistiques du compte (zéros s'il n'a pas encore de sortie) */}
-            {activeTab === "stats" && !showDemoOnly && (
+            {activeTab === "stats" && (
               <div {...panelProps("stats")}>
                 <ProfileStatsPanel
                   period={statsPeriod}
@@ -454,95 +414,8 @@ const Profile: React.FC = () => {
                   loading={statsLoading}
                   error={statsError}
                   now={statsNow}
+                  sports={practicedSports(apiActivities ?? [])}
                 />
-              </div>
-            )}
-
-            {/* « Voir démo » : mêmes données fictives que l'historique de démo */}
-            {activeTab === "stats" && showDemoOnly && (
-              <div {...panelProps("stats")}>
-                {/* Grille de statistiques de carrière */}
-                <section
-                  className="sq-profile-section"
-                  aria-label="Statistiques de carrière et exploration"
-                >
-                  <div className="sq-profile-section-header">
-                    <div>
-                      <h2 className="sq-section-title">
-                        Statistiques de carrière
-                      </h2>
-                      <p className="sq-profile-section-sub">
-                        Entraînement et exploration cumulés
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="sq-profile-stats-grid">
-                    <StatMetric
-                      label="Distance totale"
-                      value={profile.totalKm}
-                      unit="km"
-                      trend="Cumul de carrière"
-                    />
-                    <StatMetric
-                      label="Dénivelé cumulé"
-                      value={formatElevation(profile.totalElevationMeters)}
-                      unit="m D+"
-                      trend="Ascensions totales"
-                    />
-                    <StatMetric
-                      label="Sorties totales"
-                      value={profile.activitiesCount}
-                      unit="sorties"
-                      trend="Expéditions"
-                    />
-                    <StatMetric
-                      label="Quêtes réussies"
-                      value={profile.totalQuestsCompleted ?? 18}
-                      unit="succès"
-                      trend="100% complétées"
-                    />
-                  </div>
-                </section>
-
-                {/* Histogramme de Distance par semaine (km) */}
-                <section
-                  className="sq-card sq-profile-barchart-card"
-                  aria-label="Distance par semaine"
-                >
-                  <div className="sq-profile-section-header">
-                    <div>
-                      <h2 className="sq-section-title">Distance par semaine</h2>
-                      <p className="sq-profile-section-sub">
-                        Volume d'entraînement en kilomètres
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="sq-profile-barchart">
-                    {DEMO_WEEKLY_BARS.map((bar) => {
-                      const maxKm = 30;
-                      const heightPercent = Math.min(
-                        100,
-                        Math.round((bar.km / maxKm) * 100),
-                      );
-                      return (
-                        <div key={bar.label} className="sq-barchart-col">
-                          <span className="sq-barchart-val sq-tabular">
-                            {bar.km}
-                          </span>
-                          <div className="sq-barchart-bar-track">
-                            <div
-                              className={`sq-barchart-bar-fill ${bar.isCurrent ? "is-current" : ""}`}
-                              style={{ height: `${heightPercent}%` }}
-                            />
-                          </div>
-                          <span className="sq-barchart-label">{bar.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
               </div>
             )}
 
@@ -605,30 +478,12 @@ const Profile: React.FC = () => {
                     </div>
 
                     <div className="sq-profile-header-actions">
-                      {apiActivities && apiActivities.length > 0 && (
-                        <button
-                          type="button"
-                          className="sq-profile-toggle-btn"
-                          onClick={() => setShowDemoOnly(!showDemoOnly)}
-                          title={
-                            showDemoOnly
-                              ? "Afficher mes vraies sorties enregistrées"
-                              : "Afficher les données de démonstration"
-                          }
-                        >
-                          {showDemoOnly ? "Voir mes sorties" : "Voir démo"}
-                        </button>
-                      )}
-                      {hasRealActivities ? (
+                      {hasRealActivities && (
                         <span className="sq-profile-sync-badge">
                           <span>
                             ● {activitiesToDisplay.length} réelle
                             {activitiesToDisplay.length > 1 ? "s" : ""}
                           </span>
-                        </span>
-                      ) : (
-                        <span className="sq-badge sq-badge-cyan">
-                          <span>Mode Démo</span>
                         </span>
                       )}
                       <button
@@ -646,17 +501,16 @@ const Profile: React.FC = () => {
                     </div>
                   </div>
 
-                  <div
-                    key={
-                      hasRealActivities
-                        ? "real-activities-container"
-                        : "demo-activities-container"
-                    }
-                    className="sq-profile-activities-list"
-                  >
+                  {!hasRealActivities && !isLoading && (
+                    <p className="sq-stats-message">
+                      Aucune sortie enregistrée pour l'instant.
+                    </p>
+                  )}
+
+                  <div className="sq-profile-activities-list">
                     {activitiesToDisplay.map((activity) => (
                       <article
-                        key={`${hasRealActivities ? "real" : "demo"}-${activity.id}`}
+                        key={activity.id}
                         className="sq-card sq-profile-activity-card"
                       >
                         <div className="sq-activity-card-header">

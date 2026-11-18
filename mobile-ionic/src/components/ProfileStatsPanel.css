@@ -47,3 +47,13 @@
 .sq-stats-chart-year .sq-barchart-val {
   font-size: 0.6rem;
 }
+
+/* Vraies données : toutes les barres en vert, la période en cours se lit sur son libellé */
+.sq-stats-bar .sq-barchart-bar-fill {
+  background: var(--sq-green-athletic);
+}
+
+.sq-stats-bar.is-current .sq-barchart-label {
+  color: var(--sq-green-athletic);
+  font-weight: 800;
+}

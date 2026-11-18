@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import ProfileStatsPanel, { ProfileStatsPanelProps } from "./ProfileStatsPanel";
-import type { StatsActivity } from "../services/activityStats";
+import type { SportType, StatsActivity } from "../services/activityStats";
 
 const local = (y: number, m: number, d: number, h = 0) =>
   new Date(y, m - 1, d, h);
@@ -13,8 +13,10 @@ const activity = (
   km: number,
   dPlus: number,
   minutes: number,
+  activityType: SportType = "run",
 ): StatsActivity => ({
   startedAt: start.toISOString(),
+  activityType,
   distanceMeters: km * 1000,
   elevationGainMeters: dPlus,
   durationSeconds: minutes * 60,
@@ -30,6 +32,7 @@ function renderPanel(props: Partial<ProfileStatsPanelProps> = {}) {
       loading={false}
       error={null}
       now={NOW}
+      sports={[]}
       {...props}
     />,
   );
@@ -110,9 +113,10 @@ describe("ProfileStatsPanel", () => {
     expect(
       screen.getByText("Aucune sortie sur cette période."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("note")).toHaveTextContent(
-      "TODO: graphique par sport pratiqué",
-    );
+    expect(
+      screen.getByText(/Enregistre une première sortie/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Sport affiché" })).toBeNull();
   });
 
   it("affiche l'erreur de chargement sans le message « aucune sortie »", () => {
@@ -122,5 +126,70 @@ describe("ProfileStatsPanel", () => {
       "Impossible de charger les statistiques.",
     );
     expect(screen.queryByText(/Aucune sortie/)).toBeNull();
+  });
+
+  it("distance par sport : un onglet par sport pratiqué, graphique filtré", () => {
+    renderPanel({
+      sports: ["run", "bike"],
+      activities: [
+        activity(local(2026, 11, 16, 7), 10, 0, 60, "run"),
+        activity(local(2026, 11, 17, 9), 42, 300, 90, "bike"),
+      ],
+    });
+
+    const group = screen.getByRole("group", { name: "Sport affiché" });
+    const buttons = within(group).getAllByRole("button");
+    expect(buttons.map((b) => b.textContent)).toEqual(["Course", "Vélo"]);
+    expect(buttons[0]).toHaveAttribute("aria-pressed", "true");
+
+    const runChart = screen.getByRole("list", {
+      name: "Distance par jour – Course",
+    });
+    expect(
+      within(runChart).getByRole("listitem", { name: "Lun : 10 km" }),
+    ).toBeInTheDocument();
+    expect(
+      within(runChart).getByRole("listitem", { name: "Mar : 0 km" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(within(group).getByRole("button", { name: "Vélo" }));
+    const bikeChart = screen.getByRole("list", {
+      name: "Distance par jour – Vélo",
+    });
+    expect(
+      within(bikeChart).getByRole("listitem", { name: "Mar : 42 km" }),
+    ).toBeInTheDocument();
+    expect(
+      within(bikeChart).getByRole("listitem", { name: "Lun : 0 km" }),
+    ).toBeInTheDocument();
+  });
+
+  it("distance par sport : suit la période choisie", () => {
+    renderPanel({
+      period: "year",
+      sports: ["walk"],
+      activities: [activity(local(2026, 3, 2), 6, 0, 70, "walk")],
+    });
+
+    const chart = screen.getByRole("list", {
+      name: "Distance par mois – Marche",
+    });
+    expect(within(chart).getAllByRole("listitem")).toHaveLength(12);
+    expect(
+      within(chart).getByRole("listitem", { name: "Mar : 6 km" }),
+    ).toBeInTheDocument();
+  });
+
+  it("toutes les barres sont des données ; seule la période en cours est marquée", () => {
+    renderPanel({
+      activities: [activity(local(2026, 11, 16, 7), 10, 0, 60)],
+    });
+
+    const chart = screen.getByRole("list", { name: "Distance par jour" });
+    const monday = within(chart).getByRole("listitem", { name: "Lun : 10 km" });
+    const tuesday = within(chart).getByRole("listitem", { name: "Mar : 0 km" });
+    expect(monday).toHaveClass("sq-stats-bar");
+    expect(monday).not.toHaveClass("is-current");
+    expect(tuesday).toHaveClass("is-current");
   });
 });

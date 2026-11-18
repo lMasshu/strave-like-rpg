@@ -92,7 +92,7 @@ describe("Profile Page (Adventurer Card)", () => {
     expect(screen.getByRole("tablist")).toBeInTheDocument();
   });
 
-  it("affiche le nom et l'e-mail du compte connecté, avec niveau et XP de démo", async () => {
+  it("affiche le nom, l'e-mail, le niveau et l'XP du compte connecté", async () => {
     const account = {
       ...TEST_PLAYER,
       username: "Compte_Inscrit",
@@ -106,9 +106,10 @@ describe("Profile Page (Adventurer Card)", () => {
       screen.getByRole("heading", { name: "Compte_Inscrit" }),
     ).toBeInTheDocument();
     expect(screen.getByText("inscrit@example.com")).toBeInTheDocument();
-    // Valeurs de démo conservées pour l'instant
-    expect(screen.getByText(/820 \/ 1200 XP/i)).toBeInTheDocument();
-    expect(screen.getByText(/Éclaireur des Sentiers/i)).toBeInTheDocument();
+    // 820 XP : niveau 1, 820 XP sur les 1 000 du niveau
+    expect(screen.getByText("820 / 1000 XP")).toBeInTheDocument();
+    expect(screen.getByText("Niveau 1")).toBeInTheDocument();
+    expect(screen.getByText(/Novice des Sentiers/i)).toBeInTheDocument();
     // Plus de bandeau « Se connecter » ni de déconnexion ici (elle est dans les Paramètres).
     expect(screen.queryByRole("button", { name: /se connecter/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /déconnecter/i })).toBeNull();
@@ -116,6 +117,22 @@ describe("Profile Page (Adventurer Card)", () => {
     expect(
       screen.getByRole("heading", { name: "Compte_Inscrit" }),
     ).toBeInTheDocument();
+  });
+
+  it("les sorties font monter le niveau : 7 000 XP donnent le niveau 8", async () => {
+    const account = { ...TEST_PLAYER, level: 8, experience: 7000 };
+    getPlayer.mockResolvedValue(account);
+
+    renderProfile(fakeAuth({ player: account }));
+
+    expect(await screen.findByText("Niveau 8")).toBeInTheDocument();
+    expect(screen.getByText("0 / 1000 XP")).toBeInTheDocument();
+    expect(screen.getByText("1000 XP avant le rang 9")).toBeInTheDocument();
+    expect(
+      screen.getByRole("progressbar", {
+        name: "Progression vers le niveau suivant",
+      }),
+    ).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("organise le profil en trois onglets sous la fiche, Statistiques par défaut", () => {
@@ -197,7 +214,7 @@ describe("Profile Page (Adventurer Card)", () => {
     ).toBeInTheDocument();
   });
 
-  it("sans aucune sortie : vraies statistiques à zéro, historique de démo", async () => {
+  it("sans aucune sortie : vraies statistiques à zéro, historique vide", async () => {
     renderProfile();
     await waitFor(() => expect(getSummaries).toHaveBeenCalled());
 
@@ -211,14 +228,12 @@ describe("Profile Page (Adventurer Card)", () => {
     expect(screen.queryByText("218.4")).toBeNull();
 
     openTab(/Activités/);
-    expect(screen.getByText(/Mode Démo/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Reconnaissance des Remparts/i),
+      await screen.findByText("Aucune sortie enregistrée pour l'instant."),
     ).toBeInTheDocument();
-    expect(screen.getByText(/\+420 XP/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Badge débloqué : Arpenteur Sylvestre/i),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/Mode Démo/i)).toBeNull();
+    expect(screen.queryByText(/Reconnaissance des Remparts/i)).toBeNull();
+    expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
   });
 
   it("renders badge shelf with unlocked and locked trophies", () => {
@@ -299,28 +314,14 @@ describe("Profile Page (Adventurer Card)", () => {
     ]);
   });
 
-  it("n'indique pas de provenance sur les sorties de démo", async () => {
-    renderProfile();
-    openTab(/Activités/);
-    await waitFor(() => expect(getActivities).toHaveBeenCalled());
-
-    expect(screen.queryAllByLabelText(/^Enregistrée via /)).toHaveLength(0);
-  });
-
-  it("toggles between real activities and demo data without crashing", async () => {
+  it("ne propose plus de basculer vers des données de démo", async () => {
     getActivities.mockResolvedValue([REAL_RUN]);
 
     renderProfile();
-
     openTab(/Activités/);
+
     expect(await screen.findByText(/Course d'endurance/i)).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /voir démo/i }));
-    expect(
-      screen.getByText(/Reconnaissance des Remparts/i),
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /voir mes sorties/i }));
-    expect(screen.getByText(/Course d'endurance/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /voir démo/i })).toBeNull();
+    expect(screen.queryByText(/Reconnaissance des Remparts/i)).toBeNull();
   });
 });

@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { IonSpinner } from "@ionic/react";
 import StatMetric from "./StatMetric";
-import TodoPlaceholder from "./TodoPlaceholder";
 import {
+  activitiesOfSport,
   computeTotals,
+  DistanceBar,
   distanceBars,
   formatActiveDuration,
   periodLabel,
   periodRange,
+  SportType,
+  SPORTS,
   StatsActivity,
   StatsPeriod,
 } from "../services/activityStats";
@@ -20,6 +24,8 @@ export interface ProfileStatsPanelProps {
   loading: boolean;
   error: string | null;
   now: Date;
+  /** Sports pratiqués par le compte (déduits de tout son historique). */
+  sports: SportType[];
 }
 
 const PERIODS: { id: StatsPeriod; label: string; chartTitle: string }[] = [
@@ -32,6 +38,50 @@ function formatThousands(value: number): string {
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
+interface DistanceBarChartProps {
+  bars: DistanceBar[];
+  period: StatsPeriod;
+  label: string;
+}
+
+/** Histogramme des kilomètres, une barre par jour, tranche de jours ou mois. */
+const DistanceBarChart: React.FC<DistanceBarChartProps> = ({
+  bars,
+  period,
+  label,
+}) => {
+  const maxKm = Math.max(1, ...bars.map((bar) => bar.km));
+  return (
+    <div
+      className={`sq-profile-barchart sq-stats-chart-${period}`}
+      role="list"
+      aria-label={label}
+    >
+      {bars.map((bar) => (
+        <div
+          key={bar.label}
+          className={`sq-barchart-col sq-stats-bar${bar.isCurrent ? " is-current" : ""}`}
+          role="listitem"
+          aria-label={`${bar.label} : ${bar.km} km`}
+        >
+          <span className="sq-barchart-val sq-tabular" aria-hidden="true">
+            {bar.km > 0 ? bar.km : ""}
+          </span>
+          <div className="sq-barchart-bar-track" aria-hidden="true">
+            <div
+              className="sq-barchart-bar-fill"
+              style={{ height: `${Math.round((bar.km / maxKm) * 100)}%` }}
+            />
+          </div>
+          <span className="sq-barchart-label" aria-hidden="true">
+            {bar.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 /** Statistiques du profil calculées à partir des vraies activités de la période choisie. */
 const ProfileStatsPanel: React.FC<ProfileStatsPanelProps> = ({
   period,
@@ -40,12 +90,21 @@ const ProfileStatsPanel: React.FC<ProfileStatsPanelProps> = ({
   loading,
   error,
   now,
+  sports,
 }) => {
+  const [chosenSport, setChosenSport] = useState<SportType | null>(null);
+  // Le sport choisi peut disparaître de la liste (rechargement) : on retombe sur le premier.
+  const sport =
+    chosenSport && sports.includes(chosenSport) ? chosenSport : sports[0];
+
   const range = periodRange(period, now);
   const totals = computeTotals(activities, range);
   const bars = distanceBars(period, range, activities, now);
-  const maxKm = Math.max(1, ...bars.map((bar) => bar.km));
   const current = PERIODS.find((p) => p.id === period)!;
+  const sportLabel = SPORTS.find((s) => s.id === sport)?.label ?? "";
+  const sportBars = sport
+    ? distanceBars(period, range, activitiesOfSport(activities, sport), now)
+    : [];
 
   return (
     <>
@@ -122,38 +181,64 @@ const ProfileStatsPanel: React.FC<ProfileStatsPanelProps> = ({
           </div>
         </div>
 
-        <div
-          className={`sq-profile-barchart sq-stats-chart-${period}`}
-          role="list"
-          aria-label={current.chartTitle}
-        >
-          {bars.map((bar) => (
-            <div
-              key={bar.label}
-              className="sq-barchart-col"
-              role="listitem"
-              aria-label={`${bar.label} : ${bar.km} km`}
-            >
-              <span className="sq-barchart-val sq-tabular" aria-hidden="true">
-                {bar.km > 0 ? bar.km : ""}
-              </span>
-              <div className="sq-barchart-bar-track" aria-hidden="true">
-                <div
-                  className={`sq-barchart-bar-fill ${bar.isCurrent ? "is-current" : ""}`}
-                  style={{
-                    height: `${Math.round((bar.km / maxKm) * 100)}%`,
-                  }}
-                />
-              </div>
-              <span className="sq-barchart-label" aria-hidden="true">
-                {bar.label}
-              </span>
-            </div>
-          ))}
-        </div>
+        <DistanceBarChart
+          bars={bars}
+          period={period}
+          label={current.chartTitle}
+        />
       </section>
 
-      <TodoPlaceholder>TODO: graphique par sport pratiqué</TodoPlaceholder>
+      <section
+        className="sq-card sq-profile-barchart-card"
+        aria-labelledby="sport-chart-heading"
+      >
+        <div className="sq-profile-section-header">
+          <div>
+            <h2 id="sport-chart-heading" className="sq-section-title">
+              Distance par sport
+            </h2>
+            <p className="sq-profile-section-sub">
+              {sport
+                ? `${current.chartTitle} · ${sportLabel}`
+                : "Volume en kilomètres"}
+            </p>
+          </div>
+        </div>
+
+        {sport ? (
+          <>
+            <div
+              className="sq-stats-periods sq-stats-sports"
+              role="group"
+              aria-label="Sport affiché"
+              style={{
+                gridTemplateColumns: `repeat(${sports.length}, minmax(0, 1fr))`,
+              }}
+            >
+              {sports.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={id === sport}
+                  className={id === sport ? "is-active" : ""}
+                  onClick={() => setChosenSport(id)}
+                >
+                  {SPORTS.find((s) => s.id === id)?.label}
+                </button>
+              ))}
+            </div>
+            <DistanceBarChart
+              bars={sportBars}
+              period={period}
+              label={`${current.chartTitle} – ${sportLabel}`}
+            />
+          </>
+        ) : (
+          <p className="sq-stats-message">
+            Enregistre une première sortie pour voir tes kilomètres par sport.
+          </p>
+        )}
+      </section>
     </>
   );
 };

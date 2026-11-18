@@ -1,9 +1,21 @@
 /** Période des statistiques du profil. */
 export type StatsPeriod = "week" | "month" | "year";
 
+/** Sports enregistrables (même valeurs que `activityType` côté API). */
+export type SportType = "walk" | "run" | "bike" | "hike";
+
+/** Ordre d'affichage et libellés des onglets de sport. */
+export const SPORTS: { id: SportType; label: string }[] = [
+  { id: "run", label: "Course" },
+  { id: "walk", label: "Marche" },
+  { id: "hike", label: "Randonnée" },
+  { id: "bike", label: "Vélo" },
+];
+
 /** Ce dont le calcul a besoin : un résumé d'activité (pas de tracé). */
 export interface StatsActivity {
   startedAt: string;
+  activityType?: SportType;
   durationSeconds: number;
   distanceMeters: number;
   elevationGainMeters: number;
@@ -151,6 +163,22 @@ export function distanceBars(
     km: round1(meters[index] / 1000),
     isCurrent: index === current,
   }));
+}
+
+/** Sports présents dans les activités du compte, dans l'ordre de {@link SPORTS}. */
+export function practicedSports(
+  activities: { activityType?: SportType }[],
+): SportType[] {
+  const seen = new Set(activities.map((activity) => activity.activityType));
+  return SPORTS.filter((sport) => seen.has(sport.id)).map((sport) => sport.id);
+}
+
+/** Activités d'un seul sport. */
+export function activitiesOfSport(
+  activities: StatsActivity[],
+  sport: SportType,
+): StatsActivity[] {
+  return activities.filter((activity) => activity.activityType === sport);
 }
 
 /** « 3 h 05 », « 45 min », « 0 min ». */

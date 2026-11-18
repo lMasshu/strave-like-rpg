@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  activitiesOfSport,
   computeTotals,
   distanceBars,
   formatActiveDuration,
   periodLabel,
   periodRange,
+  practicedSports,
   StatsActivity,
 } from "./activityStats";
 
@@ -185,5 +187,45 @@ describe("formatage", () => {
       "novembre 2026",
     );
     expect(periodLabel("year", periodRange("year", NOW))).toBe("2026");
+  });
+});
+
+describe("practicedSports", () => {
+  it("garde chaque sport une seule fois, dans l'ordre d'affichage", () => {
+    expect(
+      practicedSports([
+        { activityType: "bike" },
+        { activityType: "run" },
+        { activityType: "bike" },
+        { activityType: "walk" },
+      ]),
+    ).toEqual(["run", "walk", "bike"]);
+  });
+
+  it("renvoie une liste vide sans activité ou sans type connu", () => {
+    expect(practicedSports([])).toEqual([]);
+    expect(practicedSports([{}])).toEqual([]);
+  });
+});
+
+describe("activitiesOfSport", () => {
+  it("ne garde que les activités du sport demandé", () => {
+    const start = new Date(2026, 10, 16).toISOString();
+    const base = {
+      startedAt: start,
+      durationSeconds: 60,
+      distanceMeters: 1000,
+      elevationGainMeters: 0,
+    };
+    const result = activitiesOfSport(
+      [
+        { ...base, activityType: "run" },
+        { ...base, activityType: "bike", distanceMeters: 20000 },
+        { ...base },
+      ],
+      "bike",
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].distanceMeters).toBe(20000);
   });
 });

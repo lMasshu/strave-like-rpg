@@ -166,7 +166,9 @@ const GuildMasterModal: React.FC<GuildMasterModalProps> = ({
       );
 
       setMessages((prev) =>
-        prev.map((m) => (m.id === streamingAssistantId ? finalAssistantMsg : m)),
+        prev.map((m) =>
+          m.id === streamingAssistantId ? finalAssistantMsg : m,
+        ),
       );
     } catch (err: unknown) {
       setChatError(

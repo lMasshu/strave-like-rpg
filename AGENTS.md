@@ -189,7 +189,17 @@ Toute contribution de code par un agent doit scrupuleusement respecter les règl
    - Tout nouveau service, endpoint ou composant sensible **doit** s'accompagner d'un fichier de test unitaire Vitest (`*.test.ts` ou `*.test.tsx`).
    - Le build et l'intégralité des tests doivent passer au vert avant de considérer une tâche terminée.
 
-4. **Style, Formatage & Conventions Git** :
+4. **Protocole de Validation CI Pré-Push OBLIGATOIRE (Zéro échec toléré)** :
+   - Avant TOUT commit ou push, exécuter **intégralement** la chaîne de vérification CI locale :
+     1. `npm --prefix mobile-ionic run format` puis `npm --prefix mobile-ionic run format:check` (Prettier)
+     2. `npm --prefix mobile-ionic run lint` (ESLint)
+     3. `npm --prefix mobile-ionic run test.unit -- --run` (Vitest frontend)
+     4. `npm --prefix mobile-ionic run build` (Vite build)
+     5. `npm run api:build` (TypeScript backend)
+     6. `npm run api:test` (Vitest backend)
+   - Interdiction formelle de commiter ou pousser si la moindre étape échoue ou renvoie un warning.
+
+5. **Style, Formatage & Conventions Git** :
    - Prettier (`npm --prefix mobile-ionic run format`) et ESLint (`npm run lint`).
    - Commits : Conventional Commits en français : `<type>(<scope>): <description concise en minuscules>`.
    - Branches : GitFlow (`feature/...`, `fix/...`). Ne jamais commiter de secrets (`.env`).

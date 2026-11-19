@@ -22,6 +22,21 @@ class MockLlmClient implements IOllamaClient {
     this.calls.push(messages);
     return this.nextResponse;
   }
+
+  async chatStream(
+    messages: OllamaChatMessage[],
+    onChunk: (chunk: string) => void,
+  ): Promise<string> {
+    if (this.shouldFail) {
+      throw new Error('Ollama offline');
+    }
+    this.calls.push(messages);
+    const words = this.nextResponse.split(' ');
+    for (const w of words) {
+      onChunk(w + ' ');
+    }
+    return this.nextResponse;
+  }
 }
 
 describe('CoachService', () => {
@@ -158,6 +173,26 @@ describe('CoachService', () => {
       expect(messages[1]!.content).toBe('Comment préparer mon premier marathon dans 6 mois ?');
     });
 
+    it('stream la réponse du coach par morceaux et enregistre le message final', async () => {
+      llmClient.nextResponse = 'Pour courir 10 km, régularité et patience.';
+      const chunks: string[] = [];
+
+      const reply = await coachService.handleChatMessageStream(
+        testPlayer.id,
+        'Conseil pour mon 10 km',
+        (chunk) => chunks.push(chunk),
+      );
+
+      expect(reply.role).toBe('assistant');
+      expect(reply.content).toBe('Pour courir 10 km, régularité et patience.');
+      expect(chunks.length).toBeGreaterThan(1);
+      expect(chunks.join('')).toContain('régularité');
+
+      const messages = await coachService.getRecentMessages(testPlayer.id);
+      expect(messages.length).toBe(2);
+      expect(messages[0]!.content).toBe('Pour courir 10 km, régularité et patience.');
+    });
+
     it('rejette les messages vides', async () => {
       await expect(coachService.handleChatMessage(testPlayer.id, '   ')).rejects.toThrow(
         'Le message ne peut pas être vide',
@@ -181,6 +216,63 @@ describe('CoachService', () => {
 
       const after = await coachRepo.getRecentMessages(testPlayer.id, 50);
       expect(after.length).toBe(30);
+    });
+
+    it('génère un prompt arithmétique pur pour une formule de calcul (ex: 4*4)', () => {
+      const prompt = coachService.buildChatSystemPrompt(
+        testPlayer,
+        '4*4',
+        10,
+        2,
+        new Date('2026-11-19T10:00:00Z'),
+      );
+
+      expect(prompt).toContain('calcul arithmétique');
+      expect(prompt).toContain('Ignore totalement les conversations ou objectifs sportifs précédents');
+    });
+
+    it('génère un prompt ultra-court sans priming d’entraînement pour une question hors-sport (ex: Bonjour comment vas-tu ?)', () => {
+      const prompt = coachService.buildChatSystemPrompt(
+        testPlayer,
+        'Bonjour comment vas-tu ?',
+        10,
+        2,
+        new Date('2026-11-19T10:00:00Z'),
+      );
+
+      expect(prompt).toContain('mentor d\'aventure');
+      expect(prompt).toContain('une seule phrase');
+      expect(prompt).not.toContain('Semi-marathon');
+      expect(prompt).not.toContain('Foncier');
+    });
+
+    it('génère un prompt orienté conseil sans structure de plan pour une question de douleur ou récupération', () => {
+      const prompt = coachService.buildChatSystemPrompt(
+        testPlayer,
+        'J\'ai une douleur au mollet après ma séance',
+        10,
+        2,
+        new Date('2026-11-19T10:00:00Z'),
+      );
+
+      expect(prompt).toContain('coach sportif protecteur');
+      expect(prompt).toContain('Ne propose AUCUN programme');
+      expect(prompt).not.toContain('Phase 1 - Foncier');
+    });
+
+    it('génère un prompt complet et cadré pour une demande explicite de programme d\'entraînement', () => {
+      const prompt = coachService.buildChatSystemPrompt(
+        testPlayer,
+        'Donne-moi un programme pour préparer mon semi-marathon',
+        10,
+        2,
+        new Date('2026-11-19T10:00:00Z'),
+      );
+
+      expect(prompt).toContain('Consignes impératives pour ce programme');
+      expect(prompt).toContain('Vocabulaire athlétique rigoureux');
+      expect(prompt).toContain('Tutoie SYSTÉMATIQUEMENT');
+      expect(prompt).toContain('min/km');
     });
   });
 });

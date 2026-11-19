@@ -164,43 +164,10 @@ export class CoachService {
       content: trimmed,
     });
 
-    // 2. Charger l'historique récent (4 derniers messages max avec troncature des pavés pour rapidité CPU)
-    const recent = await this.coachRepo.getRecentMessages(playerId, 4);
-    // getRecentMessages renvoie les plus récents en premier -> on inverse pour la chronologie
-    const history = [...recent].reverse();
+    // 2. Assembler les messages pour l'IA
+    const llmMessages = await this.prepareLlmChatMessages(player, trimmed);
 
-    // 3. Charger les stats récentes pour ancrer la réponse dans le réel
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const recentActivities = await this.activityRepo.findSummariesBetween(
-      playerId,
-      sevenDaysAgo,
-      now,
-      20,
-    );
-    const kmLast7Days = Math.round(
-      recentActivities.reduce((acc, a) => acc + a.distanceMeters, 0) / 1000,
-    );
-
-    // 4. Assembler les messages pour l'IA (hygiène du prompt pour latence < 10s)
-    const systemPrompt = this.buildChatSystemPrompt(player, kmLast7Days, recentActivities.length);
-    const llmMessages: OllamaChatMessage[] = [
-      { role: 'system', content: systemPrompt },
-    ];
-
-    for (const msg of history) {
-      // Pour éviter d'exploser le prompt quand l'historique contient de longs programmes précédents
-      const content =
-        msg.role === 'assistant' && msg.content.length > 250
-          ? `${msg.content.slice(0, 250)}...`
-          : msg.content;
-      llmMessages.push({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content,
-      });
-    }
-
-    // 5. Générer la réponse (avec fallback si Ollama est hors ligne)
+    // 3. Générer la réponse (avec fallback si Ollama est hors ligne)
     let assistantContent: string;
     try {
       assistantContent = await this.llmClient.chat(llmMessages);
@@ -212,17 +179,108 @@ export class CoachService {
       }
     }
 
-    // 6. Sauvegarder la réponse du coach
+    // 4. Sauvegarder la réponse du coach
     const assistantMsg = await this.coachRepo.saveMessage({
       playerId,
       role: 'assistant',
       content: assistantContent,
     });
 
-    // 7. Purger les anciens messages au-delà de 30 pour maîtriser le stockage
+    // 5. Purger les anciens messages au-delà de 30 pour maîtriser le stockage
     await this.coachRepo.purgeOldMessages(playerId, 30);
 
     return assistantMsg;
+  }
+
+  async handleChatMessageStream(
+    playerId: string,
+    userText: string,
+    onChunk: (chunk: string) => void,
+  ): Promise<CoachMessage> {
+    const player = await this.requirePlayer(playerId);
+    const trimmed = userText.trim();
+    if (!trimmed) {
+      throw new Error('Le message ne peut pas être vide');
+    }
+
+    // 1. Enregistrer le message de l'utilisateur
+    await this.coachRepo.saveMessage({
+      playerId,
+      role: 'user',
+      content: trimmed,
+    });
+
+    // 2. Assembler les messages pour l'IA
+    const llmMessages = await this.prepareLlmChatMessages(player, trimmed);
+
+    // 3. Streamer la réponse (avec fallback si Ollama est hors ligne)
+    let assistantContent: string;
+    try {
+      assistantContent = await this.llmClient.chatStream(llmMessages, onChunk);
+    } catch (err: unknown) {
+      if (err instanceof OllamaUnavailableError) {
+        assistantContent = this.generateFallbackChatReply(player, trimmed);
+        onChunk(assistantContent);
+      } else {
+        throw err;
+      }
+    }
+
+    // 4. Sauvegarder la réponse du coach
+    const assistantMsg = await this.coachRepo.saveMessage({
+      playerId,
+      role: 'assistant',
+      content: assistantContent,
+    });
+
+    // 5. Purger les anciens messages au-delà de 30 pour maîtriser le stockage
+    await this.coachRepo.purgeOldMessages(playerId, 30);
+
+    return assistantMsg;
+  }
+
+  private async prepareLlmChatMessages(
+    player: Player,
+    trimmed: string,
+  ): Promise<OllamaChatMessage[]> {
+    const recent = await this.coachRepo.getRecentMessages(player.id, 4);
+    const history = [...recent].reverse();
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const recentActivities = await this.activityRepo.findSummariesBetween(
+      player.id,
+      sevenDaysAgo,
+      now,
+      20,
+    );
+    const kmLast7Days = Math.round(
+      recentActivities.reduce((acc, a) => acc + a.distanceMeters, 0) / 1000,
+    );
+
+    const systemPrompt = this.buildChatSystemPrompt(
+      player,
+      trimmed,
+      kmLast7Days,
+      recentActivities.length,
+      now,
+    );
+    const llmMessages: OllamaChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+    ];
+
+    for (const msg of history) {
+      const content =
+        msg.role === 'assistant' && msg.content.length > 250
+          ? `${msg.content.slice(0, 250)}...`
+          : msg.content;
+      llmMessages.push({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content,
+      });
+    }
+
+    return llmMessages;
   }
 
   private async requirePlayer(playerId: string): Promise<Player> {
@@ -267,37 +325,75 @@ Rédige le bilan hebdomadaire personnalisé pour ${player.username} :
     ];
   }
 
-  private buildChatSystemPrompt(
+  buildChatSystemPrompt(
     player: Player,
+    userText: string,
     kmLast7Days: number,
     workoutsLast7Days: number,
+    referenceDate: Date = new Date(),
   ): string {
+    const textLower = userText.toLowerCase().trim();
+    const isMath = /^[\d\s+\-*/xX^=().,]+$/.test(textLower);
+
+    // 0. Calcul arithmétique pur (ex: "4*4", "2+2") -> réponse isolée sans historique sportif
+    if (isMath) {
+      return `Tu es le Maître de Guilde de Stride Quest.
+L'aventurier te demande un calcul arithmétique.
+Donne uniquement l'opération et son résultat numérique en une phrase courte (ex: "4 × 4 = 16."). Ignore totalement les conversations ou objectifs sportifs précédents.`;
+    }
+
+    const isTrainingPlan =
+      /(programme|plan|préparer|preparer|preparation|préparation|planif|calendrier)/i.test(
+        textLower,
+      );
+    const isSportsRelated =
+      /(course|courir|marathon|semi|10\s*km|5\s*km|footing|entrainement|entraînement|séance|seance|allure|cardio|vma|blessure|douleur|mollet|genou|tibia|tendon|chaussure|récupération|recuperation|fractionné|fractionne|jogging|km|sport|raid|dénivelé|denivele)/i.test(
+        textLower,
+      );
+
     const goalDesc = GOAL_LABELS[player.coachGoal] || player.coachGoal;
+    const dateFormatted = referenceDate.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
 
-    return `Tu es le Maître de Guilde de Stride Quest, coach sportif d'endurance bienveillant et mentor RPG.
-Tu t'adresses à l'aventurier(ère) ${player.username} (Niveau ${player.level}, objectif déclaré : ${goalDesc}, 7 derniers jours : ${workoutsLast7Days} sortie(s), ${kmLast7Days} km).
+    // 1. Demande explicite de plan / programme d'entraînement
+    if (isTrainingPlan) {
+      return `Tu es le Maître de Guilde de Stride Quest, coach sportif d'endurance bienveillant.
+Athlète : ${player.username} (Niveau ${player.level}, objectif déclaré : ${goalDesc}, 7 derniers jours : ${workoutsLast7Days} sortie(s), ${kmLast7Days} km au total).
+Date actuelle : ${dateFormatted}.
 
-RÈGLES D'EXPERTISE SPORTIVE :
-1. Distances officielles : 10 km = 10,0 km | Semi-Marathon = 21,1 km | Marathon = 42,2 km. Si l'utilisateur demande une course spécifique, c'est cette distance qui compte, pas son profil de départ.
-2. Durée d'un plan : Un plan spécifique de course dure TOUJOURS 12 semaines (3 mois). Si l'échéance est lointaine, on maintient une base libre (2-3 sorties/semaine) jusqu'à J-12 semaines de la course.
-3. Règle absolue anti-bégaiement : Ne liste JAMAIS les semaines une par une (interdiction de 'Semaine 1-2', 'Semaine 3-4', 'Semaine 5-6'...).
-4. Pour toute demande de programme, structure TOUJOURS ta réponse exactement comme cet exemple :
+Consignes impératives pour ce programme :
+1. Tutoie SYSTÉMATIQUEMENT l'athlète ("tu", "ton", "tes"). N'utilise JAMAIS le vouvoiement ("vous", "votre").
+2. L'échéance de course demandée est la date limite absolue : la durée totale du plan doit correspondre au délai réel entre aujourd'hui et la course (ex: de fin novembre à début janvier = 6 semaines, pas 12 semaines).
+3. Vocabulaire athlétique rigoureux :
+   - Écris les allures au format "min/km" (ex: 4:30/km). N'écris JAMAIS de "h" pour une allure (bannir absolument "4h30/km") et ne fais pas de confusion hasardeuse avec les km/h.
+   - Utilise les termes "Échauffement (10 min)" et "Retour au calme (5 min)". Ne dis JAMAIS "allongement".
+4. Propose une semaine-type réaliste de 3 séances distinctes :
+   - Mardi : Footing en endurance fondamentale (40-45 min, aisance respiratoire totale).
+   - Jeudi : Séances d'allure cible (ex: 5 à 6 répétitions de 1 000 m à l'allure visée avec 1 min 30 de récupération trottinée).
+   - Dimanche : Sortie longue progressive (sans jamais dépasser la distance de la course préparée).
+5. Termine par 1 courte phrase motivante dans le ton d'aventure RPG. Ne recopie jamais les consignes ou parenthèses de ce prompt.`;
+    }
 
-### 1. La Stratégie Temporelle
-- **D'ici là** : Maintiens 2 à 3 sorties faciles par semaine en endurance fondamentale pour consolider ton aisance et valider un 10 km régulier.
-- **Les 12 dernières semaines** : Enclenchement du plan spécifique vers ton objectif officiel.
+    // 2. Question ou conseil running / santé / équipement / récupération
+    if (isSportsRelated) {
+      return `Tu es le Maître de Guilde de Stride Quest, coach sportif protecteur et bienveillant de l'aventurier(ère) ${player.username} (Niveau ${player.level}, objectif : ${goalDesc}).
+Date actuelle : ${dateFormatted}.
 
-### 2. Le Plan Spécifique (12 semaines)
-- **Mois 1 (Semaines 1 à 4 - Socle foncier)** : Footings d'assimilation et sortie longue dominicale de 8 à 10 km.
-- **Mois 2 (Semaines 5 à 9 - Montée en volume)** : Progression de la sortie longue jusqu'au pic clé de 16 à 18 km (à 3 semaines de la course).
-- **Mois 3 (Semaines 10 à 12 - Affûtage & Course)** : Réduction de la charge pour recharger les réserves. Semaine 12 : Jour J et franchissement des 21,1 km !
+Consignes :
+1. Tutoie SYSTÉMATIQUEMENT l'athlète ("tu", "ton", "tes"). N'utilise JAMAIS le vouvoiement.
+2. Réponds directement et précisément au sujet abordé (douleur, récupération, séance, équipement ou allure).
+3. Donne 2 ou 3 conseils pratiques, bienveillants et immédiatement applicables.
+4. Ne propose AUCUN programme ni plan d'entraînement : concentre-toi à 100% sur le conseil demandé.
+5. Termine par une phrase d'encouragement chaleureuse. Sois concis (70 à 100 mots max).`;
+    }
 
-### 3. Ta Semaine-Type (3 séances)
-- **Mardi** : Footing aérobie (40-45 min en aisance respiratoire, pouvoir discuter sans forcer).
-- **Jeudi** : Séance d'allure spécifique (échauffement + travail à allure cible).
-- **Dimanche** : Sortie longue progressive du week-end.
-
-Conclus toujours par une question motivante courte : "Veux-tu que nous préparions ensemble ta première séance d'entraînement ?"`;
+    // 3. Question générale, salutation ou calcul simple (hors running)
+    return `Tu es le Maître de Guilde de Stride Quest, mentor d'aventure.
+Tutoie l'aventurier. Réponds de manière concise, polie et directe à la demande de l'aventurier en une seule phrase (15 mots maximum). Ne mentionne aucun entraînement, sport ou course à pied s'il n'en est pas expressément question.`;
   }
 
   private generateFallbackReport(

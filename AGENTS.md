@@ -110,9 +110,20 @@ strave-like-rpg/
   - Séparation stricte entre le Core métier (`entities`, `services`, interfaces de `ports`) et l'Infrastructure (`repositories/postgres`, `http/app.ts`).
   - Dépôts PostgreSQL natifs avec `pg.Pool`. En l'absence de `DATABASE_URL`, repli transparent sur les dépôts en mémoire pour les tests unitaires.
 - **Maître de Guilde (Service LLM Local & Souverain)** :
-  - Intégration d'Ollama (`llama3.2:3b` par défaut pour une latence CPU ultra-faible ~10s, ou `mistral:7b`) via `OllamaClient` avec timeout calibré (120s), température resserrée (`0.4`), pénalité de répétition (`repeat_penalty: 1.25`) et repli heuristique autonome.
-  - **Gabarit Strict Anti-Boucle (Few-Shot Structure)** : interdiction formelle des listings de micro-semaines ('Semaine 1-2', etc.) qui font bégayer les modèles 3B. Structuration obligatoire en 3 phases mensuelles nettes + semaine type (Mardi, Jeudi, Dimanche) avec ancrage immuable sur la distance cible réelle (Semi-marathon = 21,1 km).
-  - **Ancrage Temporel Dynamique** : injection de la date du jour réelle dans le prompt système pour garantir la justesse des calculs d'échéances et de calendrier d'entraînement (ex: délai avant une course cible).
+  - Intégration d'Ollama (`mistral:7b` recommandé par défaut pour sa pertinence en français et sa logique d'instructions, ou `llama3.2:3b` pour contrainte CPU stricte) via `OllamaClient` avec timeout calibré (120s), température resserrée (`0.3`), pénalité de répétition (`repeat_penalty: 1.15`) et repli heuristique autonome.
+  - **Sobriété de Réponse & Pertinence Contextuelle** : le prompt n'injecte plus d'exemples rigides de templates qui provoquaient des fuites de méta-consignes et des plans de semi-marathon sur des questions simples (comme "2+2"). Les questions non sportives ou simples sont répondues en une phrase concise, et un programme n'est déployé que sur demande explicite.
+  - **Ancrage Temporel Dynamique** : injection de la date du jour réelle (`toLocaleDateString('fr-FR')`) dans le prompt système pour garantir la justesse des calculs d'échéances et de calendrier d'entraînement (ex: délai avant une course cible).
+  - **Streaming Temps Réel (Server-Sent Events / SSE)** :
+    - Route dédiée `POST /api/coach/messages/stream` : transmission progressive des tokens générés par Ollama (`stream: true`) au client mobile.
+    - **Time To First Token (TTFT) < 1,8 s** : l'utilisateur commence à lire immédiatement pendant que le modèle génère le reste de la réponse sous ses yeux, éliminant totalement la sensation d'attente sur écran figé.
+    - Le plafond artificiel de tokens (`num_predict`) est desserré (`1000 tokens`) : les programmes complets ne sont plus jamais coupés.
+    - Persistance atomique à la fin du flux dans `coach_messages`.
+  - **Routage d'Intention & Anti-Contamination (Latence < 2s sur questions simples)** :
+    - Classification de l'intention en amont dans `coachService.ts` :
+      1. *Générale / Hors-sport / Calcul* (ex: "2+2", "bonjour") : prompt minimaliste sans injection de profil running -> réponse en ~1,9s (10-15 tokens) au lieu de 50s.
+      2. *Conseil Running / Récupération* (douleurs, nutrition, équipement) : prompt ciblé conseil sans structure de plan -> réponse bienveillante en 10-15s sans parasitage.
+      3. *Programme d'Entraînement Explicite* : cadrage strict (Foncier, Spécifique, Affûtage, max 3 séances/semaine, plafond de sortie longue à 18 km pour semi / 32 km pour marathon).
+  - **Persistance en RAM (keep_alive)** : maintien du modèle chargé en mémoire vive (`keep_alive: '60m'`) pour éliminer le délai de rechargement SSD de 9s à chaque requête.
   - **Évaluation Paresseuse (Lazy Evaluation)** : les bilans hebdomadaires sont calculés à la demande lors de la première consultation de la semaine et mis en cache dans `coach_weekly_reports` (zéro appel LLM inutile).
   - **Sobriété de Stockage & Rétention Stricte** : l'historique de discussion est automatiquement purgé au-delà des 30 derniers messages (`purgeOldMessages(playerId, 30)`), garantissant un coût de stockage minime (~15 Ko max par joueur).
 - **Anti-Triche & Validation GPS** :

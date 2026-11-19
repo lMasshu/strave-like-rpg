@@ -135,9 +135,39 @@ const GuildMasterModal: React.FC<GuildMasterModalProps> = ({
     setMessages((prev) => [...prev, optimisticUserMsg]);
     setIsSending(true);
 
+    const streamingAssistantId = `stream-${Date.now()}`;
+
     try {
-      const assistantMsg = await apiClient.sendCoachMessage(text);
-      setMessages((prev) => [...prev, assistantMsg]);
+      const finalAssistantMsg = await apiClient.streamCoachMessage(
+        text,
+        (delta) => {
+          setIsSending(false);
+          setMessages((prev) => {
+            const exists = prev.some((m) => m.id === streamingAssistantId);
+            if (!exists) {
+              return [
+                ...prev,
+                {
+                  id: streamingAssistantId,
+                  playerId: "guild-master",
+                  role: "assistant",
+                  content: delta,
+                  createdAt: new Date().toISOString(),
+                },
+              ];
+            }
+            return prev.map((m) =>
+              m.id === streamingAssistantId
+                ? { ...m, content: m.content + delta }
+                : m,
+            );
+          });
+        },
+      );
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === streamingAssistantId ? finalAssistantMsg : m)),
+      );
     } catch (err: unknown) {
       setChatError(
         err instanceof Error

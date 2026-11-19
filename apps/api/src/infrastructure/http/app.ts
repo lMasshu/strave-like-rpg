@@ -567,6 +567,46 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     },
   );
 
+  app.post(
+    '/api/coach/messages/stream',
+    { preHandler: authenticate, config: authRateLimit },
+    async (req, reply) => {
+      const parsed = coachMessageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: firstIssue(parsed.error) });
+      }
+
+      reply.raw.setHeader('Access-Control-Allow-Origin', '*');
+      reply.raw.setHeader('Access-Control-Allow-Headers', '*');
+      reply.raw.setHeader('Content-Type', 'text/event-stream');
+      reply.raw.setHeader('Cache-Control', 'no-cache, no-transform');
+      reply.raw.setHeader('Connection', 'keep-alive');
+      reply.raw.flushHeaders?.();
+
+      try {
+        const finalMessage = await coachService.handleChatMessageStream(
+          req.user.sub,
+          parsed.data.message,
+          (delta) => {
+            reply.raw.write(`data: ${JSON.stringify({ type: 'chunk', delta })}\n\n`);
+          },
+        );
+
+        reply.raw.write(
+          `data: ${JSON.stringify({ type: 'done', message: finalMessage })}\n\n`,
+        );
+        reply.raw.end();
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : 'Erreur de génération du message';
+        reply.raw.write(
+          `data: ${JSON.stringify({ type: 'error', error: message })}\n\n`,
+        );
+        reply.raw.end();
+      }
+    },
+  );
+
   return app;
 }
 

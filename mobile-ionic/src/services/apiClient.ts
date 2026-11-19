@@ -377,6 +377,90 @@ export class ApiClient {
   }
 
   /**
+   * Envoie un message au Maître de Guilde et reçoit sa réponse en streaming SSE.
+   * Déclenche `onChunk` au fur et à mesure que les tokens sont générés.
+   */
+  async streamCoachMessage(
+    message: string,
+    onChunk: (delta: string) => void,
+  ): Promise<CoachMessageDto> {
+    let res: Response;
+    try {
+      res = await this.authorizedFetch("/api/coach/messages/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+    } catch {
+      // Repli transparent sur la route synchrone si le streaming échoue au niveau réseau
+      const fallback = await this.sendCoachMessage(message);
+      onChunk(fallback.content);
+      return fallback;
+    }
+
+    if (!res.ok) {
+      // Repli transparent si la route stream renvoie une erreur ou n'est pas encore rechargée
+      const fallback = await this.sendCoachMessage(message);
+      onChunk(fallback.content);
+      return fallback;
+    }
+
+    if (!res.body) {
+      throw new Error("Flux de streaming non supporté par le client.");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalMessage: CoachMessageDto | null = null;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
+
+        for (const evt of events) {
+          const trimmed = evt.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          const jsonStr = trimmed.slice(5).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const data = JSON.parse(jsonStr) as
+              | { type: "chunk"; delta: string }
+              | { type: "done"; message: CoachMessageDto }
+              | { type: "error"; error: string };
+
+            if (data.type === "chunk" && data.delta) {
+              onChunk(data.delta);
+            } else if (data.type === "done" && data.message) {
+              finalMessage = data.message;
+            } else if (data.type === "error") {
+              throw new Error(data.error);
+            }
+          } catch (e) {
+            if (e instanceof Error && e.message !== jsonStr) {
+              throw e;
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    if (!finalMessage) {
+      throw new Error("Le Maître de Guilde n'a pas pu terminer sa réponse.");
+    }
+
+    return finalMessage;
+  }
+
+  /**
    * Joueurs inscrits (sauf moi) dont le pseudo contient `query` ; tous si vide.
    * L'API en renvoie 20 par défaut, 50 au plus.
    */

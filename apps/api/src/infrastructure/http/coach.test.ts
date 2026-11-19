@@ -17,6 +17,17 @@ class TestMockLlm implements IOllamaClient {
     }
     return this.response;
   }
+
+  async chatStream(
+    _messages: OllamaChatMessage[],
+    onChunk: (chunk: string) => void,
+  ): Promise<string> {
+    if (!this.available) {
+      throw new OllamaUnavailableError('Service local inaccessible');
+    }
+    onChunk(this.response);
+    return this.response;
+  }
 }
 
 describe('Routes HTTP Coach / Maître de Guilde', () => {
@@ -168,5 +179,25 @@ describe('Routes HTTP Coach / Maître de Guilde', () => {
     expect(msgs.length).toBe(2);
     expect(msgs[0].role).toBe('assistant');
     expect(msgs[1].role).toBe('user');
+  });
+
+  it('stream la réponse du coach en direct via SSE (/api/coach/messages/stream)', async () => {
+    const mockLlm = new TestMockLlm();
+    mockLlm.response = 'Courage pour ton 10 km !';
+    const app = await buildTestApp({ llmClient: mockLlm });
+    const { headers } = await registerPlayer(app);
+
+    const streamRes = await app.inject({
+      method: 'POST',
+      url: '/api/coach/messages/stream',
+      headers,
+      payload: { message: 'Comment courir un 10 km ?' },
+    });
+
+    expect(streamRes.statusCode).toBe(200);
+    expect(streamRes.headers['content-type']).toContain('text/event-stream');
+    expect(streamRes.body).toContain('"type":"chunk"');
+    expect(streamRes.body).toContain('Courage pour ton 10 km !');
+    expect(streamRes.body).toContain('"type":"done"');
   });
 });

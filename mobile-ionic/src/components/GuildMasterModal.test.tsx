@@ -9,6 +9,7 @@ vi.mock("../services/apiClient", () => ({
     getCoachWeeklyReport: vi.fn(),
     getCoachMessages: vi.fn(),
     sendCoachMessage: vi.fn(),
+    streamCoachMessage: vi.fn(),
   },
 }));
 
@@ -91,13 +92,19 @@ describe("GuildMasterModal", () => {
         createdAt: "2026-11-18T09:00:00Z",
       },
     ]);
-    vi.mocked(apiClient.sendCoachMessage).mockResolvedValueOnce({
-      id: "msg-2",
-      playerId: "p1",
-      role: "assistant",
-      content: "Pour un marathon, la régularité prime.",
-      createdAt: "2026-11-18T10:05:00Z",
-    });
+    vi.mocked(apiClient.streamCoachMessage).mockImplementation(
+      async (_text, onChunk) => {
+        onChunk("Pour un marathon, ");
+        onChunk("la régularité prime.");
+        return {
+          id: "msg-2",
+          playerId: "p1",
+          role: "assistant",
+          content: "Pour un marathon, la régularité prime.",
+          createdAt: "2026-11-18T10:05:00Z",
+        };
+      },
+    );
 
     render(
       <MemoryRouter>
@@ -116,8 +123,9 @@ describe("GuildMasterModal", () => {
     fireEvent.click(sendBtn);
 
     await waitFor(() => {
-      expect(apiClient.sendCoachMessage).toHaveBeenCalledWith(
+      expect(apiClient.streamCoachMessage).toHaveBeenCalledWith(
         "Conseil pour marathon",
+        expect.any(Function),
       );
       expect(
         screen.getByText("Pour un marathon, la régularité prime."),
